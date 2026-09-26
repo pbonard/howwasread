@@ -1,6 +1,6 @@
 namespace: backend
 email: ""
-registry: "ghcr.io/seaoferror"
+registry: "ghcr.io/pbonard"
 
 circuitBreaker:
   maxConnections: 100
@@ -247,3 +247,68 @@ apps:
     firebase: false
     valkey: false
     opensearch: false
+
+# Flink jobs run by the flink operator in the flink namespace (namespace, operator and ghcr secret come from bootstrap)
+flink:
+  namespace: flink
+  version: v2_2
+  # shared by every job, a job's own flinkConfiguration overrides these keys
+  flinkConfiguration:
+    taskmanager.numberOfTaskSlots: "2"
+    taskmanager.memory.jvm-metaspace.size: "160m"
+    taskmanager.memory.jvm-overhead.min: "64m"
+    taskmanager.memory.framework.heap.size: "64m"
+    taskmanager.memory.framework.off-heap.size: "64m"
+    taskmanager.memory.network.min: "32m"
+    taskmanager.memory.network.max: "32m"
+    jobmanager.memory.jvm-overhead.min: "64m"
+    jobmanager.memory.off-heap.size: "64m"
+  jobManager:
+    memory: "400m"
+    cpu: 0.5
+  taskManager:
+    memory: "640m"
+    cpu: 0.5
+  # env of every job (the config-map in the flink namespace)
+  config:
+    KAFKA_BOOTSTRAP_SERVERS: "kafka-cluster-kafka-bootstrap.kafka-system.svc.cluster.local:9093"
+    KAFKA_USER_CERT_PATH: "/cert/kafka/user/user.crt"
+    KAFKA_USER_KEY_PATH: "/cert/kafka/user/user.key"
+    KAFKA_CA_CERT_PATH: "/cert/kafka/cluster/ca.crt"
+    VITESS_VTGATE_HOST: "vitess-cluster-vtgate-6e607aba.vitess.svc.cluster.local"
+    VITESS_VTGATE_GRPC_PORT: "15999"
+  jobs:
+    scheduled-notification-job:
+      image: flink/schedulednotificationjob:latest
+      jar: schedulednotificationjob.jar
+      entryClass: schedulednotificationjob.ScheduledNotificationJob
+      parallelism: 2
+      flinkConfiguration:
+        state.backend.type: rocksdb
+        execution.checkpointing.incremental: "true"
+        taskmanager.memory.managed.size: "64m"
+        jobmanager.memory.jvm-metaspace.size: "128m"
+    exponential-backoff-retry-job:
+      image: flink/exponentialbackoffretryjob:latest
+      jar: exponentialbackoffretryjob.jar
+      entryClass: exponentialbackoffretryjob.ExponentialBackoffRetryJob
+      parallelism: 2
+      flinkConfiguration:
+        state.backend.type: rocksdb
+        execution.checkpointing.incremental: "true"
+        taskmanager.memory.managed.size: "64m"
+        jobmanager.memory.jvm-metaspace.size: "128m"
+    conversation-cdc-job:
+      image: flink/conversationcdcjob:latest
+      jar: conversationcdcjob.jar
+      entryClass: conversationcdcjob.ConversationCdcJob
+      parallelism: 1
+      flinkConfiguration:
+        # no keyed state (source offsets are operator state), so no rocksdb and no managed memory
+        state.backend.type: hashmap
+        execution.checkpointing.interval: "10s"
+        taskmanager.memory.managed.fraction: "0.0"
+        # sql planning runs in the jobmanager, it needs more metaspace and heap than the datastream jobs
+        jobmanager.memory.jvm-metaspace.size: "160m"
+      jobManager:
+        memory: "512m"

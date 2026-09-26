@@ -1,0 +1,100 @@
+{{- $flink := .Values.flink }}
+{{- range $name, $job := $flink.jobs }}
+---
+apiVersion: flink.apache.org/v1beta1
+kind: FlinkDeployment
+metadata:
+  name: {{ $name }}
+  namespace: {{ $flink.namespace }}
+spec:
+  image: "{{ $.Values.registry }}/{{ $job.image }}"
+  podTemplate:
+    spec:
+      {{- if hasPrefix "ghcr.io/" $.Values.registry }}
+      imagePullSecrets:
+        - name: ghcr
+      {{- end }}
+      containers:
+        - name: flink-main-container
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: kafka-user
+              mountPath: "/cert/kafka/user"
+              readOnly: true
+            - name: kafka-ca
+              mountPath: "/cert/kafka/cluster"
+              readOnly: true
+          envFrom:
+            - configMapRef:
+                name: config-map
+      volumes:
+        - name: kafka-user
+          secret:
+            secretName: kafka-user
+        - name: kafka-ca
+          secret:
+            secretName: kafka-cluster-cluster-ca-cert
+  flinkVersion: {{ $flink.version }}
+  flinkConfiguration:
+    {{- /* a job's own keys override the shared ones */}}
+    {{- range $key, $value := merge (deepCopy ($job.flinkConfiguration | default dict)) $flink.flinkConfiguration }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+  serviceAccount: flink
+  jobManager:
+    resource:
+      memory: {{ ($job.jobManager).memory | default $flink.jobManager.memory | quote }}
+      cpu: {{ ($job.jobManager).cpu | default $flink.jobManager.cpu }}
+  taskManager:
+    resource:
+      memory: {{ ($job.taskManager).memory | default $flink.taskManager.memory | quote }}
+      cpu: {{ ($job.taskManager).cpu | default $flink.taskManager.cpu }}
+  job:
+    jarURI: local:///opt/flink/usrlib/{{ $job.jar }}
+    entryClass: {{ $job.entryClass }}
+    parallelism: {{ $job.parallelism }}
+    upgradeMode: {{ $job.upgradeMode | default "stateless" }}
+{{- end }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: flink
+  namespace: {{ $flink.namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: flink
+  namespace: {{ $flink.namespace }}
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "configmaps", "services"]
+    verbs: ["create", "get", "list", "watch", "update", "patch", "delete"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["create", "get", "list", "watch", "update", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: flink
+  namespace: {{ $flink.namespace }}
+subjects:
+  - kind: ServiceAccount
+    name: flink
+    namespace: {{ $flink.namespace }}
+roleRef:
+  kind: Role
+  name: flink
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config-map
+  namespace: {{ $flink.namespace }}
+data:
+  {{- range $key, $value := $flink.config }}
+  {{ $key }}: {{ $value | quote }}
+  {{- end }}
