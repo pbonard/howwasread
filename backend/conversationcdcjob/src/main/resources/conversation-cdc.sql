@@ -213,6 +213,20 @@ CREATE TEMPORARY TABLE chat_message_sink (
     'value.fields-include' = 'EXCEPT_KEY'
 ) LIKE kafka_sink_base (EXCLUDING ALL OVERWRITING OPTIONS);
 
+-- same shape, schedule and cancel events of a conversation stay in order on one partition
+CREATE TEMPORARY TABLE scheduled_notification_sink (
+    conversation_id STRING,
+    payload         STRING,
+    ts              TIMESTAMP_LTZ(3) METADATA FROM 'timestamp'
+) WITH (
+    'connector' = 'kafka',
+    'topic' = 'scheduled-notification',
+    'key.format' = 'raw',
+    'key.fields' = 'conversation_id',
+    'value.format' = 'raw',
+    'value.fields-include' = 'EXCEPT_KEY'
+) LIKE kafka_sink_base (EXCLUDING ALL OVERWRITING OPTIONS);
+
 -- ------------------------------------------------------------
 -- pipelines, submitted together as one job
 -- ------------------------------------------------------------
@@ -266,3 +280,8 @@ INSERT INTO chat_message_sink
 SELECT BIN_TO_UUID(conversation_id), payload, op_ts
 FROM outbox_source
 WHERE topic = 'chat-message';
+
+INSERT INTO scheduled_notification_sink
+SELECT BIN_TO_UUID(conversation_id), payload, op_ts
+FROM outbox_source
+WHERE topic = 'scheduled-notification';

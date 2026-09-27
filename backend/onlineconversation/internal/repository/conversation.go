@@ -186,6 +186,30 @@ func (r *repository) RemoveRegistrantId(ctx context.Context, session Session, co
 	return nil
 }
 
+func (r *repository) FindNotificationIds(ctx context.Context, session Session, conversationId uuid.UUID) ([]uuid.UUID, error) {
+	rows, err := session.QueryContext(ctx,
+		`SELECT member_id FROM online_conversation_notification WHERE conversation_id = ?`,
+		conversationId[:])
+	if err != nil {
+		slog.Error("fail to find online conversation notification ids", "err", err, "conversationId", conversationId)
+		return nil, err
+	}
+	defer rows.Close()
+	var ids []uuid.UUID
+	for rows.Next() {
+		var raw []byte
+		if err = rows.Scan(&raw); err != nil {
+			return nil, err
+		}
+		id, err := uuid.FromBytes(raw)
+		if err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, rows.Err()
+}
+
 func (r *repository) RemoveNotificationId(ctx context.Context, session Session, conversationId, memberId uuid.UUID) error {
 	_, err := session.ExecContext(ctx,
 		`DELETE FROM online_conversation_notification

@@ -51,6 +51,9 @@ type Repository interface {
 	DecrementRegistrants(ctx context.Context, session Session, conversationId uuid.UUID) error
 	RemoveRegistrantId(ctx context.Context, session Session, conversationId, memberId uuid.UUID) error
 	RemoveNotificationId(ctx context.Context, session Session, conversationId, memberId uuid.UUID) error
+	FindNotificationIds(ctx context.Context, session Session, conversationId uuid.UUID) ([]uuid.UUID, error)
+	InsertOutbox(ctx context.Context, session Session, id, conversationId uuid.UUID, topic string, payload []byte) error
+	DeleteOutbox(ctx context.Context, session Session, id, conversationId uuid.UUID) error
 	BeginTx(ctx context.Context) (Tx, error)
 	Tx() Session
 }

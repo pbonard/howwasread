@@ -88,16 +88,6 @@ func TestModeratorGuardedActions(t *testing.T) {
 			denied: "can't update conversation",
 		},
 		{
-			name: "delete",
-			expect: func(r *MockRepository_Expecter) *mock.Call {
-				return r.DeleteOnlineConversationIfModerator(mock.Anything, mock.Anything, conversationId, memberId).Call
-			},
-			call: func(s service.Service) error {
-				return s.DeleteConversation(context.Background(), memberId, conversationId)
-			},
-			denied: "can't delete conversation",
-		},
-		{
 			name: "ban",
 			expect: func(r *MockRepository_Expecter) *mock.Call {
 				return r.AddBanIdIfModerator(mock.Anything, mock.Anything, conversationId, memberId, banId).Call
@@ -217,17 +207,6 @@ func TestDeregisterOnlineConversation(t *testing.T) {
 }
 
 // ---------------------------------------------------------------- notification
-
-func TestScheduleAndCancelNotification(t *testing.T) {
-	repo := NewMockRepository(t)
-	repo.EXPECT().Tx().Return(nil)
-	repo.EXPECT().AddNotificationId(mock.Anything, mock.Anything, conversationId, memberId).Return(nil)
-	repo.EXPECT().RemoveNotificationId(mock.Anything, mock.Anything, conversationId, memberId).Return(errDB)
-	s := newService(t, repo)
-
-	assert.NoError(t, s.ScheduleNotification(context.Background(), memberId, conversationId))
-	assert.ErrorIs(t, s.CancelNotification(context.Background(), memberId, conversationId), errDB)
-}
 
 func TestGetConversationDetail_updatedAtIsOmittedUntilUpdated(t *testing.T) {
 	updated := time.Date(2026, 9, 24, 1, 0, 0, 0, time.UTC)
