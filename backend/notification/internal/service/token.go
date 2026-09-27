@@ -65,6 +65,7 @@ func (s *service) getEachTokenMap(ctx context.Context, toIds []uuid.UUID) (apntm
 					am.Lock()
 					apntm[d.DevicePushToken] = uuid.UUID(d.Id)
 					am.Unlock()
+					continue
 				}
 				fm.Lock()
 				fcmtm[d.DevicePushToken] = uuid.UUID(d.Id)

@@ -63,7 +63,16 @@ func (s *service) UpdateConversation(ctx context.Context, memberId uuid.UUID, re
 }
 
 func (s *service) DeleteConversation(ctx context.Context, memberId, conversationId uuid.UUID) error {
-	ok, err := s.repository.DeleteOnlineConversationIfModerator(ctx, s.repository.Tx(), conversationId, memberId)
+	tx, err := s.repository.BeginTx(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	subscribers, err := s.repository.FindNotificationIds(ctx, tx, conversationId)
+	if err != nil {
+		return err
+	}
+	ok, err := s.repository.DeleteOnlineConversationIfModerator(ctx, tx, conversationId, memberId)
 	if err != nil {
 		return err
 	}
@@ -72,6 +81,17 @@ func (s *service) DeleteConversation(ctx context.Context, memberId, conversation
 		slog.Warn("delete online conversation failed, ui error or api abuse attempt",
 			"conversationId", conversationId,
 			"memberId", memberId)
+		return err
+	}
+	// nobody gets a reminder for a deleted conversation
+	for _, subscriber := range subscribers {
+		if err = s.publishCancelNotification(ctx, tx, conversationId, subscriber); err != nil {
+			return err
+		}
+	}
+	err = tx.Commit()
+	if err != nil {
+		slog.Error("fail to commit transaction for delete conversation", "err", err)
 		return err
 	}
 	return nil
@@ -183,16 +203,47 @@ func (s *service) DeregisterOnlineConversation(ctx context.Context, memberId, co
 }
 
 func (s *service) ScheduleNotification(ctx context.Context, memberId, conversationId uuid.UUID) error {
-	err := s.repository.AddNotificationId(ctx, s.repository.Tx(), conversationId, memberId)
+	tx, err := s.repository.BeginTx(ctx)
 	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	detail, err := s.repository.FindConversationDetail(ctx, tx, conversationId, memberId)
+	if err != nil {
+		return err
+	}
+	if !time.Now().UTC().Before(detail.Time.Add(-notificationTimeMinusInterval)) {
+		return ErrTooLateForNotification
+	}
+	if err = s.repository.AddNotificationId(ctx, tx, conversationId, memberId); err != nil {
+		return err
+	}
+	if err = s.publishScheduleNotification(ctx, tx, conversationId, memberId, detail); err != nil {
+		return err
+	}
+	err = tx.Commit()
+	if err != nil {
+		slog.Error("fail to commit transaction for schedule notification", "err", err)
 		return err
 	}
 	return nil
 }
 
 func (s *service) CancelNotification(ctx context.Context, memberId, conversationId uuid.UUID) error {
-	err := s.repository.RemoveNotificationId(ctx, s.repository.Tx(), conversationId, memberId)
+	tx, err := s.repository.BeginTx(ctx)
 	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if err = s.repository.RemoveNotificationId(ctx, tx, conversationId, memberId); err != nil {
+		return err
+	}
+	if err = s.publishCancelNotification(ctx, tx, conversationId, memberId); err != nil {
+		return err
+	}
+	err = tx.Commit()
+	if err != nil {
+		slog.Error("fail to commit transaction for cancel notification", "err", err)
 		return err
 	}
 	return nil

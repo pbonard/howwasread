@@ -12,6 +12,8 @@ import org.apache.flink.api.common.typeinfo.TypeHint;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.util.Collector;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Serial;
 import java.util.*;
@@ -20,6 +22,7 @@ public class ScheduledNotificationFunction extends KeyedProcessFunction<String, 
 
   @Serial
   private static final long serialVersionUID = 1L;
+  private static final Logger LOG = LoggerFactory.getLogger(ScheduledNotificationFunction.class);
 
   private transient MapState<String, NotificationElement> elements;
   private transient ValueState<String> partitionType;
@@ -43,8 +46,16 @@ public class ScheduledNotificationFunction extends KeyedProcessFunction<String, 
 
   @Override
   public void processElement(IncomingNotificationEvent event, Context ctx, Collector<OutgoingNotificationEvent> out) throws Exception {
+    if (event.getType() == null || event.getKeyId() == null) {
+      LOG.warn("drop notification event without type or keyId, partitionId: {}", event.getPartitionId());
+      return;
+    }
     if (event.getType().equals("cancel")) {
       elements.remove(event.getKeyId());
+      return;
+    }
+    if (event.getScheduledTime() == null || event.getContents() == null) {
+      LOG.warn("drop notification event without scheduledTime or contents, partitionId: {}", event.getPartitionId());
       return;
     }
     if (partitionType.value() == null) {

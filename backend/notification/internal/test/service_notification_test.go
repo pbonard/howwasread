@@ -110,7 +110,7 @@ func TestPreprocessScheduledNotification_splitsTokensByOS(t *testing.T) {
 	require.Len(t, pushes["fcm-notification"], 1)
 	require.Len(t, pushes["apn-notification"], 1)
 	fcm := pushes["fcm-notification"][0]
-	assert.Equal(t, roomId[:], fcm.key)
+	assert.Equal(t, append(roomId[:], 2), fcm.key)
 	assert.Equal(t, map[string]uuid.UUID{"fcm-token": memberId}, fcm.message(t).TokenMap)
 	assert.Equal(t, "Conversation starts soon", fcm.message(t).Title)
 	assert.Equal(t, "You can now enter the conversation about Hamlet and talk!", fcm.message(t).Text)
