@@ -1,6 +1,6 @@
 # go tool mockery (run from backend/) generates testify mocks.
 # - common interfaces go to common/mocks (package mocks), shared by every service's tests
-# - a service's own interfaces go to <service>/internal/test as _test.go files
+# - a service's own interfaces go to <service>/test as _test.go files
 template: testify
 filename: "mock_{{.InterfaceName | snakecase}}_test.go"
 structname: "Mock{{.InterfaceName}}"
@@ -21,119 +21,119 @@ packages:
     interfaces:
       StorageClient:
         configs:
-          - dir: chat/internal/test
+          - dir: chat/test
             pkgname: test
   backend/messagepreprocess/internal/repository:
     interfaces:
       Repository:
         configs:
-          - dir: messagepreprocess/internal/test
+          - dir: messagepreprocess/test
             pkgname: test
   backend/messagepersist/internal/repository:
     interfaces:
       Repository:
         configs:
-          - dir: messagepersist/internal/test
+          - dir: messagepersist/test
             pkgname: test
   backend/onlineconversation/internal/repository:
     interfaces:
       Repository:
         configs:
-          - dir: onlineconversation/internal/test
+          - dir: onlineconversation/test
             pkgname: test
       Tx:
         configs:
-          - dir: onlineconversation/internal/test
+          - dir: onlineconversation/test
             pkgname: test
   backend/notification/internal/repository:
     interfaces:
       Repository:
         configs:
-          - dir: notification/internal/test
+          - dir: notification/test
             pkgname: test
   backend/notification/internal/service:
     interfaces:
       Service:
         configs:
-          - dir: notification/internal/test
+          - dir: notification/test
             pkgname: test
   backend/chat/internal/repository:
     interfaces:
       Repository:
         configs:
-          - dir: chat/internal/test
+          - dir: chat/test
             pkgname: test
   backend/chat/internal/service:
     interfaces:
       Service:
         configs:
-          - dir: chat/internal/test
+          - dir: chat/test
             pkgname: test
   backend/fcmnotification/internal/repository:
     interfaces:
       Repository:
         configs:
-          - dir: fcmnotification/internal/test
+          - dir: fcmnotification/test
             pkgname: test
   backend/messagerelay/internal/repository:
     interfaces:
       Repository:
         configs:
-          - dir: messagerelay/internal/test
+          - dir: messagerelay/test
             pkgname: test
   backend/signalrelay/internal/repository:
     interfaces:
       Repository:
         configs:
-          - dir: signalrelay/internal/test
+          - dir: signalrelay/test
             pkgname: test
   backend/auth/internal/repository:
     interfaces:
       Repository:
         configs:
-          - dir: auth/internal/test
+          - dir: auth/test
             pkgname: test
   backend/auth/internal/service:
     interfaces:
       Service:
         configs:
-          - dir: auth/internal/test
+          - dir: auth/test
             pkgname: test
   backend/onlineconversation/internal/service:
     interfaces:
       Service:
         configs:
-          - dir: onlineconversation/internal/test
+          - dir: onlineconversation/test
             pkgname: test
   backend/fcmnotification/internal/client:
     interfaces:
       FCMClient:
         configs:
-          - dir: fcmnotification/internal/test
+          - dir: fcmnotification/test
             pkgname: test
   backend/messagerelay/internal/client:
     interfaces:
       RelayClient:
         configs:
-          - dir: messagerelay/internal/test
+          - dir: messagerelay/test
             pkgname: test
   backend/signalrelay/internal/client:
     interfaces:
       RelayClient:
         configs:
-          - dir: signalrelay/internal/test
+          - dir: signalrelay/test
             pkgname: test
   backend/auth/internal/client:
     interfaces:
       SMSClient:
         configs:
-          - dir: auth/internal/test
+          - dir: auth/test
             pkgname: test
       GoogleAuthClient:
         configs:
-          - dir: auth/internal/test
+          - dir: auth/test
             pkgname: test
       SMTPClient:
         configs:
-          - dir: auth/internal/test
+          - dir: auth/test
             pkgname: test
