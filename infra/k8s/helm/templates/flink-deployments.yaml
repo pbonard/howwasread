@@ -54,6 +54,7 @@ spec:
     entryClass: {{ $job.entryClass }}
     parallelism: {{ $job.parallelism }}
     upgradeMode: {{ $job.upgradeMode | default "stateless" }}
+{{/*    upgradeMode is curretly stateless because of cost, but we assume this is set as last-state and s3 is set up while development*/}}
 {{- end }}
 ---
 apiVersion: v1

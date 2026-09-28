@@ -6,10 +6,6 @@ import org.springframework.data.domain.Persistable;
 
 import java.util.UUID;
 
-/**
- * Transactional outbox row, inserted and deleted in the same transaction.
- * The CDC job forwards the insert to the Kafka topic in the topic column.
- */
 @Entity
 @Builder
 @Getter
@@ -27,7 +23,7 @@ public class Outbox implements Persistable<UUID> {
   @Column(columnDefinition = "TEXT")
   private String payload;
 
-  // always a new row, so save() persists instead of merging with a select by id (not the shard key)
+  // always a new row, so save() persists instead of merging with a select by id(always insert without checking update feasibility)
   @Override
   public boolean isNew() {
     return true;
