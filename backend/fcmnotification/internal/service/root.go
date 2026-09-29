@@ -1,7 +1,7 @@
 package service
 
 import (
-	"backend/common"
+	"backend/common/producer"
 	"backend/fcmnotification/internal/client"
 	"backend/fcmnotification/internal/repository"
 	"context"
@@ -10,16 +10,16 @@ import (
 )
 
 type Service interface {
-	SendNotification(ctx context.Context, messageId uuid.UUID, notificationId uint8, value []byte)
+	SendNotification(ctx context.Context, messageId uuid.UUID, notificationId uint8, value []byte) error
 }
 
 type service struct {
-	producer   common.Producer
+	producer   producer.SyncProducer
 	repository repository.Repository
 	fcmClient  client.FCMClient
 }
 
-func NewService(r repository.Repository, p common.Producer, fcmClient client.FCMClient) Service {
+func NewService(r repository.Repository, p producer.SyncProducer, fcmClient client.FCMClient) Service {
 	s := service{
 		producer:   p,
 		repository: r,

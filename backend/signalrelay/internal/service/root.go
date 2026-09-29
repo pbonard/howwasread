@@ -1,7 +1,7 @@
 package service
 
 import (
-	"backend/common"
+	"backend/common/producer"
 	"backend/signalrelay/internal/client"
 	"backend/signalrelay/internal/repository"
 	"context"
@@ -14,11 +14,11 @@ type Service interface {
 
 type service struct {
 	repository  repository.Repository
-	producer    common.Producer
+	producer    producer.SyncProducer
 	relayClient client.RelayClient
 }
 
-func NewService(r repository.Repository, p common.Producer, relayClient client.RelayClient) Service {
+func NewService(r repository.Repository, p producer.SyncProducer, relayClient client.RelayClient) Service {
 	return &service{
 		repository:  r,
 		producer:    p,

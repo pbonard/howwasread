@@ -34,14 +34,16 @@ public class OutboxPublisher {
         .contentType(contentType)
         .contents(contents)
         .build());
-    publish(id, conversationId, CHAT_MESSAGE_TOPIC, payload);
+    publish(id, conversationId, CHAT_MESSAGE_TOPIC, null, payload);
   }
 
-  private void publish(UUID id, UUID conversationId, String topic, String payload) {
+  // the CDC job sends payload to topic with taskType as the "taskType" header, a null taskType sends no header
+  private void publish(UUID id, UUID conversationId, String topic, String taskType, String payload) {
     outboxRepository.saveAndFlush(Outbox.builder()
         .id(id)
         .conversationId(conversationId)
         .topic(topic)
+        .taskType(taskType)
         .payload(payload)
         .build());
     outboxRepository.deleteByIdAndConversationId(id, conversationId);

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"backend/common/payload"
 	"backend/onlineconversation/internal/dto"
 	"context"
 	"errors"
@@ -85,7 +86,13 @@ func (s *service) DeleteConversation(ctx context.Context, memberId, conversation
 	}
 	// nobody gets a reminder for a deleted conversation
 	for _, subscriber := range subscribers {
-		if err = s.publishCancelNotification(ctx, tx, conversationId, subscriber); err != nil {
+		err = s.publish(ctx, tx, conversationId, scheduledNotificationTopic, "",
+			payload.Marshal(payload.NotificationScheduling{
+				PartitionId: conversationId,
+				KeyId:       subscriber,
+				Type:        "cancel",
+			}))
+		if err != nil {
 			return err
 		}
 	}
@@ -152,7 +159,7 @@ func (s *service) GetConversationDetail(ctx context.Context, conversationId, mem
 	return &resp, nil
 }
 
-func (s *service) RegisterOnlineConversation(ctx context.Context, memberId, conversationId uuid.UUID) error {
+func (s *service) RegisterConversation(ctx context.Context, memberId, conversationId uuid.UUID) error {
 	tx, err := s.repository.BeginTx(ctx)
 	if err != nil {
 		return err
@@ -177,7 +184,7 @@ func (s *service) RegisterOnlineConversation(ctx context.Context, memberId, conv
 	return nil
 }
 
-func (s *service) DeregisterOnlineConversation(ctx context.Context, memberId, conversationId uuid.UUID) error {
+func (s *service) DeregisterConversation(ctx context.Context, memberId, conversationId uuid.UUID) error {
 	tx, err := s.repository.BeginTx(ctx)
 	if err != nil {
 		return err
@@ -218,7 +225,14 @@ func (s *service) ScheduleNotification(ctx context.Context, memberId, conversati
 	if err = s.repository.AddNotificationId(ctx, tx, conversationId, memberId); err != nil {
 		return err
 	}
-	if err = s.publishScheduleNotification(ctx, tx, conversationId, memberId, detail); err != nil {
+	err = s.publish(ctx, tx, conversationId, scheduledNotificationTopic, "", payload.Marshal(payload.NotificationScheduling{
+		PartitionId:   conversationId,
+		KeyId:         memberId,
+		ScheduledTime: detail.Time.Add(-notificationTimeMinusInterval).UnixMilli(),
+		Contents:      map[int]string{0: about(detail)},
+		Type:          "online-conversation",
+	}))
+	if err != nil {
 		return err
 	}
 	err = tx.Commit()
@@ -235,15 +249,39 @@ func (s *service) CancelNotification(ctx context.Context, memberId, conversation
 		return err
 	}
 	defer tx.Rollback()
-	if err = s.repository.RemoveNotificationId(ctx, tx, conversationId, memberId); err != nil {
+	err = s.repository.RemoveNotificationId(ctx, tx, conversationId, memberId)
+	if err != nil {
 		return err
 	}
-	if err = s.publishCancelNotification(ctx, tx, conversationId, memberId); err != nil {
+	err = s.publish(ctx, tx, conversationId, scheduledNotificationTopic, "",
+		payload.Marshal(payload.NotificationScheduling{
+			PartitionId: conversationId,
+			KeyId:       memberId,
+			Type:        "cancel",
+		}))
+	if err != nil {
 		return err
 	}
 	err = tx.Commit()
 	if err != nil {
 		slog.Error("fail to commit transaction for cancel notification", "err", err)
+		return err
+	}
+	return nil
+}
+
+func (s *service) ReportConversation(ctx context.Context, conversationId uuid.UUID) error {
+	tx, err := s.repository.BeginTx(ctx)
+	if err != nil {
+		return err
+	}
+	err = s.publish(ctx, tx, conversationId, onlineConversationTopic, reportTaskType,
+		payload.Marshal(payload.ConversationRequest{Id: conversationId}))
+	if err != nil {
+		return err
+	}
+	err = tx.Commit()
+	if err != nil {
 		return err
 	}
 	return nil

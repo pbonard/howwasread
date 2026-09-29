@@ -10,14 +10,14 @@ import (
 
 const scheduledNotificationId uint8 = 2
 
-func (s *service) PreprocessScheduledNotification(ctx context.Context, partitionId uuid.UUID, notifications map[uuid.UUID]map[int]string, contents map[int]string) {
+func (s *service) PreprocessScheduledNotification(ctx context.Context, partitionId uuid.UUID, notifications map[uuid.UUID]map[int]string, contents map[int]string) error {
 	memberIds := make([]uuid.UUID, 0, len(notifications))
 	for memberId, _ := range notifications {
 		memberIds = append(memberIds, memberId)
 	}
 	apntm, fcmtm, err := s.getEachTokenMap(ctx, memberIds)
 	if err != nil {
-		return
+		return err
 	}
 	p := payload.NotificationMessage{
 		TokenMap: fcmtm,
@@ -28,10 +28,17 @@ func (s *service) PreprocessScheduledNotification(ctx context.Context, partition
 	kafkaKey := append(partitionId[:], scheduledNotificationId)
 	if len(fcmtm) > 0 {
 		p.TokenMap = fcmtm
-		s.producer.PushMessage("fcm-notification", kafkaKey, payload.Marshal(p), nil)
+		err = s.producer.Commit("fcm-notification", kafkaKey, payload.Marshal(p), nil)
+		if err != nil {
+			return err
+		}
 	}
 	if len(apntm) > 0 {
 		p.TokenMap = apntm
-		s.producer.PushMessage("apn-notification", kafkaKey, payload.Marshal(p), nil)
+		err = s.producer.Commit("apn-notification", kafkaKey, payload.Marshal(p), nil)
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 }

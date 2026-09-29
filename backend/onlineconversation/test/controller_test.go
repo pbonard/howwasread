@@ -89,11 +89,11 @@ func TestController_delegatesToTheService(t *testing.T) {
 			}},
 		{"register", http.MethodPost, "/onlineconversation/register", idBody,
 			func(s *MockService_Expecter) {
-				s.RegisterOnlineConversation(mock.Anything, memberId, conversationId).Return(nil)
+				s.RegisterConversation(mock.Anything, memberId, conversationId).Return(nil)
 			}},
 		{"deregister", http.MethodPost, "/onlineconversation/deregister", idBody,
 			func(s *MockService_Expecter) {
-				s.DeregisterOnlineConversation(mock.Anything, memberId, conversationId).Return(nil)
+				s.DeregisterConversation(mock.Anything, memberId, conversationId).Return(nil)
 			}},
 		{"schedule notification", http.MethodPost, "/onlineconversation/notification/schedule", idBody,
 			func(s *MockService_Expecter) {
@@ -118,7 +118,7 @@ func TestController_delegatesToTheService(t *testing.T) {
 
 func TestController_serviceErrorIsBadRequest(t *testing.T) {
 	svc := NewMockService(t)
-	svc.EXPECT().RegisterOnlineConversation(mock.Anything, memberId, conversationId).Return(fmt.Errorf("already fully registered"))
+	svc.EXPECT().RegisterConversation(mock.Anything, memberId, conversationId).Return(fmt.Errorf("already fully registered"))
 
 	rec := serve(svc, http.MethodPost, "/onlineconversation/register", memberId.String(), idBody)
 

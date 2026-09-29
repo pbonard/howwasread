@@ -14,28 +14,18 @@ import (
 	"github.com/google/uuid"
 )
 
+// SendNotification returns an error only when the notification was not sent, so a retry never sends it twice
 func (s *service) SendNotification(
 	ctx context.Context,
-	//originTopic string,
-	//retryBackoff time.Duration,
 	messageId uuid.UUID,
 	notificationId uint8,
-	value []byte) {
+	value []byte) error {
 	did, err := s.repository.DidNotification(ctx, string(messageId[:]), string(notificationId))
 	if err != nil {
-		//err = s.producer.PushRetryMessage(
-		//	fmt.Sprintf("%v-%v", originTopic, "retry"),
-		//	append(messageId[:], notificationId), value,
-		//	50*time.Millisecond,
-		//	err.Error(),
-		//)
-		//if err != nil {
-		//	panic(err)
-		//}
-		return
+		return err
 	}
 	if did {
-		return
+		return nil
 	}
 	var p payload.NotificationMessage
 	err = json.Unmarshal(value, &p)
@@ -43,7 +33,7 @@ func (s *service) SendNotification(
 		slog.Error("fail to unmarshal payload value",
 			"err", err,
 			"value", value)
-		return
+		return nil
 	}
 	tokenMap := p.TokenMap
 	text := p.Text
@@ -62,11 +52,12 @@ func (s *service) SendNotification(
 	defer cancel()
 	invalidTokens, err := s.fcmClient.Send(ctxf, ts, p.Title, text, imageURL)
 	if err != nil {
-		return
+		return err
 	}
+	// sent already: a failed mark or token cleanup is only logged, a retry would send it again
 	err = s.repository.MarkNotification(ctx, string(messageId[:]), string(notificationId))
 	if err != nil {
-		return
+		slog.Error("fail to mark notification", "err", err, "messageId", messageId)
 	}
 	for _, token := range invalidTokens {
 		wg.Add(1)
@@ -83,7 +74,7 @@ func (s *service) SendNotification(
 	wg.Wait()
 	err = errors.Join(es...)
 	if err != nil {
-		return
+		slog.Error("fail to remove invalid tokens", "err", err)
 	}
-	return
+	return nil
 }

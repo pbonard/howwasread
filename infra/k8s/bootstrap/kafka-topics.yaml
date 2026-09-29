@@ -59,3 +59,16 @@ metadata:
 spec:
   partitions: 3
   replicas: 1
+---
+
+# terminal topic of the exponential-backoff-retry job and the spring dead-letter recoverer
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaTopic
+metadata:
+  name: dlq
+  namespace: kafka-system
+  labels:
+    strimzi.io/cluster: kafka-cluster
+spec:
+  partitions: 3
+  replicas: 1

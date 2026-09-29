@@ -36,12 +36,12 @@ func ios(id uuid.UUID, token string) projection.FindPushTokensById {
 }
 
 // captures the pushed messages by topic
-func capturePushes(producer *mocks.MockProducer) map[string][]pushed {
+func capturePushes(producer *mocks.MockSyncProducer) map[string][]pushed {
 	out := map[string][]pushed{}
-	producer.EXPECT().PushMessage(mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+	producer.EXPECT().Commit(mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 		Run(func(topic string, key, value []byte, _ []sarama.RecordHeader) {
 			out[topic] = append(out[topic], pushed{key: key, value: value})
-		}).Return().Maybe()
+		}).Return(nil).Maybe()
 	return out
 }
 
@@ -63,7 +63,7 @@ func TestRegisterNotification(t *testing.T) {
 		repo.EXPECT().FindMemberIdByToken(mock.Anything, "tok").Return(gocql.UUID(memberId), nil)
 		repo.EXPECT().SaveNotificationInfoById(mock.Anything, gocql.UUID(memberId), "ios", "tok").Return(nil)
 
-		assert.NoError(t, service.NewService(repo, mocks.NewMockProducer(t), mocks.NewMockCDNClient(t)).
+		assert.NoError(t, service.NewService(repo, mocks.NewMockSyncProducer(t), mocks.NewMockCDNClient(t)).
 			RegisterNotification(context.Background(), memberId, "ios", "tok"))
 	})
 	t.Run("token moves from another member", func(t *testing.T) {
@@ -73,7 +73,7 @@ func TestRegisterNotification(t *testing.T) {
 		repo.EXPECT().UpdateMemberIdByToken(mock.Anything, "tok", gocql.UUID(memberId)).Return(nil)
 		repo.EXPECT().SaveNotificationInfoById(mock.Anything, gocql.UUID(memberId), "android", "tok").Return(nil)
 
-		assert.NoError(t, service.NewService(repo, mocks.NewMockProducer(t), mocks.NewMockCDNClient(t)).
+		assert.NoError(t, service.NewService(repo, mocks.NewMockSyncProducer(t), mocks.NewMockCDNClient(t)).
 			RegisterNotification(context.Background(), memberId, "android", "tok"))
 	})
 	t.Run("new token writes the owner once and deletes nothing", func(t *testing.T) {
@@ -82,14 +82,14 @@ func TestRegisterNotification(t *testing.T) {
 		repo.EXPECT().UpdateMemberIdByToken(mock.Anything, "tok", gocql.UUID(memberId)).Return(nil).Once()
 		repo.EXPECT().SaveNotificationInfoById(mock.Anything, gocql.UUID(memberId), "android", "tok").Return(nil)
 
-		assert.NoError(t, service.NewService(repo, mocks.NewMockProducer(t), mocks.NewMockCDNClient(t)).
+		assert.NoError(t, service.NewService(repo, mocks.NewMockSyncProducer(t), mocks.NewMockCDNClient(t)).
 			RegisterNotification(context.Background(), memberId, "android", "tok"))
 	})
 	t.Run("lookup error", func(t *testing.T) {
 		repo := NewMockRepository(t)
 		repo.EXPECT().FindMemberIdByToken(mock.Anything, "tok").Return(gocql.UUID{}, errDB)
 
-		assert.ErrorIs(t, service.NewService(repo, mocks.NewMockProducer(t), mocks.NewMockCDNClient(t)).
+		assert.ErrorIs(t, service.NewService(repo, mocks.NewMockSyncProducer(t), mocks.NewMockCDNClient(t)).
 			RegisterNotification(context.Background(), memberId, "android", "tok"), errDB)
 	})
 }
@@ -97,7 +97,7 @@ func TestRegisterNotification(t *testing.T) {
 // ---------------------------------------------------------------- scheduled
 
 func TestPreprocessScheduledNotification_splitsTokensByOS(t *testing.T) {
-	repo, producer := NewMockRepository(t), mocks.NewMockProducer(t)
+	repo, producer := NewMockRepository(t), mocks.NewMockSyncProducer(t)
 	repo.EXPECT().FindPushTokensById(mock.Anything, gocql.UUID(memberId)).
 		Return([]projection.FindPushTokensById{android(memberId, "fcm-token")}, nil)
 	repo.EXPECT().FindPushTokensById(mock.Anything, gocql.UUID(otherId)).
@@ -121,8 +121,23 @@ func TestPreprocessScheduledNotification_tokenLookupErrorSendsNothing(t *testing
 	repo := NewMockRepository(t)
 	repo.EXPECT().FindPushTokensById(mock.Anything, gocql.UUID(memberId)).Return(nil, errDB)
 
-	service.NewService(repo, mocks.NewMockProducer(t), mocks.NewMockCDNClient(t)).PreprocessScheduledNotification(
+	err := service.NewService(repo, mocks.NewMockSyncProducer(t), mocks.NewMockCDNClient(t)).PreprocessScheduledNotification(
 		context.Background(), roomId, map[uuid.UUID]map[int]string{memberId: nil}, map[int]string{0: "Hamlet"})
+
+	assert.ErrorIs(t, err, errDB)
+}
+
+func TestPreprocessScheduledNotification_publishFailureIsReturned(t *testing.T) {
+	repo, producer := NewMockRepository(t), mocks.NewMockSyncProducer(t)
+	repo.EXPECT().FindPushTokensById(mock.Anything, gocql.UUID(memberId)).
+		Return([]projection.FindPushTokensById{android(memberId, "fcm-token")}, nil)
+	errKafka := errors.New("kafka down")
+	producer.EXPECT().Commit("fcm-notification", mock.Anything, mock.Anything, mock.Anything).Return(errKafka)
+
+	err := service.NewService(repo, producer, mocks.NewMockCDNClient(t)).PreprocessScheduledNotification(
+		context.Background(), roomId, map[uuid.UUID]map[int]string{memberId: nil}, map[int]string{0: "Hamlet"})
+
+	assert.ErrorIs(t, err, errKafka)
 }
 
 // ---------------------------------------------------------------- message
@@ -135,7 +150,7 @@ func expectTokens(repo *MockRepository, tokens ...projection.FindPushTokensById)
 }
 
 func TestPreprocessMessageNotification_personalText(t *testing.T) {
-	repo, producer := NewMockRepository(t), mocks.NewMockProducer(t)
+	repo, producer := NewMockRepository(t), mocks.NewMockSyncProducer(t)
 	expectTokens(repo, android(memberId, "fcm-token"))
 	repo.EXPECT().FindNameById(mock.Anything, gocql.UUID(senderId)).Return("alice", nil)
 	pushes := capturePushes(producer)
@@ -154,7 +169,7 @@ func TestPreprocessMessageNotification_personalText(t *testing.T) {
 }
 
 func TestPreprocessMessageNotification_groupUsesRoomNameAsTitle(t *testing.T) {
-	repo, producer := NewMockRepository(t), mocks.NewMockProducer(t)
+	repo, producer := NewMockRepository(t), mocks.NewMockSyncProducer(t)
 	expectTokens(repo, ios(memberId, "apn-token"))
 	repo.EXPECT().FindNameById(mock.Anything, gocql.UUID(senderId)).Return("alice", nil)
 	repo.EXPECT().FindRoomNameById(mock.Anything, gocql.UUID(roomId)).Return("Seoul", nil)
@@ -170,7 +185,7 @@ func TestPreprocessMessageNotification_groupUsesRoomNameAsTitle(t *testing.T) {
 }
 
 func TestPreprocessMessageNotification_imageIsSigned(t *testing.T) {
-	repo, producer, signer := NewMockRepository(t), mocks.NewMockProducer(t), mocks.NewMockCDNClient(t)
+	repo, producer, signer := NewMockRepository(t), mocks.NewMockSyncProducer(t), mocks.NewMockCDNClient(t)
 	expectTokens(repo, android(memberId, "fcm-token"))
 	repo.EXPECT().FindNameById(mock.Anything, gocql.UUID(senderId)).Return("alice", nil)
 	signer.EXPECT().SignedURL("image", "file-1").Return("https://signed", nil)
@@ -188,14 +203,30 @@ func TestPreprocessMessageNotification_signFailureSendsNothing(t *testing.T) {
 	repo, signer := NewMockRepository(t), mocks.NewMockCDNClient(t)
 	expectTokens(repo, android(memberId, "fcm-token"))
 	repo.EXPECT().FindNameById(mock.Anything, gocql.UUID(senderId)).Return("alice", nil)
-	signer.EXPECT().SignedURL(mock.Anything, mock.Anything).Return("", errors.New("bad key"))
+	errSign := errors.New("bad key")
+	signer.EXPECT().SignedURL(mock.Anything, mock.Anything).Return("", errSign)
 
-	service.NewService(repo, mocks.NewMockProducer(t), signer).PreprocessMessageNotification(context.Background(), 0,
+	err := service.NewService(repo, mocks.NewMockSyncProducer(t), signer).PreprocessMessageNotification(context.Background(), 0,
 		messageId, [][]byte{memberId[:]}, memberId, senderId, "image", []string{"file-1"})
+
+	assert.ErrorIs(t, err, errSign)
+}
+
+func TestPreprocessMessageNotification_publishFailureIsReturned(t *testing.T) {
+	repo, producer := NewMockRepository(t), mocks.NewMockSyncProducer(t)
+	expectTokens(repo, android(memberId, "fcm-token"))
+	repo.EXPECT().FindNameById(mock.Anything, gocql.UUID(senderId)).Return("alice", nil)
+	errKafka := errors.New("kafka down")
+	producer.EXPECT().Commit("fcm-notification", mock.Anything, mock.Anything, mock.Anything).Return(errKafka)
+
+	err := service.NewService(repo, producer, mocks.NewMockCDNClient(t)).PreprocessMessageNotification(context.Background(), 1,
+		messageId, [][]byte{memberId[:]}, memberId, senderId, "text", []string{"hello"})
+
+	assert.ErrorIs(t, err, errKafka)
 }
 
 func TestPreprocessMessageNotification_otherMediaShowsType(t *testing.T) {
-	repo, producer := NewMockRepository(t), mocks.NewMockProducer(t)
+	repo, producer := NewMockRepository(t), mocks.NewMockSyncProducer(t)
 	expectTokens(repo, android(memberId, "fcm-token"))
 	repo.EXPECT().FindNameById(mock.Anything, gocql.UUID(senderId)).Return("alice", nil)
 	pushes := capturePushes(producer)

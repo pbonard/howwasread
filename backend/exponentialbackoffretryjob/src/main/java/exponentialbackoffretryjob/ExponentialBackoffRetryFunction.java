@@ -1,9 +1,14 @@
 package exponentialbackoffretryjob;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.api.common.functions.OpenContext;
 import org.apache.flink.api.common.state.ListState;
 import org.apache.flink.api.common.state.ListStateDescriptor;
+import org.apache.flink.api.common.state.MapState;
+import org.apache.flink.api.common.state.MapStateDescriptor;
+import org.apache.flink.api.common.state.StateDescriptor;
+import org.apache.flink.api.common.state.StateTtlConfig;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
@@ -12,12 +17,22 @@ import exponentialbackoffretryjob.dto.IncomingEvent;
 import exponentialbackoffretryjob.dto.OutgoingEvent;
 
 import java.io.Serial;
-import java.time.Instant;
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 
+@Slf4j
 public class ExponentialBackoffRetryFunction extends KeyedProcessFunction<String, IncomingEvent, OutgoingEvent> {
 
   @Serial
   private static final long serialVersionUID = 1L;
+
+  public static final String DLQ_TOPIC = "dlq";
+
+  private static final StateTtlConfig TTL = StateTtlConfig.newBuilder(Duration.ofHours(24))
+      .setUpdateType(StateTtlConfig.UpdateType.OnCreateAndWrite)
+      .setStateVisibility(StateTtlConfig.StateVisibility.NeverReturnExpired)
+      .build();
 
   private transient ListState<String> reasons;
   private transient ValueState<Long> backoff;
@@ -26,120 +41,106 @@ public class ExponentialBackoffRetryFunction extends KeyedProcessFunction<String
   private transient ValueState<Integer> currentFailure;
   private transient ValueState<Integer> maxFailure;
   private transient ValueState<String> topic;
-  private transient ValueState<String> originalTopic;
-  private transient ValueState<String> type;
+  private transient ValueState<byte[]> key;
+  private transient MapState<String, byte[]> headers;
   private transient ValueState<byte[]> value;
   private transient ObjectMapper objectMapper;
 
   @Override
   public void open(OpenContext openContext) throws Exception {
-    ListStateDescriptor<String> reasonsDescriptor =
-        new ListStateDescriptor<>("reasons", String.class);
-    reasons = getRuntimeContext().getListState(reasonsDescriptor);
-
-    ValueStateDescriptor<Long> backoffDescriptor =
-        new ValueStateDescriptor<>("backoff", Long.class);
-    backoff = getRuntimeContext().getState(backoffDescriptor);
-
-    ValueStateDescriptor<Long> multiplierDescriptor =
-        new ValueStateDescriptor<>("multiplier", Long.class);
-    multiplier = getRuntimeContext().getState(multiplierDescriptor);
-
-    ValueStateDescriptor<Long> capDescriptor =
-        new ValueStateDescriptor<>("cap", Long.class);
-    cap = getRuntimeContext().getState(capDescriptor);
-
-    ValueStateDescriptor<Integer> currentFailureDescriptor =
-        new ValueStateDescriptor<>("current-failure", Integer.class);
-    currentFailure = getRuntimeContext().getState(currentFailureDescriptor);
-
-    ValueStateDescriptor<Integer> maxFailureDescriptor =
-        new ValueStateDescriptor<>("max-failure", Integer.class);
-    maxFailure = getRuntimeContext().getState(maxFailureDescriptor);
-
-    ValueStateDescriptor<String> topicDescriptor =
-        new ValueStateDescriptor<>("topic", String.class);
-    topic = getRuntimeContext().getState(topicDescriptor);
-
-    ValueStateDescriptor<String> originalTopicDescriptor =
-        new ValueStateDescriptor<>("original-topic", String.class);
-    originalTopic = getRuntimeContext().getState(originalTopicDescriptor);
-
-    ValueStateDescriptor<String> typeDescriptor =
-        new ValueStateDescriptor<>("type", String.class);
-    type = getRuntimeContext().getState(typeDescriptor);
-
-    ValueStateDescriptor<byte[]> valueDescriptor =
-        new ValueStateDescriptor<>("value", byte[].class);
-    value = getRuntimeContext().getState(valueDescriptor);
-
+    reasons = getRuntimeContext().getListState(withTtl(new ListStateDescriptor<>("reasons", String.class)));
+    backoff = getRuntimeContext().getState(withTtl(new ValueStateDescriptor<>("backoff", Long.class)));
+    multiplier = getRuntimeContext().getState(withTtl(new ValueStateDescriptor<>("multiplier", Long.class)));
+    cap = getRuntimeContext().getState(withTtl(new ValueStateDescriptor<>("cap", Long.class)));
+    currentFailure = getRuntimeContext().getState(withTtl(new ValueStateDescriptor<>("current-failure", Integer.class)));
+    maxFailure = getRuntimeContext().getState(withTtl(new ValueStateDescriptor<>("max-failure", Integer.class)));
+    topic = getRuntimeContext().getState(withTtl(new ValueStateDescriptor<>("topic", String.class)));
+    key = getRuntimeContext().getState(withTtl(new ValueStateDescriptor<>("key", byte[].class)));
+    headers = getRuntimeContext().getMapState(withTtl(new MapStateDescriptor<>("headers", String.class, byte[].class)));
+    value = getRuntimeContext().getState(withTtl(new ValueStateDescriptor<>("value", byte[].class)));
     objectMapper = new ObjectMapper();
+  }
+
+  private static <D extends StateDescriptor<?, ?>> D withTtl(D descriptor) {
+    descriptor.enableTimeToLive(TTL);
+    return descriptor;
   }
 
   @Override
   public void processElement(IncomingEvent event, Context ctx, Collector<OutgoingEvent> out) throws Exception {
+    if (topic.value() == null) {
+      // a follow-up whose state expired has nothing to re-send
+      if (event.getTopic() == null) {
+        log.warn("drop retry event without state, partitionId: {}, reason: {}", event.getPartitionId(), event.getReason());
+        return;
+      }
+      topic.update(event.getTopic());
+      key.update(event.getKey());
+      if (event.getHeaders() != null) {
+        headers.putAll(event.getHeaders());
+      }
+      value.update(event.getValue());
+      backoff.update(event.getBackoff());
+      multiplier.update(event.getMultiplier());
+      cap.update(event.getCap());
+      maxFailure.update(event.getMaxFailure());
+      currentFailure.update(0);
+    }
     reasons.add(event.getReason());
     int c = currentFailure.value() + 1;
-    if (c >= maxFailure.value()) {
-      originalTopic.update(topic.value());
-      topic.update("dlq");
-      ctx.timerService().registerProcessingTimeTimer(0);
-      return;
-    }
     currentFailure.update(c);
-    if (event.getTopic() != null) {
-      topic.update(event.getTopic());
-    }
-    if (event.getType() != null) {
-      type.update(event.getType());
-    }
-    if (event.getCap() != null) {
-      cap.update(event.getCap());
-    }
-    if (event.getValue() != null) {
-      value.update(event.getValue());
-    }
-    if (event.getMultiplier() != null) {
-      multiplier.update(event.getMultiplier());
-    }
-    if (event.getMaxFailure() != null) {
-      maxFailure.update(event.getMaxFailure());
-    }
-    if (event.getBackoff() != null) {
-      backoff.update(event.getBackoff());
-    }
-    var b = Math.min(backoff.value() * multiplier.value(), cap.value());
-    backoff.update(b);
-    ctx.timerService().registerProcessingTimeTimer(Instant.now().toEpochMilli() + b);
-  }
-
-  @Override
-  public void onTimer(long timestamp, KeyedProcessFunction<String, IncomingEvent, OutgoingEvent>.OnTimerContext ctx, Collector<OutgoingEvent> out) throws Exception {
-    var t = topic.value();
-    if (t.equals("dlq")) {
+    if (c >= maxFailure.value()) {
       out.collect(OutgoingEvent.builder()
-          .topic("dlq")
-          .type(type.value())
-          .originalTopic(originalTopic.value())
+          .topic(DLQ_TOPIC)
+          .originalTopic(topic.value())
+          .partitionId(ctx.getCurrentKey())
+          .key(key.value())
+          .headers(storedHeaders())
           .rawReasons(objectMapper.writeValueAsBytes(reasons.get()))
           .value(value.value())
           .build());
-      reasons.clear();
-      backoff.clear();
-      multiplier.clear();
-      cap.clear();
-      currentFailure.clear();
-      maxFailure.clear();
-      topic.clear();
-      originalTopic.clear();
-      type.clear();
-      value.clear();
+      clear();
       return;
     }
+    // the first retry waits the base backoff, each next one multiplied up to the cap
+    long wait = Math.min(backoff.value(), cap.value());
+    backoff.update(Math.min(wait * multiplier.value(), cap.value()));
+    ctx.timerService().registerProcessingTimeTimer(ctx.timerService().currentProcessingTime() + wait);
+  }
+
+  @Override
+  public void onTimer(long timestamp, OnTimerContext ctx, Collector<OutgoingEvent> out) throws Exception {
+    if (topic.value() == null) {
+      return;
+    }
+    // the state is kept so a follow-up failure of the re-sent record finds it
     out.collect(OutgoingEvent.builder()
-        .topic(t)
-        .type(type.value())
+        .topic(topic.value())
+        .partitionId(ctx.getCurrentKey())
+        .key(key.value())
+        .headers(storedHeaders())
         .value(value.value())
         .build());
+  }
+
+  private Map<String, byte[]> storedHeaders() throws Exception {
+    Map<String, byte[]> m = new HashMap<>();
+    for (Map.Entry<String, byte[]> e : headers.entries()) {
+      m.put(e.getKey(), e.getValue());
+    }
+    return m;
+  }
+
+  private void clear() {
+    reasons.clear();
+    backoff.clear();
+    multiplier.clear();
+    cap.clear();
+    currentFailure.clear();
+    maxFailure.clear();
+    topic.clear();
+    key.clear();
+    headers.clear();
+    value.clear();
   }
 }

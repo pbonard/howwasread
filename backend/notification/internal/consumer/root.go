@@ -3,14 +3,17 @@ package consumer
 import (
 	"backend/common"
 	"backend/common/payload"
+	"backend/common/producer"
 	"backend/notification/internal/service"
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"log/slog"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
 
@@ -20,30 +23,29 @@ import (
 	_ "github.com/joho/godotenv/autoload"
 )
 
+const groupId = "notification-preprocess"
+
 type Consumer struct {
 	consumerGroup sarama.ConsumerGroup
 	service       service.Service
+	producer      producer.SyncProducer
 }
 
-func NewConsumer(s service.Service) *Consumer {
-	consumerGroup, err := connectConsumer("preprocess_notification")
+func NewConsumer(s service.Service, p producer.SyncProducer) *Consumer {
+	consumerGroup, err := connectConsumer(groupId)
 	if err != nil {
 		log.Panicf("fail to create consumer group client: %v", err)
 	}
 	return &Consumer{
 		consumerGroup: consumerGroup,
 		service:       s,
+		producer:      p,
 	}
 }
 
 func connectConsumer(groupID string) (sarama.ConsumerGroup, error) {
 	cfg := sarama.NewConfig()
-	id, err := uuid.NewV7()
-	if err != nil {
-		slog.Error("fail to create uuid for kafka client uuid")
-		return nil, err
-	}
-	cfg.ClientID = "consumer.preprocess_notification" + id.String()
+	cfg.ClientID = "notification"
 	tlsConfig, err1 := common.CreateTlSConfig(os.Getenv("KAFKA_USER_CERT_PATH"), os.Getenv("KAFKA_USER_KEY_PATH"), os.Getenv("KAFKA_CA_CERT_PATH"))
 	if err1 != nil {
 		return nil, err1
@@ -81,7 +83,10 @@ func (c *Consumer) ConsumeClaim(session sarama.ConsumerGroupSession, claim saram
 		select {
 		case msg := <-claim.Messages():
 			log.Print("Kafka message incoming...")
-			c.distinguishMessage(session.Context(), msg)
+			// a failed retry publish leaves the offset unmarked, the session restarts from the last commit
+			if err := c.distinguishMessage(session.Context(), msg); err != nil {
+				return err
+			}
 			session.MarkMessage(msg, "")
 			continue
 		case <-session.Context().Done():
@@ -157,33 +162,69 @@ func toggleConsumptionFlow(consumerGroup sarama.ConsumerGroup, isPaused *bool) {
 	*isPaused = !*isPaused
 }
 
-func (c *Consumer) distinguishMessage(ctx context.Context, message *sarama.ConsumerMessage) {
+func (c *Consumer) distinguishMessage(ctx context.Context, message *sarama.ConsumerMessage) error {
+	for _, h := range message.Headers {
+		// a copy re-sent for another group's retry, this group handles the original record itself
+		if string(h.Key) == "partitionId" && !strings.HasPrefix(string(h.Value), groupId+":") {
+			return nil
+		}
+	}
 	var t string
 	for _, header := range message.Headers {
-		if bytes.Equal(header.Key, []byte("type")) {
+		if bytes.Equal(header.Key, []byte("taskType")) {
 			t = string(header.Value)
 			break
 		}
 	}
+	var err error
 	if t == "scheduled-notification" {
 		var p payload.NotificationScheduled
-		err := json.Unmarshal(message.Value, &p)
+		err = json.Unmarshal(message.Value, &p)
 		if err != nil {
 			slog.Error("fail to unmarshal payload value", "err", err)
-			return
+			return nil
 		}
-		if p.PartitionType == "online-conversation" {
-			c.service.PreprocessScheduledNotification(ctx, p.PartitionId, p.Notifications, p.SharedContents)
+		if p.PartitionType != "online-conversation" {
+			return nil
 		}
-		return
+		err = c.service.PreprocessScheduledNotification(ctx, p.PartitionId, p.Notifications, p.SharedContents)
+	} else {
+		var p payload.PreparedMessage
+		err = json.Unmarshal(message.Value, &p)
+		if err != nil {
+			slog.Error("fail to unmarshal payload value",
+				"err", err,
+				"payload.Value", message.Value)
+			return nil
+		}
+		err = c.service.PreprocessMessageNotification(ctx, p.NotificationId, uuid.UUID(p.Id), p.ToIds, uuid.UUID(p.RoomId), uuid.UUID(p.FromId), p.ContentType, p.Contents)
 	}
-	var p payload.PreparedMessage
-	err := json.Unmarshal(message.Value, &p)
 	if err != nil {
-		slog.Error("fail to unmarshal payload value",
-			"err", err,
-			"payload.Value", message.Value)
-		return
+		e := payload.RetryEvent{Reason: err.Error()}
+		for _, h := range message.Headers {
+			// a re-sent record carries the partition id of the group that failed, other groups treat it as a new record
+			if string(h.Key) == "partitionId" && strings.HasPrefix(string(h.Value), groupId+":") {
+				e.PartitionId = string(h.Value)
+			}
+		}
+		if e.PartitionId == "" {
+			e.PartitionId = fmt.Sprintf("%s:%s:%d:%d", groupId, message.Topic, message.Partition, message.Offset)
+			e.Backoff = common.AddJitter(2000)
+			e.Multiplier = 2
+			e.Cap = 15000000
+			e.MaxFailure = 5
+			e.Topic = message.Topic
+			e.Key = message.Key
+			e.Headers = make(map[string][]byte, len(message.Headers))
+			for _, h := range message.Headers {
+				if string(h.Key) != "partitionId" {
+					e.Headers[string(h.Key)] = h.Value
+				}
+			}
+			e.Value = message.Value
+		}
+		// keyed by partition id so the events of one retry stay ordered in the job
+		return c.producer.Commit("exponential-backoff-retry", []byte(e.PartitionId), payload.Marshal(e), nil)
 	}
-	c.service.PreprocessMessageNotification(ctx, p.NotificationId, uuid.UUID(p.Id), p.ToIds, uuid.UUID(p.RoomId), uuid.UUID(p.FromId), p.ContentType, p.Contents)
+	return nil
 }

@@ -380,12 +380,12 @@ func (_c *MockService_DeleteConversation_Call) RunAndReturn(run func(ctx context
 	return _c
 }
 
-// DeregisterOnlineConversation provides a mock function for the type MockService
-func (_mock *MockService) DeregisterOnlineConversation(ctx context.Context, memberId uuid.UUID, conversationId uuid.UUID) error {
+// DeregisterConversation provides a mock function for the type MockService
+func (_mock *MockService) DeregisterConversation(ctx context.Context, memberId uuid.UUID, conversationId uuid.UUID) error {
 	ret := _mock.Called(ctx, memberId, conversationId)
 
 	if len(ret) == 0 {
-		panic("no return value specified for DeregisterOnlineConversation")
+		panic("no return value specified for DeregisterConversation")
 	}
 
 	var r0 error
@@ -397,20 +397,20 @@ func (_mock *MockService) DeregisterOnlineConversation(ctx context.Context, memb
 	return r0
 }
 
-// MockService_DeregisterOnlineConversation_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeregisterOnlineConversation'
-type MockService_DeregisterOnlineConversation_Call struct {
+// MockService_DeregisterConversation_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeregisterConversation'
+type MockService_DeregisterConversation_Call struct {
 	*mock.Call
 }
 
-// DeregisterOnlineConversation is a helper method to define mock.On call
+// DeregisterConversation is a helper method to define mock.On call
 //   - ctx context.Context
 //   - memberId uuid.UUID
 //   - conversationId uuid.UUID
-func (_e *MockService_Expecter) DeregisterOnlineConversation(ctx any, memberId any, conversationId any) *MockService_DeregisterOnlineConversation_Call {
-	return &MockService_DeregisterOnlineConversation_Call{Call: _e.mock.On("DeregisterOnlineConversation", ctx, memberId, conversationId)}
+func (_e *MockService_Expecter) DeregisterConversation(ctx any, memberId any, conversationId any) *MockService_DeregisterConversation_Call {
+	return &MockService_DeregisterConversation_Call{Call: _e.mock.On("DeregisterConversation", ctx, memberId, conversationId)}
 }
 
-func (_c *MockService_DeregisterOnlineConversation_Call) Run(run func(ctx context.Context, memberId uuid.UUID, conversationId uuid.UUID)) *MockService_DeregisterOnlineConversation_Call {
+func (_c *MockService_DeregisterConversation_Call) Run(run func(ctx context.Context, memberId uuid.UUID, conversationId uuid.UUID)) *MockService_DeregisterConversation_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -433,12 +433,12 @@ func (_c *MockService_DeregisterOnlineConversation_Call) Run(run func(ctx contex
 	return _c
 }
 
-func (_c *MockService_DeregisterOnlineConversation_Call) Return(err error) *MockService_DeregisterOnlineConversation_Call {
+func (_c *MockService_DeregisterConversation_Call) Return(err error) *MockService_DeregisterConversation_Call {
 	_c.Call.Return(err)
 	return _c
 }
 
-func (_c *MockService_DeregisterOnlineConversation_Call) RunAndReturn(run func(ctx context.Context, memberId uuid.UUID, conversationId uuid.UUID) error) *MockService_DeregisterOnlineConversation_Call {
+func (_c *MockService_DeregisterConversation_Call) RunAndReturn(run func(ctx context.Context, memberId uuid.UUID, conversationId uuid.UUID) error) *MockService_DeregisterConversation_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -700,12 +700,12 @@ func (_c *MockService_PublishConversationSignal_Call) RunAndReturn(run func(from
 	return _c
 }
 
-// RegisterOnlineConversation provides a mock function for the type MockService
-func (_mock *MockService) RegisterOnlineConversation(ctx context.Context, memberId uuid.UUID, conversationId uuid.UUID) error {
+// RegisterConversation provides a mock function for the type MockService
+func (_mock *MockService) RegisterConversation(ctx context.Context, memberId uuid.UUID, conversationId uuid.UUID) error {
 	ret := _mock.Called(ctx, memberId, conversationId)
 
 	if len(ret) == 0 {
-		panic("no return value specified for RegisterOnlineConversation")
+		panic("no return value specified for RegisterConversation")
 	}
 
 	var r0 error
@@ -717,20 +717,20 @@ func (_mock *MockService) RegisterOnlineConversation(ctx context.Context, member
 	return r0
 }
 
-// MockService_RegisterOnlineConversation_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RegisterOnlineConversation'
-type MockService_RegisterOnlineConversation_Call struct {
+// MockService_RegisterConversation_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RegisterConversation'
+type MockService_RegisterConversation_Call struct {
 	*mock.Call
 }
 
-// RegisterOnlineConversation is a helper method to define mock.On call
+// RegisterConversation is a helper method to define mock.On call
 //   - ctx context.Context
 //   - memberId uuid.UUID
 //   - conversationId uuid.UUID
-func (_e *MockService_Expecter) RegisterOnlineConversation(ctx any, memberId any, conversationId any) *MockService_RegisterOnlineConversation_Call {
-	return &MockService_RegisterOnlineConversation_Call{Call: _e.mock.On("RegisterOnlineConversation", ctx, memberId, conversationId)}
+func (_e *MockService_Expecter) RegisterConversation(ctx any, memberId any, conversationId any) *MockService_RegisterConversation_Call {
+	return &MockService_RegisterConversation_Call{Call: _e.mock.On("RegisterConversation", ctx, memberId, conversationId)}
 }
 
-func (_c *MockService_RegisterOnlineConversation_Call) Run(run func(ctx context.Context, memberId uuid.UUID, conversationId uuid.UUID)) *MockService_RegisterOnlineConversation_Call {
+func (_c *MockService_RegisterConversation_Call) Run(run func(ctx context.Context, memberId uuid.UUID, conversationId uuid.UUID)) *MockService_RegisterConversation_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -753,12 +753,12 @@ func (_c *MockService_RegisterOnlineConversation_Call) Run(run func(ctx context.
 	return _c
 }
 
-func (_c *MockService_RegisterOnlineConversation_Call) Return(err error) *MockService_RegisterOnlineConversation_Call {
+func (_c *MockService_RegisterConversation_Call) Return(err error) *MockService_RegisterConversation_Call {
 	_c.Call.Return(err)
 	return _c
 }
 
-func (_c *MockService_RegisterOnlineConversation_Call) RunAndReturn(run func(ctx context.Context, memberId uuid.UUID, conversationId uuid.UUID) error) *MockService_RegisterOnlineConversation_Call {
+func (_c *MockService_RegisterConversation_Call) RunAndReturn(run func(ctx context.Context, memberId uuid.UUID, conversationId uuid.UUID) error) *MockService_RegisterConversation_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -879,6 +879,63 @@ func (_c *MockService_RemoveServerIP_Call) Return(err error) *MockService_Remove
 }
 
 func (_c *MockService_RemoveServerIP_Call) RunAndReturn(run func(ctx context.Context, memberId uuid.UUID) error) *MockService_RemoveServerIP_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ReportConversation provides a mock function for the type MockService
+func (_mock *MockService) ReportConversation(ctx context.Context, conversationId uuid.UUID) error {
+	ret := _mock.Called(ctx, conversationId)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ReportConversation")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) error); ok {
+		r0 = returnFunc(ctx, conversationId)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockService_ReportConversation_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ReportConversation'
+type MockService_ReportConversation_Call struct {
+	*mock.Call
+}
+
+// ReportConversation is a helper method to define mock.On call
+//   - ctx context.Context
+//   - conversationId uuid.UUID
+func (_e *MockService_Expecter) ReportConversation(ctx any, conversationId any) *MockService_ReportConversation_Call {
+	return &MockService_ReportConversation_Call{Call: _e.mock.On("ReportConversation", ctx, conversationId)}
+}
+
+func (_c *MockService_ReportConversation_Call) Run(run func(ctx context.Context, conversationId uuid.UUID)) *MockService_ReportConversation_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockService_ReportConversation_Call) Return(err error) *MockService_ReportConversation_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockService_ReportConversation_Call) RunAndReturn(run func(ctx context.Context, conversationId uuid.UUID) error) *MockService_ReportConversation_Call {
 	_c.Call.Return(run)
 	return _c
 }

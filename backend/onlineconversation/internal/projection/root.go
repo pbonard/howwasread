@@ -11,3 +11,7 @@ type Detail struct {
 	UpdatedAt                                                    *time.Time // nil until the conversation is updated
 	IsModerator, IsRegistrant, IsBanned, IsNotificationScheduled bool
 }
+
+type Contents struct {
+	Novel, ShortStory, Poem, Play, Film, WrittenBy, Rule string
+}

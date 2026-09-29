@@ -211,7 +211,8 @@ export default function OfflineConversationScreen() {
             label="Create"
             onPress={offlineConversationForm.handleSubmit(onSubmit)}
             disabled={
-              resolvedGeoInfo === null || createOfflineConversationMutation.isPending
+              resolvedGeoInfo === null ||
+              createOfflineConversationMutation.isPending
             }
           />
         </KeyboardAvoidingView>

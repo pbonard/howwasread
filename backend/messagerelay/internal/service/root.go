@@ -1,7 +1,7 @@
 package service
 
 import (
-	"backend/common"
+	"backend/common/producer"
 	"backend/messagerelay/internal/client"
 	"backend/messagerelay/internal/repository"
 	"context"
@@ -10,16 +10,16 @@ import (
 )
 
 type Service interface {
-	RelayMessage(ctx context.Context, id uuid.UUID, toIds [][]byte, roomId, fromId uuid.UUID, contentType string, contents []string)
+	RelayMessage(ctx context.Context, id uuid.UUID, toIds [][]byte, roomId, fromId uuid.UUID, contentType string, contents []string) error
 }
 
 type service struct {
 	repository  repository.Repository
-	producer    common.Producer
+	producer    producer.SyncProducer
 	relayClient client.RelayClient
 }
 
-func NewService(r repository.Repository, p common.Producer, relayClient client.RelayClient) Service {
+func NewService(r repository.Repository, p producer.SyncProducer, relayClient client.RelayClient) Service {
 	return &service{
 		repository:  r,
 		producer:    p,

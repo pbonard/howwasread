@@ -78,13 +78,13 @@ func TestServerIPAndParticipantPassThrough(t *testing.T) {
 }
 
 func TestPublishConversationSignal(t *testing.T) {
-	producer := mocks.NewMockProducer(t)
+	asyncProducer := mocks.NewMockAsyncProducer(t)
 	other := uuid.New()
 	var pushed []byte
-	producer.EXPECT().PushMessage("conversation-signal", []byte(nil), mock.Anything, []sarama.RecordHeader(nil)).
+	asyncProducer.EXPECT().Fire("conversation-signal", []byte(nil), mock.Anything, []sarama.RecordHeader(nil)).
 		Run(func(_ string, _ []byte, value []byte, _ []sarama.RecordHeader) { pushed = value }).Return()
 
-	err := service.NewService(NewMockRepository(t), producer).
+	err := service.NewService(NewMockRepository(t), mocks.NewMockSyncProducer(t), asyncProducer).
 		PublishConversationSignal(memberId, [][]byte{other[:]}, []byte(`{"sdp":"offer"}`))
 
 	require.NoError(t, err)

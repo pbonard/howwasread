@@ -21,7 +21,7 @@ func (s *service) RelayMessage(
 	roomId, fromId uuid.UUID,
 	contentType string,
 	contents []string,
-) {
+) error {
 	var wg sync.WaitGroup
 	relayToIdsByIP := make(map[string][][]byte)
 	var rm sync.Mutex
@@ -64,7 +64,10 @@ func (s *service) RelayMessage(
 			ContentType:    contentType,
 			Contents:       contents,
 		})
-		s.producer.PushMessage("notification", nil, p, nil)
+		err := s.producer.Commit("notification", nil, p, nil)
+		if err != nil {
+			return err
+		}
 		pushToIds = nil
 	}
 
@@ -126,9 +129,9 @@ func (s *service) RelayMessage(
 			ContentType:    contentType,
 			Contents:       contents,
 		})
-		s.producer.PushMessage("notification", nil, p, nil)
+		return s.producer.Commit("notification", nil, p, nil)
 	}
-	return
+	return nil
 }
 
 // removeStaleIPs forgets ip for the members that are not connected there anymore

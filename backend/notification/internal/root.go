@@ -2,6 +2,7 @@ package internal
 
 import (
 	"backend/common"
+	"backend/common/producer"
 	"backend/notification/internal/consumer"
 	"backend/notification/internal/controller"
 	"backend/notification/internal/repository"
@@ -19,7 +20,7 @@ func NewServer() {
 
 	r := repository.NewRepository()
 
-	p := common.NewProducer("producer.preprocess_notification")
+	p := producer.NewSyncProducer("notification")
 
 	s := service.NewService(r, p, common.NewCDNClient())
 
@@ -36,7 +37,7 @@ func NewServer() {
 		}
 	}()
 
-	c := consumer.NewConsumer(s)
+	c := consumer.NewConsumer(s, p)
 
 	err := c.GetMessage([]string{"notification"})
 	if err != nil {

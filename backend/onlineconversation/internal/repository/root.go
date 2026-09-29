@@ -46,16 +46,17 @@ type Repository interface {
 	InsertModerator(ctx context.Context, session Session, conversationId, memberId uuid.UUID) error
 	InsertRegistrant(ctx context.Context, session Session, conversationId, memberId uuid.UUID) error
 	AddNotificationId(ctx context.Context, session Session, conversationId, memberId uuid.UUID) error
-	FindConversationDetail(ctx context.Context, session Session, conversationId, memberId uuid.UUID) (d projection.Detail, err error)
+	FindConversationDetail(ctx context.Context, session Session, conversationId, memberId uuid.UUID) (projection.Detail, error)
 	TryIncrementRegistrants(ctx context.Context, session Session, conversationId uuid.UUID) (bool, error)
 	DecrementRegistrants(ctx context.Context, session Session, conversationId uuid.UUID) error
 	RemoveRegistrantId(ctx context.Context, session Session, conversationId, memberId uuid.UUID) error
 	RemoveNotificationId(ctx context.Context, session Session, conversationId, memberId uuid.UUID) error
 	FindNotificationIds(ctx context.Context, session Session, conversationId uuid.UUID) ([]uuid.UUID, error)
-	InsertOutbox(ctx context.Context, session Session, id, conversationId uuid.UUID, topic string, payload []byte) error
+	InsertOutbox(ctx context.Context, session Session, id, conversationId uuid.UUID, topic, taskType string, payload []byte) error
 	DeleteOutbox(ctx context.Context, session Session, id, conversationId uuid.UUID) error
 	BeginTx(ctx context.Context) (Tx, error)
 	Tx() Session
+	FindConversationContents(ctx context.Context, tx Tx, id uuid.UUID) (projection.Contents, error)
 }
 
 type repository struct {

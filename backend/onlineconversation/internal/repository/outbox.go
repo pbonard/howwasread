@@ -7,12 +7,13 @@ import (
 	"github.com/google/uuid"
 )
 
-func (r *repository) InsertOutbox(ctx context.Context, session Session, id, conversationId uuid.UUID, topic string, payload []byte) error {
+// InsertOutbox stores an empty taskType as NULL, so the CDC job sends the message without a taskType header
+func (r *repository) InsertOutbox(ctx context.Context, session Session, id, conversationId uuid.UUID, topic, taskType string, payload []byte) error {
 	_, err := session.ExecContext(ctx,
-		`INSERT INTO outbox (id, conversation_id, topic, payload) VALUES (?, ?, ?, ?)`,
-		id[:], conversationId[:], topic, string(payload))
+		`INSERT INTO outbox (id, conversation_id, topic, task_type, payload) VALUES (?, ?, ?, NULLIF(?, ''), ?)`,
+		id[:], conversationId[:], topic, taskType, string(payload))
 	if err != nil {
-		slog.Error("fail to insert outbox", "err", err, "topic", topic, "conversationId", conversationId)
+		slog.Error("fail to insert outbox", "err", err, "topic", topic, "taskType", taskType, "conversationId", conversationId)
 		return err
 	}
 	return nil

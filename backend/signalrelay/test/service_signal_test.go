@@ -27,7 +27,7 @@ var (
 
 func newService(t *testing.T) (service.Service, *MockRepository, *MockRelayClient) {
 	repo, relay := NewMockRepository(t), NewMockRelayClient(t)
-	return service.NewService(repo, mocks.NewMockProducer(t), relay), repo, relay
+	return service.NewService(repo, mocks.NewMockSyncProducer(t), relay), repo, relay
 }
 
 func propagate(s service.Service, toIds ...uuid.UUID) {

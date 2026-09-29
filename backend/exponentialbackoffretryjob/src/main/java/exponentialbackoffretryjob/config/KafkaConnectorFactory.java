@@ -8,6 +8,7 @@ import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.common.config.SslConfigs;
 import org.apache.kafka.common.header.internals.RecordHeader;
 import org.apache.kafka.common.header.internals.RecordHeaders;
+import exponentialbackoffretryjob.ExponentialBackoffRetryFunction;
 import exponentialbackoffretryjob.dto.IncomingEvent;
 import exponentialbackoffretryjob.dto.OutgoingEvent;
 import exponentialbackoffretryjob.schema.IncomingEventDeserializationSchema;
@@ -73,21 +74,26 @@ public class KafkaConnectorFactory {
         .setRecordSerializer(
             KafkaRecordSerializationSchema.<OutgoingEvent>builder()
                 .setTopicSelector(OutgoingEvent::getTopic)
+                // the key is kept so a keyed consumer (e.g. fcm-notification) reads the same record again
+                .setKeySerializationSchema(OutgoingEvent::getKey)
                 .<OutgoingEvent>setHeaderProvider(event -> {
                   var headers = new RecordHeaders();
-                  headers.add(
-                      new RecordHeader("type",
-                          event.getType().getBytes(StandardCharsets.UTF_8)));
-                  if (event.getTopic().equals("dlq")) {
+                  if (event.getHeaders() != null) {
+                    event.getHeaders().forEach((k, v) -> headers.add(new RecordHeader(k, v)));
+                  }
+                  var partitionId = event.getPartitionId().getBytes(StandardCharsets.UTF_8);
+                  if (event.getTopic().equals(ExponentialBackoffRetryFunction.DLQ_TOPIC)) {
                     headers.add(new RecordHeader(
                         "x-original-topic",
                         event.getOriginalTopic().getBytes(StandardCharsets.UTF_8)));
+                    headers.add(new RecordHeader("x-partition-id", partitionId));
                     headers.add(new RecordHeader(
                         "reasons",
                         event.getRawReasons()));
                     return headers;
                   }
-                  headers.add(new RecordHeader("retry", null));
+                  // consumers treat the record as a follow-up only when the id starts with their group
+                  headers.add(new RecordHeader("partitionId", partitionId));
                   return headers;
                 })
                 .setValueSerializationSchema(new OutgoingEventSerializationSchema())

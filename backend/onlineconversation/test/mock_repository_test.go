@@ -538,6 +538,78 @@ func (_c *MockRepository_DeleteOutbox_Call) RunAndReturn(run func(ctx context.Co
 	return _c
 }
 
+// FindConversationContents provides a mock function for the type MockRepository
+func (_mock *MockRepository) FindConversationContents(ctx context.Context, tx repository.Tx, id uuid.UUID) (projection.Contents, error) {
+	ret := _mock.Called(ctx, tx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for FindConversationContents")
+	}
+
+	var r0 projection.Contents
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, repository.Tx, uuid.UUID) (projection.Contents, error)); ok {
+		return returnFunc(ctx, tx, id)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, repository.Tx, uuid.UUID) projection.Contents); ok {
+		r0 = returnFunc(ctx, tx, id)
+	} else {
+		r0 = ret.Get(0).(projection.Contents)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, repository.Tx, uuid.UUID) error); ok {
+		r1 = returnFunc(ctx, tx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockRepository_FindConversationContents_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FindConversationContents'
+type MockRepository_FindConversationContents_Call struct {
+	*mock.Call
+}
+
+// FindConversationContents is a helper method to define mock.On call
+//   - ctx context.Context
+//   - tx repository.Tx
+//   - id uuid.UUID
+func (_e *MockRepository_Expecter) FindConversationContents(ctx any, tx any, id any) *MockRepository_FindConversationContents_Call {
+	return &MockRepository_FindConversationContents_Call{Call: _e.mock.On("FindConversationContents", ctx, tx, id)}
+}
+
+func (_c *MockRepository_FindConversationContents_Call) Run(run func(ctx context.Context, tx repository.Tx, id uuid.UUID)) *MockRepository_FindConversationContents_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 repository.Tx
+		if args[1] != nil {
+			arg1 = args[1].(repository.Tx)
+		}
+		var arg2 uuid.UUID
+		if args[2] != nil {
+			arg2 = args[2].(uuid.UUID)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *MockRepository_FindConversationContents_Call) Return(contents projection.Contents, err error) *MockRepository_FindConversationContents_Call {
+	_c.Call.Return(contents, err)
+	return _c
+}
+
+func (_c *MockRepository_FindConversationContents_Call) RunAndReturn(run func(ctx context.Context, tx repository.Tx, id uuid.UUID) (projection.Contents, error)) *MockRepository_FindConversationContents_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // FindConversationDetail provides a mock function for the type MockRepository
 func (_mock *MockRepository) FindConversationDetail(ctx context.Context, session repository.Session, conversationId uuid.UUID, memberId uuid.UUID) (projection.Detail, error) {
 	ret := _mock.Called(ctx, session, conversationId, memberId)
@@ -606,8 +678,8 @@ func (_c *MockRepository_FindConversationDetail_Call) Run(run func(ctx context.C
 	return _c
 }
 
-func (_c *MockRepository_FindConversationDetail_Call) Return(d projection.Detail, err error) *MockRepository_FindConversationDetail_Call {
-	_c.Call.Return(d, err)
+func (_c *MockRepository_FindConversationDetail_Call) Return(detail projection.Detail, err error) *MockRepository_FindConversationDetail_Call {
+	_c.Call.Return(detail, err)
 	return _c
 }
 
@@ -897,16 +969,16 @@ func (_c *MockRepository_InsertModerator_Call) RunAndReturn(run func(ctx context
 }
 
 // InsertOutbox provides a mock function for the type MockRepository
-func (_mock *MockRepository) InsertOutbox(ctx context.Context, session repository.Session, id uuid.UUID, conversationId uuid.UUID, topic string, payload []byte) error {
-	ret := _mock.Called(ctx, session, id, conversationId, topic, payload)
+func (_mock *MockRepository) InsertOutbox(ctx context.Context, session repository.Session, id uuid.UUID, conversationId uuid.UUID, topic string, taskType string, payload []byte) error {
+	ret := _mock.Called(ctx, session, id, conversationId, topic, taskType, payload)
 
 	if len(ret) == 0 {
 		panic("no return value specified for InsertOutbox")
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, repository.Session, uuid.UUID, uuid.UUID, string, []byte) error); ok {
-		r0 = returnFunc(ctx, session, id, conversationId, topic, payload)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, repository.Session, uuid.UUID, uuid.UUID, string, string, []byte) error); ok {
+		r0 = returnFunc(ctx, session, id, conversationId, topic, taskType, payload)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -924,12 +996,13 @@ type MockRepository_InsertOutbox_Call struct {
 //   - id uuid.UUID
 //   - conversationId uuid.UUID
 //   - topic string
+//   - taskType string
 //   - payload []byte
-func (_e *MockRepository_Expecter) InsertOutbox(ctx any, session any, id any, conversationId any, topic any, payload any) *MockRepository_InsertOutbox_Call {
-	return &MockRepository_InsertOutbox_Call{Call: _e.mock.On("InsertOutbox", ctx, session, id, conversationId, topic, payload)}
+func (_e *MockRepository_Expecter) InsertOutbox(ctx any, session any, id any, conversationId any, topic any, taskType any, payload any) *MockRepository_InsertOutbox_Call {
+	return &MockRepository_InsertOutbox_Call{Call: _e.mock.On("InsertOutbox", ctx, session, id, conversationId, topic, taskType, payload)}
 }
 
-func (_c *MockRepository_InsertOutbox_Call) Run(run func(ctx context.Context, session repository.Session, id uuid.UUID, conversationId uuid.UUID, topic string, payload []byte)) *MockRepository_InsertOutbox_Call {
+func (_c *MockRepository_InsertOutbox_Call) Run(run func(ctx context.Context, session repository.Session, id uuid.UUID, conversationId uuid.UUID, topic string, taskType string, payload []byte)) *MockRepository_InsertOutbox_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -951,9 +1024,13 @@ func (_c *MockRepository_InsertOutbox_Call) Run(run func(ctx context.Context, se
 		if args[4] != nil {
 			arg4 = args[4].(string)
 		}
-		var arg5 []byte
+		var arg5 string
 		if args[5] != nil {
-			arg5 = args[5].([]byte)
+			arg5 = args[5].(string)
+		}
+		var arg6 []byte
+		if args[6] != nil {
+			arg6 = args[6].([]byte)
 		}
 		run(
 			arg0,
@@ -962,6 +1039,7 @@ func (_c *MockRepository_InsertOutbox_Call) Run(run func(ctx context.Context, se
 			arg3,
 			arg4,
 			arg5,
+			arg6,
 		)
 	})
 	return _c
@@ -972,7 +1050,7 @@ func (_c *MockRepository_InsertOutbox_Call) Return(err error) *MockRepository_In
 	return _c
 }
 
-func (_c *MockRepository_InsertOutbox_Call) RunAndReturn(run func(ctx context.Context, session repository.Session, id uuid.UUID, conversationId uuid.UUID, topic string, payload []byte) error) *MockRepository_InsertOutbox_Call {
+func (_c *MockRepository_InsertOutbox_Call) RunAndReturn(run func(ctx context.Context, session repository.Session, id uuid.UUID, conversationId uuid.UUID, topic string, taskType string, payload []byte) error) *MockRepository_InsertOutbox_Call {
 	_c.Call.Return(run)
 	return _c
 }

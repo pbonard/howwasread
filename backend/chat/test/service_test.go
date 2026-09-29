@@ -27,13 +27,13 @@ var (
 
 type deps struct {
 	repo     *MockRepository
-	producer *mocks.MockProducer
+	producer *mocks.MockSyncProducer
 	storage  *MockStorageClient
 	signer   *mocks.MockCDNClient
 }
 
 func newService(t *testing.T) (service.Service, deps) {
-	d := deps{NewMockRepository(t), mocks.NewMockProducer(t), NewMockStorageClient(t), mocks.NewMockCDNClient(t)}
+	d := deps{NewMockRepository(t), mocks.NewMockSyncProducer(t), NewMockStorageClient(t), mocks.NewMockCDNClient(t)}
 	return service.NewService(d.repo, d.producer, d.storage, d.signer), d
 }
 
@@ -73,8 +73,8 @@ func TestReportUser(t *testing.T) {
 func TestPublishMessaging_textIsProducedAsChatMessage(t *testing.T) {
 	s, d := newService(t)
 	var pushed []byte
-	d.producer.EXPECT().PushMessage("chat-message", []byte(nil), mock.Anything, []sarama.RecordHeader(nil)).
-		Run(func(_ string, _ []byte, value []byte, _ []sarama.RecordHeader) { pushed = value }).Return()
+	d.producer.EXPECT().Commit("chat-message", []byte(nil), mock.Anything, []sarama.RecordHeader(nil)).
+		Run(func(_ string, _ []byte, value []byte, _ []sarama.RecordHeader) { pushed = value }).Return(nil)
 
 	resp, err := s.PublishMessaging(context.Background(), memberId, "group", roomId, "text", []string{"hi"})
 
@@ -89,13 +89,24 @@ func TestPublishMessaging_textIsProducedAsChatMessage(t *testing.T) {
 	assert.Equal(t, []string{"hi"}, msg.Contents)
 }
 
+func TestPublishMessaging_sendFailureIsReturned(t *testing.T) {
+	s, d := newService(t)
+	errKafka := errors.New("kafka down")
+	d.producer.EXPECT().Commit("chat-message", mock.Anything, mock.Anything, mock.Anything).Return(errKafka)
+
+	resp, err := s.PublishMessaging(context.Background(), memberId, "group", roomId, "text", []string{"hi"})
+
+	assert.ErrorIs(t, err, errKafka)
+	assert.Nil(t, resp)
+}
+
 func TestPublishMessaging_mediaMustBeAPresignedUpload(t *testing.T) {
 	key := "image" + string(memberId[:])
 	t.Run("uploaded file is consumed and published", func(t *testing.T) {
 		s, d := newService(t)
 		d.repo.EXPECT().HasFilepath(mock.Anything, key, []string{"f1"}).Return(true, nil)
 		d.repo.EXPECT().RemoveFilepath(mock.Anything, key, []string{"f1"}).Return(nil)
-		d.producer.EXPECT().PushMessage("chat-message", mock.Anything, mock.Anything, mock.Anything).Return()
+		d.producer.EXPECT().Commit("chat-message", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 		_, err := s.PublishMessaging(context.Background(), memberId, "personal", otherId, "image", []string{"f1"})
 

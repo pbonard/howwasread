@@ -18,11 +18,12 @@ func conversationRouter(c *Controller) {
 	c.Router(GET, "/onlineconversation/join", c.joinConversation)
 	c.Router(GET, "/onlineconversation/detail", c.getConversationDetail)
 	c.Router(POST, "/onlineconversation/ban", c.banParticipant)
-	c.Router(POST, "/onlineconversation/register", c.registerOnlineConversation)
-	c.Router(POST, "/onlineconversation/deregister", c.deregisterOnlineConversation)
+	c.Router(POST, "/onlineconversation/register", c.registerConversation)
+	c.Router(POST, "/onlineconversation/deregister", c.deregisterConversation)
 	c.Router(GET, "/onlineconversation/turn", c.getTurn)
 	c.Router(POST, "/onlineconversation/notification/schedule", c.scheduleNotification)
 	c.Router(POST, "/onlineconversation/notification/cancel", c.cancelNotification)
+	c.Router(POST, "/onlineconversation/report", c.reportConversation)
 }
 
 func (c *Controller) createConversation(w http.ResponseWriter, r *http.Request) {
@@ -159,7 +160,7 @@ func (c *Controller) banParticipant(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (c *Controller) registerOnlineConversation(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) registerConversation(w http.ResponseWriter, r *http.Request) {
 	memberId, err := uuid.Parse(r.Header.Get("X-User-Id"))
 	if err != nil {
 		slog.Error("fail to parse member id from raw string",
@@ -173,7 +174,7 @@ func (c *Controller) registerOnlineConversation(w http.ResponseWriter, r *http.R
 		handleError(w, errors.New("fail to parse"))
 		return
 	}
-	err = c.service.RegisterOnlineConversation(r.Context(), memberId, req.Id)
+	err = c.service.RegisterConversation(r.Context(), memberId, req.Id)
 	if err != nil {
 		handleError(w, err)
 		return
@@ -181,7 +182,7 @@ func (c *Controller) registerOnlineConversation(w http.ResponseWriter, r *http.R
 	w.WriteHeader(http.StatusOK)
 }
 
-func (c *Controller) deregisterOnlineConversation(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) deregisterConversation(w http.ResponseWriter, r *http.Request) {
 	memberId, err := uuid.Parse(r.Header.Get("X-User-Id"))
 	if err != nil {
 		slog.Error("fail to parse member id from raw string",
@@ -195,7 +196,7 @@ func (c *Controller) deregisterOnlineConversation(w http.ResponseWriter, r *http
 		handleError(w, errors.New("fail to parse"))
 		return
 	}
-	err = c.service.DeregisterOnlineConversation(r.Context(), memberId, req.Id)
+	err = c.service.DeregisterConversation(r.Context(), memberId, req.Id)
 	if err != nil {
 		handleError(w, err)
 		return
@@ -250,6 +251,21 @@ func (c *Controller) cancelNotification(w http.ResponseWriter, r *http.Request) 
 		handleError(w, errors.New("incorrect body"))
 	}
 	err = c.service.CancelNotification(r.Context(), memberId, req.Id)
+	if err != nil {
+		handleError(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+func (c *Controller) reportConversation(w http.ResponseWriter, r *http.Request) {
+	var req payload.ConversationRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		handleError(w, errors.New("fail to parse"))
+		return
+	}
+	err = c.service.ReportConversation(r.Context(), req.Id)
 	if err != nil {
 		handleError(w, err)
 		return

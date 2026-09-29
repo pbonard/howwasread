@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.Map;
 
 
 @Data
@@ -20,7 +21,9 @@ public class OutgoingEvent implements Serializable {
 
   private String topic;
   private String originalTopic;
-  private String type;
+  private String partitionId;
+  private byte[] key;
+  private Map<String, byte[]> headers;
   private byte[] rawReasons;
   private byte[] value;
 }

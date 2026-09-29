@@ -75,7 +75,7 @@ public class KafkaConnectorFactory {
                 KafkaRecordSerializationSchema.builder()
                     .setTopic(topic)
                     .setHeaderProvider(element -> new RecordHeaders().add(
-                        new RecordHeader("type",
+                        new RecordHeader("taskType",
                             "scheduled-notification".getBytes(StandardCharsets.UTF_8))
                     ))
                     .setValueSerializationSchema(new OutgoingNotificationEventSerializationSchema())

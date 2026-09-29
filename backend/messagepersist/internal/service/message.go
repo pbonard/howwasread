@@ -17,7 +17,7 @@ func (s *service) PersistMessage(
 	roomId, fromId uuid.UUID,
 	contentType string,
 	contents []string,
-) {
+) error {
 	var wg sync.WaitGroup
 	var es []error
 	var em sync.Mutex
@@ -43,9 +43,5 @@ func (s *service) PersistMessage(
 		}()
 	}
 	wg.Wait()
-	err0 := errors.Join(es...)
-	if err0 != nil {
-		return
-	}
-	return
+	return errors.Join(es...)
 }

@@ -14,7 +14,6 @@ import (
 	"syscall"
 
 	"github.com/IBM/sarama"
-	"github.com/google/uuid"
 
 	_ "github.com/joho/godotenv/autoload"
 )
@@ -25,7 +24,7 @@ type Consumer struct {
 }
 
 func NewKafkaConsumer(s service.Service) *Consumer {
-	consumer, err := connectConsumer("relay_signal")
+	consumer, err := connectConsumer("signal-relay")
 	if err != nil {
 		log.Panicf("fail to create consumer group client: %v", err)
 	}
@@ -37,12 +36,7 @@ func NewKafkaConsumer(s service.Service) *Consumer {
 
 func connectConsumer(groupID string) (sarama.ConsumerGroup, error) {
 	cfg := sarama.NewConfig()
-	id, err := uuid.NewV7()
-	if err != nil {
-		slog.Error("fail to create uuid for kafka client uuid")
-		return nil, err
-	}
-	cfg.ClientID = "relay_signal.consumer." + id.String()
+	cfg.ClientID = "signal-relay"
 	tlsConfig, err1 := common.CreateTlSConfig(os.Getenv("KAFKA_USER_CERT_PATH"), os.Getenv("KAFKA_USER_KEY_PATH"), os.Getenv("KAFKA_CA_CERT_PATH"))
 	if err1 != nil {
 		return nil, err1

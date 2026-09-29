@@ -1,12 +1,12 @@
 # Roadmap: conversation history
 
-Status: **deferred** until the report flow is built.
+Status: **planned**
 
 ## Design decisions
 
 | Decision | Choice | Reason |
 |---|---|---|
-| Source | Consume the existing `conversation-cdc` topic | It already carries full rows, delete tombstones, the binlog time as the record timestamp, and a `type` header. The Flink job needs no change. |
+| Source | Consume the existing `conversation-cdc` topic | It already carries full rows, delete tombstones, the binlog time as the record timestamp, and a `taskType` header. The Flink job needs no change. |
 | Consumer | One consumer group `conversation_history` in **onlineconversation**, covering online and offline | One read of the topic. Offline's history columns must be kept in sync by hand (see Risks). |
 | Storage | New Vitess keyspace `history`, 1 shard, `binary_md5` on `conversation_id` | Keeps history growth and load away from `conversation`. All versions of a conversation stay on one shard. A later `Reshard` needs no application change. |
 | Version key | `(conversation_id, version = updated_at)`; `1970-01-01 00:00:00` = never edited | `updated_at` only changes on content edits, so registrations don't create versions and a CDC snapshot replay is idempotent. The app already returns `updatedAt`, so reports can send it as `version`. |
@@ -78,7 +78,7 @@ CREATE TABLE offline_conversation_history
 CREATE TABLE conversation_member_history
 (
     conversation_id BINARY(16)  NOT NULL,
-    member_type     VARCHAR(40) NOT NULL,  -- CDC type header, e.g. 'online_conversation_registrant'
+    member_type     VARCHAR(40) NOT NULL,  -- CDC taskType header, e.g. 'online_conversation_registrant'
     member_id       BINARY(16)  NOT NULL,
     changed_at      DATETIME(3) NOT NULL,  -- kafka record timestamp (binlog time)
     action          VARCHAR(3)  NOT NULL,  -- 'in' | 'out'
@@ -117,7 +117,7 @@ Deleting a conversation leaves its member rows behind today.
   - the member key `{conversation_id, member_id}` (member keys are JSON; conversation keys are raw uuid strings)
 - [ ] **Consumer** (`internal/consumer/root.go`, modeled on `messagepreprocess/internal/consumer`):
   - group `conversation_history`, topic `conversation-cdc`, `OffsetOldest`
-  - switch on the `type` header before parsing, and skip unknown types
+  - switch on the `taskType` header before parsing, and skip unknown types
   - an empty value is a tombstone:
     - conversation types → `MarkConversationDeleted` using the record timestamp
     - member types → `SaveMemberHistory(..., "out")`

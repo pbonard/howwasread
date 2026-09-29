@@ -20,6 +20,10 @@ public class Outbox implements Persistable<UUID> {
 
   private String topic;
 
+  // sent as the "taskType" kafka header, null sends no header
+  @Column(name = "task_type")
+  private String taskType;
+
   @Column(columnDefinition = "TEXT")
   private String payload;
 
