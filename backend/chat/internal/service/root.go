@@ -5,6 +5,7 @@ import (
 	"backend/chat/internal/dto"
 	"backend/chat/internal/repository"
 	"backend/common"
+	"backend/common/producer"
 	"context"
 
 	"github.com/google/uuid"
@@ -30,12 +31,12 @@ type Service interface {
 
 type service struct {
 	repository    repository.Repository
-	producer      common.Producer
+	producer      producer.SyncProducer
 	storageClient client.StorageClient
 	cdnClient     common.CDNClient
 }
 
-func NewService(r repository.Repository, kp common.Producer, storageClient client.StorageClient, cdnClient common.CDNClient) Service {
+func NewService(r repository.Repository, kp producer.SyncProducer, storageClient client.StorageClient, cdnClient common.CDNClient) Service {
 	s := service{
 		repository:    r,
 		producer:      kp,

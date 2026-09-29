@@ -20,8 +20,8 @@ import (
 func expectOutbox(t *testing.T, repo *MockRepository, tx *MockTx, times int) *[]payload.NotificationScheduling {
 	var events []payload.NotificationScheduling
 	var ids []uuid.UUID
-	repo.EXPECT().InsertOutbox(mock.Anything, tx, mock.Anything, conversationId, "scheduled-notification", mock.Anything).
-		Run(func(_ context.Context, _ repository.Session, id, _ uuid.UUID, _ string, value []byte) {
+	repo.EXPECT().InsertOutbox(mock.Anything, tx, mock.Anything, conversationId, "scheduled-notification", "", mock.Anything).
+		Run(func(_ context.Context, _ repository.Session, id, _ uuid.UUID, _, _ string, value []byte) {
 			var e payload.NotificationScheduling
 			require.NoError(t, json.Unmarshal(value, &e))
 			events = append(events, e)
@@ -111,4 +111,14 @@ func TestDeleteConversation_nonModeratorPublishesNothing(t *testing.T) {
 	err := newService(t, repo).DeleteConversation(context.Background(), memberId, conversationId)
 
 	assert.EqualError(t, err, "can't delete conversation")
+}
+
+func TestReportConversation_publishesWithReportTaskType(t *testing.T) {
+	repo, tx := NewMockRepository(t), NewMockTx(t)
+	repo.EXPECT().BeginTx(mock.Anything).Return(tx, nil)
+	repo.EXPECT().InsertOutbox(mock.Anything, tx, mock.Anything, conversationId, "online-conversation", "report", mock.Anything).Return(nil)
+	repo.EXPECT().DeleteOutbox(mock.Anything, tx, mock.Anything, conversationId).Return(nil)
+	tx.EXPECT().Commit().Return(nil)
+
+	require.NoError(t, newService(t, repo).ReportConversation(context.Background(), conversationId))
 }

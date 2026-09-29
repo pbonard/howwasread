@@ -20,10 +20,10 @@ func (s *service) PreprocessMessageNotification(
 	roomId, fromId uuid.UUID,
 	contentType string,
 	content []string,
-) {
+) error {
 	log.Print("start notify message...")
 	if len(toIds) == 0 {
-		return
+		return nil
 	}
 	tIds := make([]uuid.UUID, 0, len(toIds))
 	for _, toId := range toIds {
@@ -31,18 +31,18 @@ func (s *service) PreprocessMessageNotification(
 	}
 	apntm, fcmtm, err := s.getEachTokenMap(ctx, tIds)
 	if err != nil {
-		return
+		return err
 	}
 	senderName, err := s.repository.FindNameById(ctx, gocql.UUID(fromId))
 	if err != nil {
-		return
+		return err
 	}
 	var roomName string
 	if !bytes.Equal(toIds[0], roomId[:]) {
 		roomName, err = s.repository.FindRoomNameById(ctx, gocql.UUID(roomId))
 	}
 	if err != nil {
-		return
+		return err
 	}
 
 	p := payload.NotificationMessage{
@@ -58,7 +58,7 @@ func (s *service) PreprocessMessageNotification(
 		imageURL, err1 := s.cdnClient.SignedURL(contentType, content[0])
 		if err1 != nil {
 			slog.Error("fail to generate Signed URL", "err", err1)
-			return
+			return err1
 		}
 		p.ImageURL = imageURL
 	}
@@ -70,11 +70,17 @@ func (s *service) PreprocessMessageNotification(
 	kafkaKey := append(messageId[:], notificationId)
 	if len(fcmtm) > 0 {
 		p.TokenMap = fcmtm
-		s.producer.PushMessage("fcm-notification", kafkaKey, payload.Marshal(p), nil)
+		err = s.producer.Commit("fcm-notification", kafkaKey, payload.Marshal(p), nil)
+		if err != nil {
+			return err
+		}
 	}
 	if len(apntm) > 0 {
 		p.TokenMap = apntm
-		s.producer.PushMessage("apn-notification", kafkaKey, payload.Marshal(p), nil)
+		err = s.producer.Commit("apn-notification", kafkaKey, payload.Marshal(p), nil)
+		if err != nil {
+			return err
+		}
 	}
-	return
+	return nil
 }

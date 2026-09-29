@@ -7,16 +7,23 @@ structname: "Mock{{.InterfaceName}}"
 packages:
   backend/common:
     interfaces:
-      Producer:
-        config:
-          dir: common/mocks
-          pkgname: mocks
-          filename: mock_producer.go
       CDNClient:
         config:
           dir: common/mocks
           pkgname: mocks
           filename: mock_cdn_client.go
+  backend/common/producer:
+    interfaces:
+      SyncProducer:
+        config:
+          dir: common/mocks
+          pkgname: mocks
+          filename: mock_sync_producer.go
+      AsyncProducer:
+        config:
+          dir: common/mocks
+          pkgname: mocks
+          filename: mock_async_producer.go
   backend/chat/internal/client:
     interfaces:
       StorageClient:

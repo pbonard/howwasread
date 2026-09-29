@@ -3,14 +3,16 @@ package consumer
 import (
 	"backend/common"
 	"backend/common/payload"
+	"backend/common/producer"
 	"backend/messagepreprocess/internal/service"
-	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"log/slog"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
 
@@ -20,14 +22,16 @@ import (
 	_ "github.com/joho/godotenv/autoload"
 )
 
+const groupId = "message-preprocess"
+
 type Consumer struct {
 	consumerGroup sarama.ConsumerGroup
 	service       service.Service
-	producer      common.Producer
+	producer      producer.SyncProducer
 }
 
-func NewConsumer(s service.Service, p common.Producer) *Consumer {
-	consumerGroup, err := connectConsumer("preprocess_message")
+func NewConsumer(s service.Service, p producer.SyncProducer) *Consumer {
+	consumerGroup, err := connectConsumer(groupId)
 	if err != nil {
 		log.Panicf("fail to create consumer group client: %v", err)
 	}
@@ -40,12 +44,7 @@ func NewConsumer(s service.Service, p common.Producer) *Consumer {
 
 func connectConsumer(groupID string) (sarama.ConsumerGroup, error) {
 	cfg := sarama.NewConfig()
-	id, err := uuid.NewV7()
-	if err != nil {
-		slog.Error("fail to create uuid for kafka client uuid")
-		return nil, err
-	}
-	cfg.ClientID = "preprocess_message." + id.String()
+	cfg.ClientID = "message-preprocess"
 	tlsConfig, err1 := common.CreateTlSConfig(os.Getenv("KAFKA_USER_CERT_PATH"), os.Getenv("KAFKA_USER_KEY_PATH"), os.Getenv("KAFKA_CA_CERT_PATH"))
 	if err1 != nil {
 		return nil, err1
@@ -84,7 +83,10 @@ func (c *Consumer) ConsumeClaim(session sarama.ConsumerGroupSession, claim saram
 		select {
 		case msg := <-claim.Messages():
 			log.Print("Kafka message incoming...")
-			c.distinguishMessage(session.Context(), msg)
+			// a failed retry publish leaves the offset unmarked, the session restarts from the last commit
+			if err := c.distinguishMessage(session.Context(), msg); err != nil {
+				return err
+			}
 			session.MarkMessage(msg, "")
 			continue
 		case <-session.Context().Done():
@@ -163,39 +165,48 @@ func toggleConsumptionFlow(client sarama.ConsumerGroup, isPaused *bool) {
 func (c *Consumer) distinguishMessage(
 	ctx context.Context,
 	message *sarama.ConsumerMessage,
-) {
-	retry := false
-	for _, header := range message.Headers {
-		if bytes.Equal(header.Key, []byte("retry")) {
-			retry = true
-			break
+) error {
+	for _, h := range message.Headers {
+		// a copy re-sent for another group's retry, this group handles the original record itself
+		if string(h.Key) == "partitionId" && !strings.HasPrefix(string(h.Value), groupId+":") {
+			return nil
 		}
 	}
-	var err error
 	var p payload.ChatMessage
-	err = json.Unmarshal(message.Value, &p)
+	err := json.Unmarshal(message.Value, &p)
 	if err != nil {
 		slog.Error("fail to unmarshal payload value",
 			"err", err,
 			"payload.Value", message.Value)
-		return
+		return nil
 	}
 	err = c.service.ManageMessage(ctx, uuid.UUID(p.Id), uuid.UUID(p.FromId), p.ToIdType, uuid.UUID(p.ToId), p.ContentType, p.Contents)
 	if err != nil {
-		e := payload.RetryEvent{
-			PartitionId: uuid.UUID(p.Id),
-			Reason:      err.Error(),
+		e := payload.RetryEvent{Reason: err.Error()}
+		for _, h := range message.Headers {
+			// a re-sent record carries the partition id of the group that failed, other groups treat it as a new record
+			if string(h.Key) == "partitionId" && strings.HasPrefix(string(h.Value), groupId+":") {
+				e.PartitionId = string(h.Value)
+			}
 		}
-		if retry {
-			c.producer.PushMessage("exponential-backoff-retry", nil, payload.Marshal(e), nil)
-			return
+		if e.PartitionId == "" {
+			e.PartitionId = fmt.Sprintf("%s:%s:%d:%d", groupId, message.Topic, message.Partition, message.Offset)
+			e.Backoff = common.AddJitter(2000)
+			e.Multiplier = 2
+			e.Cap = 15000000
+			e.MaxFailure = 5
+			e.Topic = message.Topic
+			e.Key = message.Key
+			e.Headers = make(map[string][]byte, len(message.Headers))
+			for _, h := range message.Headers {
+				if string(h.Key) != "partitionId" {
+					e.Headers[string(h.Key)] = h.Value
+				}
+			}
+			e.Value = message.Value
 		}
-		e.Backoff = common.AddJitter(2000)
-		e.Multiplier = 2
-		e.Cap = 15000000
-		e.MaxFailure = 5
-		e.Topic = message.Topic
-		e.Value = message.Value
-		c.producer.PushMessage("exponential-backoff-retry", nil, payload.Marshal(e), nil)
+		// keyed by partition id so the events of one retry stay ordered in the job
+		return c.producer.Commit("exponential-backoff-retry", []byte(e.PartitionId), payload.Marshal(e), nil)
 	}
+	return nil
 }

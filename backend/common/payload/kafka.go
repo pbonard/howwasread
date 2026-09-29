@@ -55,14 +55,18 @@ type NotificationScheduled struct {
 	Notifications  map[uuid.UUID]map[int]string `json:"notifications"`
 }
 
+// RetryEvent is sent to "exponential-backoff-retry", the job re-sends Value to Topic with Key and Headers
+// plus a "partitionId" header holding PartitionId. A follow-up failure only needs PartitionId and Reason,
+// []byte fields are base64 in json to match byte[] of the job
 type RetryEvent struct {
-	PartitionId uuid.UUID       `json:"partitionId"`
-	Reason      string          `json:"reason"`
-	Backoff     int64           `json:"backoff,omitempty"`
-	Multiplier  int             `json:"multiplier,omitempty"`
-	Cap         int             `json:"cap,omitempty"`
-	MaxFailure  int64           `json:"maxFailure,omitempty"`
-	Topic       string          `json:"topic,omitempty"`
-	Type        string          `json:"type,omitempty"`
-	Value       json.RawMessage `json:"value"`
+	PartitionId string            `json:"partitionId"` // "<group>:<topic>:<partition>:<offset>" of the first failed record
+	Reason      string            `json:"reason"`
+	Backoff     int64             `json:"backoff,omitempty"`
+	Multiplier  int64             `json:"multiplier,omitempty"`
+	Cap         int64             `json:"cap,omitempty"`
+	MaxFailure  int               `json:"maxFailure,omitempty"`
+	Topic       string            `json:"topic,omitempty"`
+	Key         []byte            `json:"key,omitempty"`
+	Headers     map[string][]byte `json:"headers,omitempty"` // original headers without "partitionId"
+	Value       []byte            `json:"value,omitempty"`
 }

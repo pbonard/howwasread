@@ -161,14 +161,14 @@ func TestManageMessage(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			repo := NewMockRepository(t)
-			producer := mocks.NewMockProducer(t)
+			producer := mocks.NewMockSyncProducer(t)
 			tt.expect(repo.EXPECT())
 
 			var pushed []byte
 			if tt.wantErr == nil {
-				producer.EXPECT().PushMessage("prepared-message", mock.Anything, mock.Anything, mock.Anything).
+				producer.EXPECT().Commit("prepared-message", mock.Anything, mock.Anything, mock.Anything).
 					Run(func(_ string, _ []byte, value []byte, _ []sarama.RecordHeader) { pushed = value }).
-					Return().Once()
+					Return(nil).Once()
 			}
 
 			err := service.NewService(repo, producer).
@@ -193,6 +193,19 @@ func TestManageMessage(t *testing.T) {
 			assert.Equal(t, tt.wantContents, msg.Contents)
 		})
 	}
+}
+
+func TestManageMessage_sendFailureIsReturned(t *testing.T) {
+	repo := NewMockRepository(t)
+	producer := mocks.NewMockSyncProducer(t)
+	errKafka := errors.New("kafka down")
+	repo.EXPECT().IsBlocked(mock.Anything, gocql.UUID(toId), gocql.UUID(fromId)).Return(false, nil)
+	producer.EXPECT().Commit("prepared-message", mock.Anything, mock.Anything, mock.Anything).Return(errKafka)
+
+	err := service.NewService(repo, producer).
+		ManageMessage(context.Background(), msgId, fromId, "personal", toId, "text", []string{"hi"})
+
+	assert.ErrorIs(t, err, errKafka)
 }
 
 // errAny marks a case that must fail without caring which error it is

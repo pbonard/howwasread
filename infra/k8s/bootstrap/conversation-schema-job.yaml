@@ -107,6 +107,8 @@ data:
         id              BINARY(16)   NOT NULL,
         conversation_id BINARY(16)   NOT NULL,
         topic           VARCHAR(255) NOT NULL,
+        -- sent as the "taskType" kafka header, NULL sends no header
+        task_type       VARCHAR(64)  NULL,
         payload         TEXT         NOT NULL,
         PRIMARY KEY (id)
     );

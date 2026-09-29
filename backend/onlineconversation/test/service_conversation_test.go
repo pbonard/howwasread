@@ -26,7 +26,7 @@ var (
 )
 
 func newService(t *testing.T, repo *MockRepository) service.Service {
-	return service.NewService(repo, mocks.NewMockProducer(t))
+	return service.NewService(repo, mocks.NewMockSyncProducer(t), mocks.NewMockAsyncProducer(t))
 }
 
 // ---------------------------------------------------------------- create
@@ -171,7 +171,7 @@ func TestRegisterOnlineConversation(t *testing.T) {
 		tx.EXPECT().Commit().Return(nil)
 		tx.EXPECT().Rollback().Return(nil)
 
-		assert.NoError(t, newService(t, repo).RegisterOnlineConversation(context.Background(), memberId, conversationId))
+		assert.NoError(t, newService(t, repo).RegisterConversation(context.Background(), memberId, conversationId))
 	})
 	t.Run("full", func(t *testing.T) {
 		repo, tx := NewMockRepository(t), NewMockTx(t)
@@ -179,7 +179,7 @@ func TestRegisterOnlineConversation(t *testing.T) {
 		repo.EXPECT().TryIncrementRegistrants(mock.Anything, tx, conversationId).Return(false, nil)
 		tx.EXPECT().Rollback().Return(nil)
 
-		assert.EqualError(t, newService(t, repo).RegisterOnlineConversation(context.Background(), memberId, conversationId),
+		assert.EqualError(t, newService(t, repo).RegisterConversation(context.Background(), memberId, conversationId),
 			"already fully registered")
 	})
 }
@@ -193,7 +193,7 @@ func TestDeregisterOnlineConversation(t *testing.T) {
 		tx.EXPECT().Commit().Return(nil)
 		tx.EXPECT().Rollback().Return(nil)
 
-		assert.NoError(t, newService(t, repo).DeregisterOnlineConversation(context.Background(), memberId, conversationId))
+		assert.NoError(t, newService(t, repo).DeregisterConversation(context.Background(), memberId, conversationId))
 	})
 	t.Run("decrement fails", func(t *testing.T) {
 		repo, tx := NewMockRepository(t), NewMockTx(t)
@@ -202,7 +202,7 @@ func TestDeregisterOnlineConversation(t *testing.T) {
 		repo.EXPECT().DecrementRegistrants(mock.Anything, tx, conversationId).Return(errDB)
 		tx.EXPECT().Rollback().Return(nil)
 
-		assert.ErrorIs(t, newService(t, repo).DeregisterOnlineConversation(context.Background(), memberId, conversationId), errDB)
+		assert.ErrorIs(t, newService(t, repo).DeregisterConversation(context.Background(), memberId, conversationId), errDB)
 	})
 }
 

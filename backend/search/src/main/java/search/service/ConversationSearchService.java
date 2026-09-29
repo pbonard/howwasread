@@ -49,7 +49,7 @@ public class ConversationSearchService {
   @KafkaListener(topics = "conversation-cdc", groupId = "search")
   public void consume(@Payload(required = false) String payload,
                       @Header(KafkaHeaders.RECEIVED_KEY) byte[] key,
-                      @Header("type") String type) {
+                      @Header("taskType") String type) {
     try {
       switch (type) {
         case "offline_conversation" -> {

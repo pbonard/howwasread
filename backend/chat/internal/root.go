@@ -7,6 +7,7 @@ import (
 	"backend/chat/internal/repository"
 	"backend/chat/internal/service"
 	"backend/common"
+	"backend/common/producer"
 	pb "backend/common/proto"
 	"log"
 	"log/slog"
@@ -23,7 +24,7 @@ func NewServer() {
 	}))
 	slog.SetDefault(logger)
 
-	p := common.NewProducer("producer_chat")
+	p := producer.NewSyncProducer("chat")
 
 	r := repository.NewRepository()
 

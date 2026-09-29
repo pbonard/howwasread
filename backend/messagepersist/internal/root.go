@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"backend/common/producer"
 	"backend/messagepersist/internal/consumer"
 	"backend/messagepersist/internal/repository"
 	"backend/messagepersist/internal/service"
@@ -19,7 +20,9 @@ func NewServer() {
 
 	s := service.NewService(r)
 
-	c := consumer.NewConsumer(s)
+	p := producer.NewSyncProducer("message-persist")
+
+	c := consumer.NewConsumer(s, p)
 
 	err := c.GetMessage([]string{"prepared-message"})
 	if err != nil {

@@ -1,7 +1,7 @@
 package internal
 
 import (
-	"backend/common"
+	"backend/common/producer"
 	"backend/messagerelay/internal/client"
 	"backend/messagerelay/internal/consumer"
 	"backend/messagerelay/internal/repository"
@@ -19,11 +19,11 @@ func NewServer() {
 
 	r := repository.NewRepository()
 
-	p := common.NewProducer("producer_message_notification")
+	p := producer.NewSyncProducer("message-relay")
 
 	s := service.NewService(r, p, client.NewRelayClient())
 
-	c := consumer.NewConsumer(s)
+	c := consumer.NewConsumer(s, p)
 
 	err := c.GetMessage([]string{"prepared-message"})
 	if err != nil {

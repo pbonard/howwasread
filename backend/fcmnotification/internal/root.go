@@ -1,7 +1,7 @@
 package internal
 
 import (
-	"backend/common"
+	"backend/common/producer"
 	"backend/fcmnotification/internal/client"
 	"backend/fcmnotification/internal/consumer"
 	"backend/fcmnotification/internal/repository"
@@ -16,13 +16,13 @@ func NewServer() {
 	}))
 	slog.SetDefault(logger)
 
-	p := common.NewProducer("producer_fcm_notification")
+	p := producer.NewSyncProducer("fcm-notification")
 
 	r := repository.NewRepository()
 
 	s := service.NewService(r, p, client.NewFCMClient())
 
-	c := consumer.NewConsumer(s)
+	c := consumer.NewConsumer(s, p)
 
 	err := c.GetMessage([]string{"fcm-notification"})
 	if err != nil {

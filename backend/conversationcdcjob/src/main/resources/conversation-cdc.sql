@@ -130,6 +130,7 @@ CREATE TEMPORARY TABLE online_conversation_notification_source (
 CREATE TEMPORARY TABLE outbox_source (
     conversation_id BYTES,
     topic           STRING,
+    task_type       STRING,
     payload         STRING,
     op_ts TIMESTAMP_LTZ(3) METADATA FROM 'op_ts' VIRTUAL
 ) WITH (
@@ -203,6 +204,7 @@ CREATE TEMPORARY TABLE conversation_member_sink (
 CREATE TEMPORARY TABLE chat_message_sink (
     conversation_id STRING,
     payload         STRING,
+    headers         MAP<STRING, BYTES> METADATA,
     ts              TIMESTAMP_LTZ(3) METADATA FROM 'timestamp'
 ) WITH (
     'connector' = 'kafka',
@@ -217,6 +219,7 @@ CREATE TEMPORARY TABLE chat_message_sink (
 CREATE TEMPORARY TABLE scheduled_notification_sink (
     conversation_id STRING,
     payload         STRING,
+    headers         MAP<STRING, BYTES> METADATA,
     ts              TIMESTAMP_LTZ(3) METADATA FROM 'timestamp'
 ) WITH (
     'connector' = 'kafka',
@@ -236,52 +239,59 @@ INSERT INTO offline_conversation_sink
 SELECT BIN_TO_UUID(id), novel, poem, short_story, play, film, written_by, rule,
        CONCAT(REPLACE(`time`, ' ', 'T'), 'Z'), length_minutes, maps_link, location, latitude, longitude,
        city, h3_res5, h3_res7, CONCAT(REPLACE(updated_at, ' ', 'T'), 'Z'),
-       MAP['type', ENCODE('offline_conversation', 'UTF-8')], op_ts
+       MAP['taskType', ENCODE('offline_conversation', 'UTF-8')], op_ts
 FROM offline_conversation_source;
 
 INSERT INTO online_conversation_sink
 SELECT BIN_TO_UUID(id), novel, short_story, poem, play, film, written_by, rule, capacity,
        CONCAT(REPLACE(`time`, ' ', 'T'), 'Z'), length_minutes, current_registrants,
        CONCAT(REPLACE(updated_at, ' ', 'T'), 'Z'),
-       MAP['type', ENCODE('online_conversation', 'UTF-8')], op_ts
+       MAP['taskType', ENCODE('online_conversation', 'UTF-8')], op_ts
 FROM online_conversation_source;
 
 INSERT INTO conversation_member_sink
 SELECT BIN_TO_UUID(conversation_id), BIN_TO_UUID(member_id),
-       MAP['type', ENCODE('offline_conversation_moderator', 'UTF-8')], op_ts
+       MAP['taskType', ENCODE('offline_conversation_moderator', 'UTF-8')], op_ts
 FROM offline_conversation_moderator_source;
 
 INSERT INTO conversation_member_sink
 SELECT BIN_TO_UUID(conversation_id), BIN_TO_UUID(member_id),
-       MAP['type', ENCODE('offline_conversation_participant', 'UTF-8')], op_ts
+       MAP['taskType', ENCODE('offline_conversation_participant', 'UTF-8')], op_ts
 FROM offline_conversation_participant_source;
 
 INSERT INTO conversation_member_sink
 SELECT BIN_TO_UUID(conversation_id), BIN_TO_UUID(member_id),
-       MAP['type', ENCODE('online_conversation_moderator', 'UTF-8')], op_ts
+       MAP['taskType', ENCODE('online_conversation_moderator', 'UTF-8')], op_ts
 FROM online_conversation_moderator_source;
 
 INSERT INTO conversation_member_sink
 SELECT BIN_TO_UUID(conversation_id), BIN_TO_UUID(member_id),
-       MAP['type', ENCODE('online_conversation_registrant', 'UTF-8')], op_ts
+       MAP['taskType', ENCODE('online_conversation_registrant', 'UTF-8')], op_ts
 FROM online_conversation_registrant_source;
 
 INSERT INTO conversation_member_sink
 SELECT BIN_TO_UUID(conversation_id), BIN_TO_UUID(member_id),
-       MAP['type', ENCODE('online_conversation_ban', 'UTF-8')], op_ts
+       MAP['taskType', ENCODE('online_conversation_ban', 'UTF-8')], op_ts
 FROM online_conversation_ban_source;
 
 INSERT INTO conversation_member_sink
 SELECT BIN_TO_UUID(conversation_id), BIN_TO_UUID(member_id),
-       MAP['type', ENCODE('online_conversation_notification', 'UTF-8')], op_ts
+       MAP['taskType', ENCODE('online_conversation_notification', 'UTF-8')], op_ts
 FROM online_conversation_notification_source;
 
+-- outbox rows with a task_type carry it as the "taskType" header, rows without one get no headers
 INSERT INTO chat_message_sink
-SELECT BIN_TO_UUID(conversation_id), payload, op_ts
+SELECT BIN_TO_UUID(conversation_id), payload,
+       CASE WHEN task_type IS NULL THEN CAST(NULL AS MAP<STRING, BYTES>)
+            ELSE MAP['taskType', ENCODE(task_type, 'UTF-8')] END,
+       op_ts
 FROM outbox_source
 WHERE topic = 'chat-message';
 
 INSERT INTO scheduled_notification_sink
-SELECT BIN_TO_UUID(conversation_id), payload, op_ts
+SELECT BIN_TO_UUID(conversation_id), payload,
+       CASE WHEN task_type IS NULL THEN CAST(NULL AS MAP<STRING, BYTES>)
+            ELSE MAP['taskType', ENCODE(task_type, 'UTF-8')] END,
+       op_ts
 FROM outbox_source
 WHERE topic = 'scheduled-notification';

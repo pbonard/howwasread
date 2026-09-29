@@ -224,3 +224,8 @@ func (r *repository) RemoveNotificationId(ctx context.Context, session Session, 
 	}
 	return nil
 }
+
+func (r *repository) FindConversationContents(ctx context.Context, tx Tx, id uuid.UUID) (projection.Contents, error) {
+	//TODO implement me
+	panic("implement me")
+}

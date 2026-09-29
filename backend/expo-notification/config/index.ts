@@ -42,18 +42,35 @@ export async function createValkeyClient() {
   });
 }
 
+export const GROUP_ID = "apn-notification";
+
+// shared by the consumer and the retry producer
+const kafkaConnectionConfig = {
+  "bootstrap.servers": process.env.KAFKA_ADDRESS,
+  "security.protocol": process.env.KAFKA_API_KEY ? "sasl_ssl" : "ssl",
+  "sasl.mechanism": process.env.KAFKA_API_KEY ? "PLAIN" : undefined,
+  "sasl.username": process.env.KAFKA_API_KEY || undefined,
+  "sasl.password": process.env.KAFKA_API_SECRET || undefined,
+  "ssl.ca.location": process.env.KAFKA_CA_CERT_PATH || undefined,
+  "ssl.certificate.location": process.env.KAFKA_USER_CERT_PATH || undefined,
+  "ssl.key.location": process.env.KAFKA_USER_KEY_PATH || undefined,
+} as const;
+
+export async function createKafkaProducer() {
+  const producer = new Kafka().producer({
+    ...kafkaConnectionConfig,
+    acks: -1,
+  });
+  await producer.connect();
+  console.log("connect to Kafka producer");
+  return producer;
+}
+
 export async function createKafkaConsumer() {
   const consumer = new Kafka().consumer({
-    "bootstrap.servers": process.env.KAFKA_ADDRESS,
-    "security.protocol": process.env.KAFKA_API_KEY ? "sasl_ssl" : "ssl",
-    "sasl.mechanism": process.env.KAFKA_API_KEY ? "PLAIN" : undefined,
-    "sasl.username": process.env.KAFKA_API_KEY || undefined,
-    "sasl.password": process.env.KAFKA_API_SECRET || undefined,
-    "ssl.ca.location": process.env.KAFKA_CA_CERT_PATH || undefined,
-    "ssl.certificate.location": process.env.KAFKA_USER_CERT_PATH || undefined,
-    "ssl.key.location": process.env.KAFKA_USER_KEY_PATH || undefined,
+    ...kafkaConnectionConfig,
 
-    "group.id": "apn-notification",
+    "group.id": GROUP_ID,
     "auto.offset.reset": "earliest",
     "group.protocol": "consumer",
     "group.remote.assignor": "uniform",

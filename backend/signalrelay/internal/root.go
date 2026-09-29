@@ -1,7 +1,7 @@
 package internal
 
 import (
-	"backend/common"
+	"backend/common/producer"
 	"backend/signalrelay/internal/client"
 	"backend/signalrelay/internal/consumer"
 	"backend/signalrelay/internal/repository"
@@ -19,7 +19,7 @@ func NewServer() {
 
 	r := repository.NewRepository()
 
-	kp := common.NewProducer("producer_signal_relay")
+	kp := producer.NewSyncProducer("signal-relay")
 
 	s := service.NewService(r, kp, client.NewRelayClient())
 

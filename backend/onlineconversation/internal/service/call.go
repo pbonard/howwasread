@@ -88,6 +88,6 @@ func (s *service) PublishConversationSignal(fromId uuid.UUID, toIds [][]byte, si
 		ToIds:  toIds,
 		Signal: signal,
 	})
-	s.producer.PushMessage("conversation-signal", nil, value, nil)
+	s.asyncProducer.Fire("conversation-signal", nil, value, nil)
 	return nil
 }

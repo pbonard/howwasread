@@ -50,6 +50,7 @@ class OutboxPublisherTest {
 
     assertThat(outbox.getConversationId()).isEqualTo(conversationId);
     assertThat(outbox.getTopic()).isEqualTo("chat-message");
+    assertThat(outbox.getTaskType()).isNull();
     assertThat(outbox.isNew()).isTrue();
   }
 

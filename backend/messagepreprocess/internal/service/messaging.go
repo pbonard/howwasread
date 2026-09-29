@@ -116,6 +116,5 @@ func (s *service) ManageMessage(ctx context.Context, id, fromId uuid.UUID, toIdT
 		Contents:    contents,
 	})
 
-	s.producer.PushMessage("prepared-message", nil, p, nil)
-	return nil
+	return s.producer.Commit("prepared-message", nil, p, nil)
 }

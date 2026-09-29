@@ -48,9 +48,20 @@ func (_m *MockService) EXPECT() *MockService_Expecter {
 }
 
 // PreprocessMessageNotification provides a mock function for the type MockService
-func (_mock *MockService) PreprocessMessageNotification(ctx context.Context, notificationId uint8, messageId uuid.UUID, toIds [][]byte, roomId uuid.UUID, fromId uuid.UUID, contentType string, content []string) {
-	_mock.Called(ctx, notificationId, messageId, toIds, roomId, fromId, contentType, content)
-	return
+func (_mock *MockService) PreprocessMessageNotification(ctx context.Context, notificationId uint8, messageId uuid.UUID, toIds [][]byte, roomId uuid.UUID, fromId uuid.UUID, contentType string, content []string) error {
+	ret := _mock.Called(ctx, notificationId, messageId, toIds, roomId, fromId, contentType, content)
+
+	if len(ret) == 0 {
+		panic("no return value specified for PreprocessMessageNotification")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uint8, uuid.UUID, [][]byte, uuid.UUID, uuid.UUID, string, []string) error); ok {
+		r0 = returnFunc(ctx, notificationId, messageId, toIds, roomId, fromId, contentType, content)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
 }
 
 // MockService_PreprocessMessageNotification_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'PreprocessMessageNotification'
@@ -119,20 +130,31 @@ func (_c *MockService_PreprocessMessageNotification_Call) Run(run func(ctx conte
 	return _c
 }
 
-func (_c *MockService_PreprocessMessageNotification_Call) Return() *MockService_PreprocessMessageNotification_Call {
-	_c.Call.Return()
+func (_c *MockService_PreprocessMessageNotification_Call) Return(err error) *MockService_PreprocessMessageNotification_Call {
+	_c.Call.Return(err)
 	return _c
 }
 
-func (_c *MockService_PreprocessMessageNotification_Call) RunAndReturn(run func(ctx context.Context, notificationId uint8, messageId uuid.UUID, toIds [][]byte, roomId uuid.UUID, fromId uuid.UUID, contentType string, content []string)) *MockService_PreprocessMessageNotification_Call {
-	_c.Run(run)
+func (_c *MockService_PreprocessMessageNotification_Call) RunAndReturn(run func(ctx context.Context, notificationId uint8, messageId uuid.UUID, toIds [][]byte, roomId uuid.UUID, fromId uuid.UUID, contentType string, content []string) error) *MockService_PreprocessMessageNotification_Call {
+	_c.Call.Return(run)
 	return _c
 }
 
 // PreprocessScheduledNotification provides a mock function for the type MockService
-func (_mock *MockService) PreprocessScheduledNotification(ctx context.Context, partitionId uuid.UUID, notifications map[uuid.UUID]map[int]string, contents map[int]string) {
-	_mock.Called(ctx, partitionId, notifications, contents)
-	return
+func (_mock *MockService) PreprocessScheduledNotification(ctx context.Context, partitionId uuid.UUID, notifications map[uuid.UUID]map[int]string, contents map[int]string) error {
+	ret := _mock.Called(ctx, partitionId, notifications, contents)
+
+	if len(ret) == 0 {
+		panic("no return value specified for PreprocessScheduledNotification")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, map[uuid.UUID]map[int]string, map[int]string) error); ok {
+		r0 = returnFunc(ctx, partitionId, notifications, contents)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
 }
 
 // MockService_PreprocessScheduledNotification_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'PreprocessScheduledNotification'
@@ -177,13 +199,13 @@ func (_c *MockService_PreprocessScheduledNotification_Call) Run(run func(ctx con
 	return _c
 }
 
-func (_c *MockService_PreprocessScheduledNotification_Call) Return() *MockService_PreprocessScheduledNotification_Call {
-	_c.Call.Return()
+func (_c *MockService_PreprocessScheduledNotification_Call) Return(err error) *MockService_PreprocessScheduledNotification_Call {
+	_c.Call.Return(err)
 	return _c
 }
 
-func (_c *MockService_PreprocessScheduledNotification_Call) RunAndReturn(run func(ctx context.Context, partitionId uuid.UUID, notifications map[uuid.UUID]map[int]string, contents map[int]string)) *MockService_PreprocessScheduledNotification_Call {
-	_c.Run(run)
+func (_c *MockService_PreprocessScheduledNotification_Call) RunAndReturn(run func(ctx context.Context, partitionId uuid.UUID, notifications map[uuid.UUID]map[int]string, contents map[int]string) error) *MockService_PreprocessScheduledNotification_Call {
+	_c.Call.Return(run)
 	return _c
 }
 
