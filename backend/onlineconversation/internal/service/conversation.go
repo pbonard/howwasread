@@ -1,7 +1,7 @@
 package service
 
 import (
-	"backend/common/payload"
+	"backend/common"
 	"backend/onlineconversation/internal/dto"
 	"context"
 	"errors"
@@ -87,7 +87,7 @@ func (s *service) DeleteConversation(ctx context.Context, memberId, conversation
 	// nobody gets a reminder for a deleted conversation
 	for _, subscriber := range subscribers {
 		err = s.publish(ctx, tx, conversationId, scheduledNotificationTopic, "",
-			payload.Marshal(payload.NotificationScheduling{
+			common.Marshal(common.NotificationScheduling{
 				PartitionId: conversationId,
 				KeyId:       subscriber,
 				Type:        "cancel",
@@ -225,7 +225,7 @@ func (s *service) ScheduleNotification(ctx context.Context, memberId, conversati
 	if err = s.repository.AddNotificationId(ctx, tx, conversationId, memberId); err != nil {
 		return err
 	}
-	err = s.publish(ctx, tx, conversationId, scheduledNotificationTopic, "", payload.Marshal(payload.NotificationScheduling{
+	err = s.publish(ctx, tx, conversationId, scheduledNotificationTopic, "", common.Marshal(common.NotificationScheduling{
 		PartitionId:   conversationId,
 		KeyId:         memberId,
 		ScheduledTime: detail.Time.Add(-notificationTimeMinusInterval).UnixMilli(),
@@ -254,7 +254,7 @@ func (s *service) CancelNotification(ctx context.Context, memberId, conversation
 		return err
 	}
 	err = s.publish(ctx, tx, conversationId, scheduledNotificationTopic, "",
-		payload.Marshal(payload.NotificationScheduling{
+		common.Marshal(common.NotificationScheduling{
 			PartitionId: conversationId,
 			KeyId:       memberId,
 			Type:        "cancel",
@@ -270,17 +270,9 @@ func (s *service) CancelNotification(ctx context.Context, memberId, conversation
 	return nil
 }
 
-func (s *service) ReportConversation(ctx context.Context, conversationId uuid.UUID) error {
-	tx, err := s.repository.BeginTx(ctx)
-	if err != nil {
-		return err
-	}
-	err = s.publish(ctx, tx, conversationId, onlineConversationTopic, reportTaskType,
-		payload.Marshal(payload.ConversationRequest{Id: conversationId}))
-	if err != nil {
-		return err
-	}
-	err = tx.Commit()
+func (s *service) ReportConversation(ctx context.Context, conversationId, memberId uuid.UUID) error {
+	err := s.producer.Commit("online-conversation", conversationId[:],
+		common.Marshal(common.ConversationReport{ReporterId: memberId, ReportedAt: time.Now()}), nil)
 	if err != nil {
 		return err
 	}
