@@ -15,9 +15,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestReportConversation_keysByConversationWithReporterAsValue(t *testing.T) {
+func TestReportConversation_keysByConversationWithoutValue(t *testing.T) {
 	p := mocks.NewMockSyncProducer(t)
-	p.EXPECT().Commit("online-conversation", conversationId[:], memberId[:], mock.Anything).Return(nil)
+	p.EXPECT().Commit("online-conversation", conversationId[:], []byte(nil), mock.Anything).Return(nil)
 
 	s := service.NewService(NewMockRepository(t), p, mocks.NewMockAsyncProducer(t))
 
@@ -30,7 +30,7 @@ func TestManageReport_evaluatedConversationIsSkipped(t *testing.T) {
 	repo.EXPECT().FindReportTarget(mock.Anything, mock.Anything, conversationId).
 		Return(projection.ReportTarget{IsEvaluated: true}, nil)
 
-	require.NoError(t, newService(t, repo).ManageReport(context.Background(), conversationId, memberId))
+	require.NoError(t, newService(t, repo).ManageReport(context.Background(), conversationId))
 }
 
 func TestManageReport_marksWithTheUpdatedAtReadBeforeEvaluation(t *testing.T) {
@@ -44,21 +44,22 @@ func TestManageReport_marksWithTheUpdatedAtReadBeforeEvaluation(t *testing.T) {
 	tx.EXPECT().Commit().Return(nil)
 	tx.EXPECT().Rollback().Return(nil) // deferred, a no-op after commit
 
-	require.NoError(t, newService(t, repo).ManageReport(context.Background(), conversationId, memberId))
+	require.NoError(t, newService(t, repo).ManageReport(context.Background(), conversationId))
 }
 
-func TestManageReport_contentChangedDuringEvaluationStillCommits(t *testing.T) {
+func TestManageReport_contentChangedDuringEvaluationIsRetried(t *testing.T) {
 	repo, tx := NewMockRepository(t), NewMockTx(t)
 	repo.EXPECT().Tx().Return(nil)
 	repo.EXPECT().FindReportTarget(mock.Anything, mock.Anything, conversationId).
 		Return(projection.ReportTarget{}, nil)
 	repo.EXPECT().BeginTx(mock.Anything).Return(tx, nil)
 	repo.EXPECT().MarkEvaluatedIfUnchanged(mock.Anything, tx, conversationId, mock.Anything).Return(false, nil)
-	tx.EXPECT().Commit().Return(nil)
 	tx.EXPECT().Rollback().Return(nil)
 
-	require.NoError(t, newService(t, repo).ManageReport(context.Background(), conversationId, memberId),
-		"not retried, the next report evaluates the new content")
+	err := newService(t, repo).ManageReport(context.Background(), conversationId)
+
+	assert.EqualError(t, err, "conversation changed during report evaluation",
+		"the error sends the report to the retryer, which evaluates the new content")
 }
 
 func TestManageReport_deletedConversationIsDropped(t *testing.T) {
@@ -67,7 +68,7 @@ func TestManageReport_deletedConversationIsDropped(t *testing.T) {
 	repo.EXPECT().FindReportTarget(mock.Anything, mock.Anything, conversationId).
 		Return(projection.ReportTarget{}, sql.ErrNoRows)
 
-	require.NoError(t, newService(t, repo).ManageReport(context.Background(), conversationId, memberId))
+	require.NoError(t, newService(t, repo).ManageReport(context.Background(), conversationId))
 }
 
 func TestManageReport_failedMarkIsReturnedForRetry(t *testing.T) {
@@ -79,7 +80,7 @@ func TestManageReport_failedMarkIsReturnedForRetry(t *testing.T) {
 	repo.EXPECT().MarkEvaluatedIfUnchanged(mock.Anything, tx, conversationId, mock.Anything).Return(false, errors.New("db down"))
 	tx.EXPECT().Rollback().Return(nil)
 
-	err := newService(t, repo).ManageReport(context.Background(), conversationId, memberId)
+	err := newService(t, repo).ManageReport(context.Background(), conversationId)
 
 	assert.EqualError(t, err, "db down")
 }

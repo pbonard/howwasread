@@ -638,16 +638,16 @@ func (_c *MockService_GetParticipantsWithoutMe_Call) RunAndReturn(run func(ctx c
 }
 
 // ManageReport provides a mock function for the type MockService
-func (_mock *MockService) ManageReport(ctx context.Context, conversationId uuid.UUID, reporterId uuid.UUID) error {
-	ret := _mock.Called(ctx, conversationId, reporterId)
+func (_mock *MockService) ManageReport(ctx context.Context, conversationId uuid.UUID) error {
+	ret := _mock.Called(ctx, conversationId)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ManageReport")
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID) error); ok {
-		r0 = returnFunc(ctx, conversationId, reporterId)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) error); ok {
+		r0 = returnFunc(ctx, conversationId)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -662,12 +662,11 @@ type MockService_ManageReport_Call struct {
 // ManageReport is a helper method to define mock.On call
 //   - ctx context.Context
 //   - conversationId uuid.UUID
-//   - reporterId uuid.UUID
-func (_e *MockService_Expecter) ManageReport(ctx any, conversationId any, reporterId any) *MockService_ManageReport_Call {
-	return &MockService_ManageReport_Call{Call: _e.mock.On("ManageReport", ctx, conversationId, reporterId)}
+func (_e *MockService_Expecter) ManageReport(ctx any, conversationId any) *MockService_ManageReport_Call {
+	return &MockService_ManageReport_Call{Call: _e.mock.On("ManageReport", ctx, conversationId)}
 }
 
-func (_c *MockService_ManageReport_Call) Run(run func(ctx context.Context, conversationId uuid.UUID, reporterId uuid.UUID)) *MockService_ManageReport_Call {
+func (_c *MockService_ManageReport_Call) Run(run func(ctx context.Context, conversationId uuid.UUID)) *MockService_ManageReport_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -677,14 +676,9 @@ func (_c *MockService_ManageReport_Call) Run(run func(ctx context.Context, conve
 		if args[1] != nil {
 			arg1 = args[1].(uuid.UUID)
 		}
-		var arg2 uuid.UUID
-		if args[2] != nil {
-			arg2 = args[2].(uuid.UUID)
-		}
 		run(
 			arg0,
 			arg1,
-			arg2,
 		)
 	})
 	return _c
@@ -695,7 +689,7 @@ func (_c *MockService_ManageReport_Call) Return(err error) *MockService_ManageRe
 	return _c
 }
 
-func (_c *MockService_ManageReport_Call) RunAndReturn(run func(ctx context.Context, conversationId uuid.UUID, reporterId uuid.UUID) error) *MockService_ManageReport_Call {
+func (_c *MockService_ManageReport_Call) RunAndReturn(run func(ctx context.Context, conversationId uuid.UUID) error) *MockService_ManageReport_Call {
 	_c.Call.Return(run)
 	return _c
 }
