@@ -3,8 +3,8 @@ package test
 import (
 	"backend/chat/internal/projection"
 	"backend/chat/internal/service"
+	"backend/common"
 	"backend/common/mocks"
-	"backend/common/payload"
 	"context"
 	"encoding/json"
 	"errors"
@@ -80,7 +80,7 @@ func TestPublishMessaging_textIsProducedAsChatMessage(t *testing.T) {
 
 	require.NoError(t, err)
 	id := resp["id"]
-	var msg payload.ChatMessage
+	var msg common.ChatMessage
 	require.NoError(t, json.Unmarshal(pushed, &msg))
 	assert.Equal(t, id[:], msg.Id)
 	assert.Equal(t, memberId[:], msg.FromId)

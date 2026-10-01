@@ -1,8 +1,8 @@
 package test
 
 import (
+	"backend/common"
 	"backend/common/mocks"
-	"backend/common/payload"
 	"backend/onlineconversation/internal/service"
 	"context"
 	"crypto/hmac"
@@ -88,7 +88,7 @@ func TestPublishConversationSignal(t *testing.T) {
 		PublishConversationSignal(memberId, [][]byte{other[:]}, []byte(`{"sdp":"offer"}`))
 
 	require.NoError(t, err)
-	var signal payload.OnlineConversationSignal
+	var signal common.OnlineConversationSignal
 	require.NoError(t, json.Unmarshal(pushed, &signal))
 	assert.Equal(t, memberId[:], signal.FromId)
 	assert.Equal(t, [][]byte{other[:]}, signal.ToIds)

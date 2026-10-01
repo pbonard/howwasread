@@ -1,7 +1,7 @@
 package service
 
 import (
-	"backend/common/payload"
+	"backend/common"
 	"context"
 	"encoding/json"
 	"errors"
@@ -27,7 +27,7 @@ func (s *service) SendNotification(
 	if did {
 		return nil
 	}
-	var p payload.NotificationMessage
+	var p common.NotificationMessage
 	err = json.Unmarshal(value, &p)
 	if err != nil {
 		slog.Error("fail to unmarshal payload value",

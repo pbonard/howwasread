@@ -2,7 +2,6 @@ package consumer
 
 import (
 	"backend/common"
-	"backend/common/payload"
 	"backend/common/producer"
 	"backend/onlineconversation/internal/service"
 	"context"
@@ -166,12 +165,12 @@ func (c *Consumer) distinguishMessage(
 	message *sarama.ConsumerMessage,
 ) error {
 	for _, h := range message.Headers {
-		// a copy re-sent for another group's retry, this group handles the original record itself
+		//partitionId is exponential backoff retry flink job's partition key
 		if string(h.Key) == "partitionId" && !strings.HasPrefix(string(h.Value), groupId+":") {
 			return nil
 		}
 	}
-	var p payload.ConversationRequest
+	var p common.ConversationReport
 	err := json.Unmarshal(message.Value, &p)
 	if err != nil {
 		slog.Error("fail to unmarshal payload value",
@@ -181,9 +180,9 @@ func (c *Consumer) distinguishMessage(
 	}
 	err = c.service.ManageMessage(ctx, p.Id)
 	if err != nil {
-		e := payload.RetryEvent{Reason: err.Error()}
+		e := common.RetryEvent{Reason: err.Error()}
 		for _, h := range message.Headers {
-			// a re-sent record carries the partition id of the group that failed, other groups treat it as a new record
+			//reuse first failed message's retry id
 			if string(h.Key) == "partitionId" && strings.HasPrefix(string(h.Value), groupId+":") {
 				e.PartitionId = string(h.Value)
 			}
@@ -205,7 +204,7 @@ func (c *Consumer) distinguishMessage(
 			e.Value = message.Value
 		}
 		// keyed by partition id so the events of one retry stay ordered in the job
-		return c.producer.Commit("exponential-backoff-retry", []byte(e.PartitionId), payload.Marshal(e), nil)
+		return c.producer.Commit("exponential-backoff-retry", []byte(e.PartitionId), common.Marshal(e), nil)
 	}
 	return nil
 }

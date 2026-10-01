@@ -884,7 +884,7 @@ func (_c *MockService_RemoveServerIP_Call) RunAndReturn(run func(ctx context.Con
 }
 
 // ReportConversation provides a mock function for the type MockService
-func (_mock *MockService) ReportConversation(ctx context.Context, conversationId uuid.UUID) error {
+func (_mock *MockService) ReportConversation(ctx context.Context, conversationId uuid.UUID, id uuid.UUID) error {
 	ret := _mock.Called(ctx, conversationId)
 
 	if len(ret) == 0 {

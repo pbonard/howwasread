@@ -1,8 +1,8 @@
 package test
 
 import (
+	"backend/common"
 	"backend/common/mocks"
-	"backend/common/payload"
 	"backend/messagepreprocess/internal/service"
 	"context"
 	"encoding/json"
@@ -183,7 +183,7 @@ func TestManageMessage(t *testing.T) {
 			}
 			require.NoError(t, err)
 
-			var msg payload.PreparedMessage
+			var msg common.PreparedMessage
 			require.NoError(t, json.Unmarshal(pushed, &msg))
 			assert.Equal(t, msgId[:], msg.Id)
 			assert.Equal(t, fromId[:], msg.FromId)

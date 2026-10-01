@@ -28,7 +28,7 @@ type Service interface {
 	DeregisterConversation(ctx context.Context, memberId, conversationId uuid.UUID) error
 	ScheduleNotification(ctx context.Context, memberId, conversationId uuid.UUID) error
 	CancelNotification(ctx context.Context, memberId, conversationId uuid.UUID) error
-	ReportConversation(ctx context.Context, conversationId uuid.UUID) error
+	ReportConversation(ctx context.Context, conversationId, memberId uuid.UUID) error
 }
 
 type service struct {

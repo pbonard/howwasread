@@ -1,7 +1,7 @@
 package test
 
 import (
-	"backend/common/payload"
+	"backend/common"
 	"backend/onlineconversation/internal/projection"
 	"backend/onlineconversation/internal/repository"
 	"backend/onlineconversation/internal/service"
@@ -17,12 +17,12 @@ import (
 )
 
 // expectOutbox expects one outbox insert and its delete on tx, and returns the published events
-func expectOutbox(t *testing.T, repo *MockRepository, tx *MockTx, times int) *[]payload.NotificationScheduling {
-	var events []payload.NotificationScheduling
+func expectOutbox(t *testing.T, repo *MockRepository, tx *MockTx, times int) *[]common.NotificationScheduling {
+	var events []common.NotificationScheduling
 	var ids []uuid.UUID
 	repo.EXPECT().InsertOutbox(mock.Anything, tx, mock.Anything, conversationId, "scheduled-notification", "", mock.Anything).
 		Run(func(_ context.Context, _ repository.Session, id, _ uuid.UUID, _, _ string, value []byte) {
-			var e payload.NotificationScheduling
+			var e common.NotificationScheduling
 			require.NoError(t, json.Unmarshal(value, &e))
 			events = append(events, e)
 			ids = append(ids, id)
@@ -79,7 +79,7 @@ func TestCancelNotification_publishesACancelEvent(t *testing.T) {
 	require.NoError(t, newService(t, repo).CancelNotification(context.Background(), memberId, conversationId))
 
 	require.Len(t, *events, 1)
-	assert.Equal(t, payload.NotificationScheduling{PartitionId: conversationId, KeyId: memberId, Type: "cancel"}, (*events)[0])
+	assert.Equal(t, common.NotificationScheduling{PartitionId: conversationId, KeyId: memberId, Type: "cancel"}, (*events)[0])
 }
 
 func TestDeleteConversation_cancelsEverySubscribersReminder(t *testing.T) {

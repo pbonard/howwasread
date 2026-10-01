@@ -1,7 +1,7 @@
 package service
 
 import (
-	"backend/common/payload"
+	"backend/common"
 	"context"
 	"fmt"
 
@@ -19,7 +19,7 @@ func (s *service) PreprocessScheduledNotification(ctx context.Context, partition
 	if err != nil {
 		return err
 	}
-	p := payload.NotificationMessage{
+	p := common.NotificationMessage{
 		TokenMap: fcmtm,
 		Title:    "Conversation starts soon",
 		Text: fmt.Sprintf("You can now enter the conversation about %s and talk!",
@@ -28,14 +28,14 @@ func (s *service) PreprocessScheduledNotification(ctx context.Context, partition
 	kafkaKey := append(partitionId[:], scheduledNotificationId)
 	if len(fcmtm) > 0 {
 		p.TokenMap = fcmtm
-		err = s.producer.Commit("fcm-notification", kafkaKey, payload.Marshal(p), nil)
+		err = s.producer.Commit("fcm-notification", kafkaKey, common.Marshal(p), nil)
 		if err != nil {
 			return err
 		}
 	}
 	if len(apntm) > 0 {
 		p.TokenMap = apntm
-		err = s.producer.Commit("apn-notification", kafkaKey, payload.Marshal(p), nil)
+		err = s.producer.Commit("apn-notification", kafkaKey, common.Marshal(p), nil)
 		if err != nil {
 			return err
 		}

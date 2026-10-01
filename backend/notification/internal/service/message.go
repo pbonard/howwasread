@@ -1,7 +1,7 @@
 package service
 
 import (
-	"backend/common/payload"
+	"backend/common"
 	"bytes"
 	"context"
 	"fmt"
@@ -45,7 +45,7 @@ func (s *service) PreprocessMessageNotification(
 		return err
 	}
 
-	p := payload.NotificationMessage{
+	p := common.NotificationMessage{
 		Title: senderName,
 		Text:  content[0],
 	}
@@ -70,14 +70,14 @@ func (s *service) PreprocessMessageNotification(
 	kafkaKey := append(messageId[:], notificationId)
 	if len(fcmtm) > 0 {
 		p.TokenMap = fcmtm
-		err = s.producer.Commit("fcm-notification", kafkaKey, payload.Marshal(p), nil)
+		err = s.producer.Commit("fcm-notification", kafkaKey, common.Marshal(p), nil)
 		if err != nil {
 			return err
 		}
 	}
 	if len(apntm) > 0 {
 		p.TokenMap = apntm
-		err = s.producer.Commit("apn-notification", kafkaKey, payload.Marshal(p), nil)
+		err = s.producer.Commit("apn-notification", kafkaKey, common.Marshal(p), nil)
 		if err != nil {
 			return err
 		}
