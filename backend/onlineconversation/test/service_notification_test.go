@@ -112,13 +112,3 @@ func TestDeleteConversation_nonModeratorPublishesNothing(t *testing.T) {
 
 	assert.EqualError(t, err, "can't delete conversation")
 }
-
-func TestReportConversation_publishesWithReportTaskType(t *testing.T) {
-	repo, tx := NewMockRepository(t), NewMockTx(t)
-	repo.EXPECT().BeginTx(mock.Anything).Return(tx, nil)
-	repo.EXPECT().InsertOutbox(mock.Anything, tx, mock.Anything, conversationId, "online-conversation", "report", mock.Anything).Return(nil)
-	repo.EXPECT().DeleteOutbox(mock.Anything, tx, mock.Anything, conversationId).Return(nil)
-	tx.EXPECT().Commit().Return(nil)
-
-	require.NoError(t, newService(t, repo).ReportConversation(context.Background(), conversationId))
-}

@@ -5,7 +5,6 @@ import (
 	"backend/common/producer"
 	"backend/onlineconversation/internal/service"
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"log/slog"
@@ -16,6 +15,7 @@ import (
 	"syscall"
 
 	"github.com/IBM/sarama"
+	"github.com/google/uuid"
 
 	_ "github.com/joho/godotenv/autoload"
 )
@@ -165,20 +165,17 @@ func (c *Consumer) distinguishMessage(
 	message *sarama.ConsumerMessage,
 ) error {
 	for _, h := range message.Headers {
-		//partitionId is exponential backoff retry flink job's partition key
 		if string(h.Key) == "partitionId" && !strings.HasPrefix(string(h.Value), groupId+":") {
 			return nil
 		}
 	}
-	var p common.ConversationReport
-	err := json.Unmarshal(message.Value, &p)
+	conversationId, err := uuid.FromBytes(message.Key)
 	if err != nil {
-		slog.Error("fail to unmarshal payload value",
-			"err", err,
-			"payload.Value", message.Value)
+		slog.Error("fail to parse report",
+			"key", message.Key)
 		return nil
 	}
-	err = c.service.ManageMessage(ctx, p.Id)
+	err = c.service.ManageReport(ctx, conversationId)
 	if err != nil {
 		e := common.RetryEvent{Reason: err.Error()}
 		for _, h := range message.Headers {

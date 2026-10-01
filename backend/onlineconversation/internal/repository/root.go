@@ -56,7 +56,8 @@ type Repository interface {
 	DeleteOutbox(ctx context.Context, session Session, id, conversationId uuid.UUID) error
 	BeginTx(ctx context.Context) (Tx, error)
 	Tx() Session
-	FindConversationContents(ctx context.Context, tx Tx, id uuid.UUID) (projection.Contents, error)
+	FindReportTarget(ctx context.Context, session Session, conversationId uuid.UUID) (projection.ReportTarget, error)
+	MarkEvaluatedIfUnchanged(ctx context.Context, session Session, conversationId uuid.UUID, updatedAt *time.Time) (bool, error)
 }
 
 type repository struct {

@@ -4,6 +4,7 @@ import (
 	"backend/common"
 	"backend/onlineconversation/internal/dto"
 	"context"
+	"database/sql"
 	"errors"
 	"log/slog"
 	"time"
@@ -271,9 +272,45 @@ func (s *service) CancelNotification(ctx context.Context, memberId, conversation
 }
 
 func (s *service) ReportConversation(ctx context.Context, conversationId, memberId uuid.UUID) error {
-	err := s.producer.Commit("online-conversation", conversationId[:],
-		common.Marshal(common.ConversationReport{ReporterId: memberId, ReportedAt: time.Now()}), nil)
+	err := s.producer.Commit("online-conversation", conversationId[:], nil, nil)
 	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *service) ManageReport(ctx context.Context, conversationId uuid.UUID) error {
+	target, err := s.repository.FindReportTarget(ctx, s.repository.Tx(), conversationId)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	if target.IsEvaluated {
+		return nil
+	}
+
+	// TODO: grpc call to evaluate target.Contents, kept outside the transaction since it takes seconds
+
+	tx, err := s.repository.BeginTx(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	marked, err := s.repository.MarkEvaluatedIfUnchanged(ctx, tx, conversationId, target.UpdatedAt)
+	if err != nil {
+		return err
+	}
+	if !marked {
+		slog.Info("conversation changed during report evaluation",
+			"conversationId", conversationId)
+		return errors.New("conversation changed during report evaluation")
+	}
+	// TODO: apply the verdict here so it commits together with is_evaluated
+	err = tx.Commit()
+	if err != nil {
+		slog.Error("fail to commit transaction for report", "err", err)
 		return err
 	}
 	return nil

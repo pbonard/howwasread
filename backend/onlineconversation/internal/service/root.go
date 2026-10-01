@@ -29,6 +29,7 @@ type Service interface {
 	ScheduleNotification(ctx context.Context, memberId, conversationId uuid.UUID) error
 	CancelNotification(ctx context.Context, memberId, conversationId uuid.UUID) error
 	ReportConversation(ctx context.Context, conversationId, memberId uuid.UUID) error
+	ManageReport(ctx context.Context, conversationId uuid.UUID) error
 }
 
 type service struct {

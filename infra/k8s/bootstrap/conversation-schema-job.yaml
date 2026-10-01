@@ -64,7 +64,8 @@ data:
         time                DATETIME NOT NULL,
         length_minutes      INT      NOT NULL,
         current_registrants INT      NOT NULL DEFAULT 0,
-        updated_at          DATETIME NULL,
+        updated_at          DATETIME(6) NULL,
+        is_evaluated        BOOLEAN  NOT NULL DEFAULT FALSE,
         PRIMARY KEY (id)
     );
 

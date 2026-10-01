@@ -9,6 +9,7 @@ import (
 	"backend/onlineconversation/internal/projection"
 	"backend/onlineconversation/internal/repository"
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 	mock "github.com/stretchr/testify/mock"
@@ -538,78 +539,6 @@ func (_c *MockRepository_DeleteOutbox_Call) RunAndReturn(run func(ctx context.Co
 	return _c
 }
 
-// FindConversationContents provides a mock function for the type MockRepository
-func (_mock *MockRepository) FindConversationContents(ctx context.Context, tx repository.Tx, id uuid.UUID) (projection.Contents, error) {
-	ret := _mock.Called(ctx, tx, id)
-
-	if len(ret) == 0 {
-		panic("no return value specified for FindConversationContents")
-	}
-
-	var r0 projection.Contents
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, repository.Tx, uuid.UUID) (projection.Contents, error)); ok {
-		return returnFunc(ctx, tx, id)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, repository.Tx, uuid.UUID) projection.Contents); ok {
-		r0 = returnFunc(ctx, tx, id)
-	} else {
-		r0 = ret.Get(0).(projection.Contents)
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, repository.Tx, uuid.UUID) error); ok {
-		r1 = returnFunc(ctx, tx, id)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// MockRepository_FindConversationContents_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FindConversationContents'
-type MockRepository_FindConversationContents_Call struct {
-	*mock.Call
-}
-
-// FindConversationContents is a helper method to define mock.On call
-//   - ctx context.Context
-//   - tx repository.Tx
-//   - id uuid.UUID
-func (_e *MockRepository_Expecter) FindConversationContents(ctx any, tx any, id any) *MockRepository_FindConversationContents_Call {
-	return &MockRepository_FindConversationContents_Call{Call: _e.mock.On("FindConversationContents", ctx, tx, id)}
-}
-
-func (_c *MockRepository_FindConversationContents_Call) Run(run func(ctx context.Context, tx repository.Tx, id uuid.UUID)) *MockRepository_FindConversationContents_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 repository.Tx
-		if args[1] != nil {
-			arg1 = args[1].(repository.Tx)
-		}
-		var arg2 uuid.UUID
-		if args[2] != nil {
-			arg2 = args[2].(uuid.UUID)
-		}
-		run(
-			arg0,
-			arg1,
-			arg2,
-		)
-	})
-	return _c
-}
-
-func (_c *MockRepository_FindConversationContents_Call) Return(contents projection.Contents, err error) *MockRepository_FindConversationContents_Call {
-	_c.Call.Return(contents, err)
-	return _c
-}
-
-func (_c *MockRepository_FindConversationContents_Call) RunAndReturn(run func(ctx context.Context, tx repository.Tx, id uuid.UUID) (projection.Contents, error)) *MockRepository_FindConversationContents_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // FindConversationDetail provides a mock function for the type MockRepository
 func (_mock *MockRepository) FindConversationDetail(ctx context.Context, session repository.Session, conversationId uuid.UUID, memberId uuid.UUID) (projection.Detail, error) {
 	ret := _mock.Called(ctx, session, conversationId, memberId)
@@ -826,6 +755,78 @@ func (_c *MockRepository_FindParticipantIds_Call) Return(strings []string, err e
 }
 
 func (_c *MockRepository_FindParticipantIds_Call) RunAndReturn(run func(ctx context.Context, conversationId string) ([]string, error)) *MockRepository_FindParticipantIds_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// FindReportTarget provides a mock function for the type MockRepository
+func (_mock *MockRepository) FindReportTarget(ctx context.Context, session repository.Session, conversationId uuid.UUID) (projection.ReportTarget, error) {
+	ret := _mock.Called(ctx, session, conversationId)
+
+	if len(ret) == 0 {
+		panic("no return value specified for FindReportTarget")
+	}
+
+	var r0 projection.ReportTarget
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, repository.Session, uuid.UUID) (projection.ReportTarget, error)); ok {
+		return returnFunc(ctx, session, conversationId)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, repository.Session, uuid.UUID) projection.ReportTarget); ok {
+		r0 = returnFunc(ctx, session, conversationId)
+	} else {
+		r0 = ret.Get(0).(projection.ReportTarget)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, repository.Session, uuid.UUID) error); ok {
+		r1 = returnFunc(ctx, session, conversationId)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockRepository_FindReportTarget_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FindReportTarget'
+type MockRepository_FindReportTarget_Call struct {
+	*mock.Call
+}
+
+// FindReportTarget is a helper method to define mock.On call
+//   - ctx context.Context
+//   - session repository.Session
+//   - conversationId uuid.UUID
+func (_e *MockRepository_Expecter) FindReportTarget(ctx any, session any, conversationId any) *MockRepository_FindReportTarget_Call {
+	return &MockRepository_FindReportTarget_Call{Call: _e.mock.On("FindReportTarget", ctx, session, conversationId)}
+}
+
+func (_c *MockRepository_FindReportTarget_Call) Run(run func(ctx context.Context, session repository.Session, conversationId uuid.UUID)) *MockRepository_FindReportTarget_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 repository.Session
+		if args[1] != nil {
+			arg1 = args[1].(repository.Session)
+		}
+		var arg2 uuid.UUID
+		if args[2] != nil {
+			arg2 = args[2].(uuid.UUID)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *MockRepository_FindReportTarget_Call) Return(reportTarget projection.ReportTarget, err error) *MockRepository_FindReportTarget_Call {
+	_c.Call.Return(reportTarget, err)
+	return _c
+}
+
+func (_c *MockRepository_FindReportTarget_Call) RunAndReturn(run func(ctx context.Context, session repository.Session, conversationId uuid.UUID) (projection.ReportTarget, error)) *MockRepository_FindReportTarget_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1120,6 +1121,84 @@ func (_c *MockRepository_InsertRegistrant_Call) Return(err error) *MockRepositor
 }
 
 func (_c *MockRepository_InsertRegistrant_Call) RunAndReturn(run func(ctx context.Context, session repository.Session, conversationId uuid.UUID, memberId uuid.UUID) error) *MockRepository_InsertRegistrant_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// MarkEvaluatedIfUnchanged provides a mock function for the type MockRepository
+func (_mock *MockRepository) MarkEvaluatedIfUnchanged(ctx context.Context, session repository.Session, conversationId uuid.UUID, updatedAt *time.Time) (bool, error) {
+	ret := _mock.Called(ctx, session, conversationId, updatedAt)
+
+	if len(ret) == 0 {
+		panic("no return value specified for MarkEvaluatedIfUnchanged")
+	}
+
+	var r0 bool
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, repository.Session, uuid.UUID, *time.Time) (bool, error)); ok {
+		return returnFunc(ctx, session, conversationId, updatedAt)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, repository.Session, uuid.UUID, *time.Time) bool); ok {
+		r0 = returnFunc(ctx, session, conversationId, updatedAt)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, repository.Session, uuid.UUID, *time.Time) error); ok {
+		r1 = returnFunc(ctx, session, conversationId, updatedAt)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockRepository_MarkEvaluatedIfUnchanged_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'MarkEvaluatedIfUnchanged'
+type MockRepository_MarkEvaluatedIfUnchanged_Call struct {
+	*mock.Call
+}
+
+// MarkEvaluatedIfUnchanged is a helper method to define mock.On call
+//   - ctx context.Context
+//   - session repository.Session
+//   - conversationId uuid.UUID
+//   - updatedAt *time.Time
+func (_e *MockRepository_Expecter) MarkEvaluatedIfUnchanged(ctx any, session any, conversationId any, updatedAt any) *MockRepository_MarkEvaluatedIfUnchanged_Call {
+	return &MockRepository_MarkEvaluatedIfUnchanged_Call{Call: _e.mock.On("MarkEvaluatedIfUnchanged", ctx, session, conversationId, updatedAt)}
+}
+
+func (_c *MockRepository_MarkEvaluatedIfUnchanged_Call) Run(run func(ctx context.Context, session repository.Session, conversationId uuid.UUID, updatedAt *time.Time)) *MockRepository_MarkEvaluatedIfUnchanged_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 repository.Session
+		if args[1] != nil {
+			arg1 = args[1].(repository.Session)
+		}
+		var arg2 uuid.UUID
+		if args[2] != nil {
+			arg2 = args[2].(uuid.UUID)
+		}
+		var arg3 *time.Time
+		if args[3] != nil {
+			arg3 = args[3].(*time.Time)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3,
+		)
+	})
+	return _c
+}
+
+func (_c *MockRepository_MarkEvaluatedIfUnchanged_Call) Return(b bool, err error) *MockRepository_MarkEvaluatedIfUnchanged_Call {
+	_c.Call.Return(b, err)
+	return _c
+}
+
+func (_c *MockRepository_MarkEvaluatedIfUnchanged_Call) RunAndReturn(run func(ctx context.Context, session repository.Session, conversationId uuid.UUID, updatedAt *time.Time) (bool, error)) *MockRepository_MarkEvaluatedIfUnchanged_Call {
 	_c.Call.Return(run)
 	return _c
 }

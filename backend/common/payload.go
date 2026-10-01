@@ -2,7 +2,6 @@ package common
 
 import (
 	"encoding/json"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -70,11 +69,6 @@ type RetryEvent struct {
 	Key         []byte            `json:"key,omitempty"`
 	Headers     map[string][]byte `json:"headers,omitempty"` // original headers without "partitionId"
 	Value       []byte            `json:"value,omitempty"`
-}
-
-type ConversationReport struct {
-	ReporterId uuid.UUID `json:"reporterId"`
-	ReportedAt time.Time `json:"reportedAt"`
 }
 
 type ConversationRequest struct {
