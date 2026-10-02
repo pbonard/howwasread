@@ -24,6 +24,7 @@ export default function WrittenBy() {
           submitBehavior="blurAndSubmit"
           value={value}
           onChangeText={onChange}
+          maxLength={50}
           error={error?.message}
         />
       )}

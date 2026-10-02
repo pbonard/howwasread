@@ -17,6 +17,7 @@ export default function PlayInput() {
           submitBehavior="blurAndSubmit"
           value={value}
           onChangeText={onChange}
+          maxLength={50}
         />
       )}
     />

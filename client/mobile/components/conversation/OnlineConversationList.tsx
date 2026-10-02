@@ -71,7 +71,7 @@ export default function OnlineConversationList({
 
   const handleSearchCancel = () => {
     setKeyword("");
-    Keyboard.dismiss()
+    Keyboard.dismiss();
   };
 
   const handleSheetCloseButtonPress = () => {
@@ -140,7 +140,7 @@ export default function OnlineConversationList({
         >
           <Ionicons name="close" size={20} color="white" />
         </Pressable>
-        <OnlineConversationDetail id={detailId} />
+        <OnlineConversationDetail id={detailId} sheet={sheet} />
       </TrueSheet>
     </View>
   );

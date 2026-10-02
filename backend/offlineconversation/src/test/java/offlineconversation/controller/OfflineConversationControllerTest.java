@@ -94,6 +94,38 @@ class OfflineConversationControllerTest {
   }
 
   @Test
+  void create_withTooLongTitle_isBadRequest() {
+    assertThat(mvc.post().uri(BASE + "/create")
+        .header("X-User-Id", memberId.toString())
+        .contentType(MediaType.APPLICATION_JSON)
+        .content(createBody("Seoul", "가".repeat(51), "")))
+        .hasStatus(HttpStatus.BAD_REQUEST);
+    verifyNoInteractions(offlineConversationService);
+  }
+
+  @Test
+  void create_withTooLongDescription_isBadRequest() {
+    assertThat(mvc.post().uri(BASE + "/create")
+        .header("X-User-Id", memberId.toString())
+        .contentType(MediaType.APPLICATION_JSON)
+        .content(createBody("Seoul", "Hamlet", "가".repeat(501))))
+        .hasStatus(HttpStatus.BAD_REQUEST);
+    verifyNoInteractions(offlineConversationService);
+  }
+
+  @Test
+  void create_atTheLengthLimits_isOk() {
+    when(offlineConversationService.create(any(CreateOfflineConversationRequest.class), eq(memberId)))
+        .thenReturn(Map.of("id", conversationId));
+
+    assertThat(mvc.post().uri(BASE + "/create")
+        .header("X-User-Id", memberId.toString())
+        .contentType(MediaType.APPLICATION_JSON)
+        .content(createBody("Seoul", "가".repeat(50), "가".repeat(500))))
+        .hasStatusOk();
+  }
+
+  @Test
   void update_returnsId() {
     assertThat(mvc.put().uri(BASE + "/update")
         .header("X-User-Id", memberId.toString())
@@ -165,11 +197,15 @@ class OfflineConversationControllerTest {
   }
 
   private String createBody(String location) {
+    return createBody(location, "Hamlet", "");
+  }
+
+  private String createBody(String location, String novel, String description) {
     return """
-        {"novel":"Hamlet","writtenBy":"shakespeare","time":"%s","lengthMinutes":60,
+        {"novel":"%s","writtenBy":"shakespeare","description":"%s","time":"%s","lengthMinutes":60,
          "mapsLink":"https://maps","location":"%s","city":"Seoul","lat":37.5,"lng":127.0,
          "h3Res5":"85283473fffffff","h3Res7":"87283472bffffff"}
-        """.formatted(Instant.parse("2026-09-24T03:00:00Z"), location);
+        """.formatted(novel, description, Instant.parse("2026-09-24T03:00:00Z"), location);
   }
 
   private String updateBody() {

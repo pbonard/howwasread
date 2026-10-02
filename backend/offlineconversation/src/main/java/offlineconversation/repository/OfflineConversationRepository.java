@@ -17,7 +17,7 @@ public interface OfflineConversationRepository extends JpaRepository<OfflineConv
 
   @Query(value = """
       SELECT c.novel as novel, c.poem as poem, c.short_story as shortStory,
-      c.play as play, c.film as film, c.written_by as writtenBy, c.rule as rule,
+      c.play as play, c.film as film, c.written_by as writtenBy, c.description as description,
       c.time as time, c.length_minutes as lengthMinutes, c.maps_link as mapsLink,
       c.location as location, c.updated_at as updatedAt,
       EXISTS(SELECT 1 FROM offline_conversation_moderator m
@@ -53,7 +53,7 @@ public interface OfflineConversationRepository extends JpaRepository<OfflineConv
       UPDATE offline_conversation
       SET novel = :#{#req.novel()}, short_story = :#{#req.shortStory()}, poem = :#{#req.poem()},
           play = :#{#req.play()}, film = :#{#req.film()},
-          written_by = :#{#req.writtenBy()}, rule = :#{#req.rule()},
+          written_by = :#{#req.writtenBy()}, description = :#{#req.description()},
           time = :#{#req.time()}, length_minutes = :#{#req.lengthMinutes()},
           updated_at = UTC_TIMESTAMP()
       WHERE id = :#{#req.id()}

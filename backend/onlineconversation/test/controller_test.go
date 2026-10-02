@@ -45,6 +45,39 @@ func TestController_create(t *testing.T) {
 	assert.JSONEq(t, fmt.Sprintf(`{"conversationId":"%s"}`, conversationId), rec.Body.String())
 }
 
+func TestController_rejectsTooLongContentsBeforeTheService(t *testing.T) {
+	tests := []struct {
+		name, method, target, body, message string
+	}{
+		{"create with a 51 char title", http.MethodPost, "/onlineconversation/create",
+			`{"writtenBy":"shakespeare","film":"` + strings.Repeat("가", 51) + `"}`, "film must be at most 50 characters"},
+		{"create with a 501 char description", http.MethodPost, "/onlineconversation/create",
+			`{"writtenBy":"shakespeare","description":"` + strings.Repeat("가", 501) + `"}`, "description must be at most 500 characters"},
+		{"update with a 51 char writtenBy", http.MethodPut, "/onlineconversation/update",
+			`{"writtenBy":"` + strings.Repeat("가", 51) + `"}`, "writtenBy must be at most 50 characters"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rec := serve(NewMockService(t), tt.method, tt.target, memberId.String(), tt.body)
+
+			assert.Equal(t, http.StatusBadRequest, rec.Code)
+			assert.Equal(t, tt.message, rec.Body.String())
+		})
+	}
+}
+
+func TestController_createAcceptsContentsAtTheLimit(t *testing.T) {
+	svc := NewMockService(t)
+	svc.EXPECT().CreateConversation(mock.Anything, memberId, mock.Anything).
+		Return(map[string]uuid.UUID{"conversationId": conversationId}, nil)
+
+	// counted in characters, a 3-byte Korean character counts once
+	rec := serve(svc, http.MethodPost, "/onlineconversation/create", memberId.String(),
+		`{"writtenBy":"`+strings.Repeat("가", 50)+`","description":"`+strings.Repeat("가", 500)+`"}`)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+}
+
 func TestController_rejectsBadRequestsBeforeTheService(t *testing.T) {
 	tests := []struct {
 		name, method, target, userId, body string

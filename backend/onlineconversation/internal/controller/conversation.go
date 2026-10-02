@@ -44,6 +44,12 @@ func (c *Controller) createConversation(w http.ResponseWriter, r *http.Request) 
 		handleError(w, errors.New("fail to parse"))
 		return
 	}
+	err = req.Validate()
+	if err != nil {
+		slog.Info("invalid body", "err", err)
+		handleError(w, err)
+		return
+	}
 	result, err := c.service.CreateConversation(
 		r.Context(),
 		memberId,
@@ -99,6 +105,12 @@ func (c *Controller) updateConversation(w http.ResponseWriter, r *http.Request) 
 			"err", err,
 		)
 		handleError(w, errors.New("fail to parse"))
+		return
+	}
+	err = req.Validate()
+	if err != nil {
+		slog.Info("invalid body", "err", err)
+		handleError(w, err)
 		return
 	}
 	err = c.service.UpdateConversation(r.Context(), memberId, req)

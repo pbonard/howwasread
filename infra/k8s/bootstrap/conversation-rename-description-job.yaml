@@ -1,0 +1,29 @@
+# One-off: renames rule to description in place. The declarative conversation-schema-job would turn the rename into
+# DROP rule + ADD description and lose the data, so run this before the schema job. A second run fails harmlessly
+# because the column rule no longer exists.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: conversation-rename-description-job
+  namespace: vitess
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: vtctldclient
+          image: vitess/lite:v24.0.3-mysql80
+          command:
+            - sh
+            - -c
+            - |
+              set -eu
+              VTCTLD_SERVER="vitess-cluster-vtctld-e819f254.vitess.svc.cluster.local:15999"
+              # direct: a column rename is an instant metadata change in MySQL 8, no Online DDL copy needed
+              vtctldclient --server "$VTCTLD_SERVER" \
+                ApplySchema --ddl-strategy direct \
+                --sql "ALTER TABLE online_conversation RENAME COLUMN rule TO description; ALTER TABLE offline_conversation RENAME COLUMN rule TO description" \
+                conversation
+              echo "Done."

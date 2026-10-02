@@ -9,7 +9,7 @@ public interface OfflineConversationDetailProjection {
   String getPlay();
   String getFilm();
   String getWrittenBy();
-  String getRule();
+  String getDescription();
   Instant getTime();
   Integer getLengthMinutes();
   String getMapsLink();

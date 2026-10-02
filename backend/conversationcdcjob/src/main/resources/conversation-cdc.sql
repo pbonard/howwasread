@@ -36,7 +36,7 @@ CREATE TEMPORARY TABLE offline_conversation_source (
     play           STRING,
     film           STRING,
     written_by     STRING,
-    rule           STRING,
+    description    STRING,
     `time`         STRING,
     length_minutes INT,
     maps_link      STRING,
@@ -79,7 +79,7 @@ CREATE TEMPORARY TABLE online_conversation_source (
     play                STRING,
     film                STRING,
     written_by          STRING,
-    rule                STRING,
+    description         STRING,
     capacity            INT,
     `time`              STRING,
     length_minutes      INT,
@@ -151,7 +151,7 @@ CREATE TEMPORARY TABLE offline_conversation_sink (
     play           STRING,
     film           STRING,
     written_by     STRING,
-    rule           STRING,
+    description    STRING,
     `time`         STRING,
     length_minutes INT,
     maps_link      STRING,
@@ -177,7 +177,7 @@ CREATE TEMPORARY TABLE online_conversation_sink (
     play                STRING,
     film                STRING,
     written_by          STRING,
-    rule                STRING,
+    description         STRING,
     capacity            INT,
     `time`              STRING,
     length_minutes      INT,
@@ -236,14 +236,14 @@ CREATE TEMPORARY TABLE scheduled_notification_sink (
 
 INSERT INTO offline_conversation_sink
 -- DATETIME is stored in UTC, 'yyyy-MM-dd HH:mm:ss' -> 'yyyy-MM-ddTHH:mm:ssZ'
-SELECT BIN_TO_UUID(id), novel, poem, short_story, play, film, written_by, rule,
+SELECT BIN_TO_UUID(id), novel, poem, short_story, play, film, written_by, description,
        CONCAT(REPLACE(`time`, ' ', 'T'), 'Z'), length_minutes, maps_link, location, latitude, longitude,
        city, h3_res5, h3_res7, CONCAT(REPLACE(updated_at, ' ', 'T'), 'Z'),
        MAP['taskType', ENCODE('offline_conversation', 'UTF-8')], op_ts
 FROM offline_conversation_source;
 
 INSERT INTO online_conversation_sink
-SELECT BIN_TO_UUID(id), novel, short_story, poem, play, film, written_by, rule, capacity,
+SELECT BIN_TO_UUID(id), novel, short_story, poem, play, film, written_by, description, capacity,
        CONCAT(REPLACE(`time`, ' ', 'T'), 'Z'), length_minutes, current_registrants,
        CONCAT(REPLACE(updated_at, ' ', 'T'), 'Z'),
        MAP['taskType', ENCODE('online_conversation', 'UTF-8')], op_ts

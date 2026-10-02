@@ -495,7 +495,7 @@ export default function OnlineConversationScreen() {
           play={String(detail?.play ?? "")}
           film={String(detail?.film ?? "")}
           writtenBy={String(detail?.writtenBy ?? "")}
-          rule={String(detail?.rule ?? "")}
+          description={String(detail?.description ?? "")}
           time={String(detail?.time ?? "")}
           length={String(detail?.lengthMinutes ?? "") + "m"}
         />

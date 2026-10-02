@@ -17,7 +17,7 @@ import PoemInput from "@/components/conversation/PoemInput";
 import PlayInput from "@/components/conversation/PlayInput";
 import FilmInput from "@/components/conversation/FilmInput";
 import WrittenBy from "@/components/conversation/WrittenBy";
-import RuleInput from "@/components/conversation/RuleInput";
+import DescriptionInput from "@/components/conversation/DescriptionInput";
 import CapacityInput from "@/components/conversation/CapacityInput";
 import YearInput from "@/components/conversation/YearInput";
 import MonthDayInput from "@/components/conversation/MonthDayInput";
@@ -35,7 +35,7 @@ interface FormValue {
   play?: string;
   film?: string;
   writtenBy?: string;
-  rule?: string;
+  description?: string;
   capacity: string;
   year: string;
   monthDay: string;
@@ -57,7 +57,7 @@ export default function OnlineConversationCreateScreen() {
       play: "",
       film: "",
       writtenBy: "",
-      rule: "",
+      description: "",
       capacity: "6",
       year: String(now.getFullYear()),
       monthDay: `${now.getMonth() + 1}.${now.getDate()}`,
@@ -74,7 +74,7 @@ export default function OnlineConversationCreateScreen() {
       play,
       film,
       writtenBy,
-      rule,
+      description,
       capacity,
       year,
       monthDay,
@@ -91,7 +91,7 @@ export default function OnlineConversationCreateScreen() {
         play: play,
         film: film,
         writtenBy: writtenBy,
-        rule: rule,
+        description: description,
         capacity: Number(capacity),
         time: t,
         lengthMinutes: Number(length),
@@ -122,7 +122,7 @@ export default function OnlineConversationCreateScreen() {
               <PlayInput />
               <FilmInput />
               <WrittenBy />
-              <RuleInput />
+              <DescriptionInput />
               <CapacityInput />
               <Text style={styles.whenLabel}>When</Text>
               <YearInput />

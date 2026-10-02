@@ -5,7 +5,7 @@ export interface CreateOnlineConversationRequest {
   play?: string;
   film?: string;
   writtenBy?: string;
-  rule?: string;
+  description?: string;
   capacity: number;
   time: string;
   lengthMinutes: number;
@@ -18,7 +18,7 @@ export interface OnlineConversationDetailResponse {
   play?: string;
   film?: string;
   writtenBy?: string;
-  rule?: string;
+  description?: string;
   capacity: number;
   time: string;
   lengthMinutes: number;
@@ -100,7 +100,7 @@ export interface CreateOfflineConversationRequest {
   play?: string;
   film?: string;
   writtenBy: string;
-  rule?: string;
+  description?: string;
   time: string;
   lengthMinutes: number;
   mapsLink: string;
@@ -119,7 +119,7 @@ export interface OfflineConversationDetailResponse {
   play?: string | null;
   film?: string | null;
   writtenBy: string;
-  rule?: string | null;
+  description?: string | null;
   time: string;
   lengthMinutes: number;
   mapsLink: string;

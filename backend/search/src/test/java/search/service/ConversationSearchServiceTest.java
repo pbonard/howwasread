@@ -59,7 +59,7 @@ class ConversationSearchServiceTest {
   void consume_offlineRow_savesMappedDocument() {
     String payload = """
         {"id":"%s","novel":"Hamlet","poem":null,"short_story":"story","play":null,"film":null,
-         "written_by":"shakespeare","rule":"no spoilers","time":"2026-09-24T03:00:00Z","length_minutes":60,
+         "written_by":"shakespeare","description":"no spoilers","time":"2026-09-24T03:00:00Z","length_minutes":60,
          "maps_link":"https://maps","location":"Seoul","latitude":37.5,"longitude":127.0,"city":"Seoul",
          "h3_res5":"85283473fffffff","h3_res7":"87283472bffffff","updated_at":null}
         """.formatted(id);
@@ -93,7 +93,7 @@ class ConversationSearchServiceTest {
   void consume_onlineRow_savesMappedDocument() {
     String payload = """
         {"id":"%s","novel":null,"short_story":null,"poem":"Ozymandias","play":null,"film":null,
-         "written_by":"shelley","rule":null,"capacity":6,"time":"2026-09-24T03:00:00Z","length_minutes":30,
+         "written_by":"shelley","description":null,"capacity":6,"time":"2026-09-24T03:00:00Z","length_minutes":30,
          "current_registrants":1,"updated_at":"2026-09-24T01:00:00Z"}
         """.formatted(id);
 
