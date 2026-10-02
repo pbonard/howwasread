@@ -1,9 +1,14 @@
-# http://ollama.backend.svc.cluster.local:11434/v1/chat/completions (OpenAI-compatible)
+# http://ollama.llm.svc.cluster.local:11434/v1/chat/completions (OpenAI-compatible)
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: llm
+---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: ollama-models
-  namespace: backend
+  namespace: llm
 spec:
   storageClassName: local-path
   accessModes:
@@ -16,7 +21,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ollama
-  namespace: backend
+  namespace: llm
   labels:
     app: ollama
 spec:
@@ -97,7 +102,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: ollama
-  namespace: backend
+  namespace: llm
 spec:
   selector:
     app: ollama
