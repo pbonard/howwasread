@@ -1,8 +1,8 @@
 package test
 
 import (
+	"backend/common"
 	"backend/common/mocks"
-	"backend/common/payload"
 	"backend/onlineconversation/internal/service"
 	"context"
 	"crypto/hmac"
@@ -84,11 +84,11 @@ func TestPublishConversationSignal(t *testing.T) {
 	asyncProducer.EXPECT().Fire("conversation-signal", []byte(nil), mock.Anything, []sarama.RecordHeader(nil)).
 		Run(func(_ string, _ []byte, value []byte, _ []sarama.RecordHeader) { pushed = value }).Return()
 
-	err := service.NewService(NewMockRepository(t), mocks.NewMockSyncProducer(t), asyncProducer).
+	err := service.NewService(NewMockRepository(t), mocks.NewMockSyncProducer(t), asyncProducer, NewMockModerationClient(t)).
 		PublishConversationSignal(memberId, [][]byte{other[:]}, []byte(`{"sdp":"offer"}`))
 
 	require.NoError(t, err)
-	var signal payload.OnlineConversationSignal
+	var signal common.OnlineConversationSignal
 	require.NoError(t, json.Unmarshal(pushed, &signal))
 	assert.Equal(t, memberId[:], signal.FromId)
 	assert.Equal(t, [][]byte{other[:]}, signal.ToIds)

@@ -1,8 +1,8 @@
 package test
 
 import (
+	"backend/common"
 	"backend/common/mocks"
-	"backend/common/payload"
 	"backend/fcmnotification/internal/service"
 	"context"
 	"errors"
@@ -26,8 +26,8 @@ func newService(t *testing.T) (service.Service, *MockRepository, *MockFCMClient)
 	return service.NewService(repo, mocks.NewMockSyncProducer(t), fcm), repo, fcm
 }
 
-func value(p payload.NotificationMessage) []byte {
-	return payload.Marshal(p)
+func value(p common.NotificationMessage) []byte {
+	return common.Marshal(p)
 }
 
 func TestSendNotification_sendsOnceAndMarksAsSent(t *testing.T) {
@@ -36,7 +36,7 @@ func TestSendNotification_sendsOnceAndMarksAsSent(t *testing.T) {
 	fcm.EXPECT().Send(mock.Anything, []string{"token"}, "Seoul", "alice: hello", "https://img").Return(nil, nil)
 	repo.EXPECT().MarkNotification(mock.Anything, idKey, notiKey).Return(nil)
 
-	err := s.SendNotification(context.Background(), messageId, 1, value(payload.NotificationMessage{
+	err := s.SendNotification(context.Background(), messageId, 1, value(common.NotificationMessage{
 		TokenMap: map[string]uuid.UUID{"token": memberId},
 		Title:    "Seoul", SubTitle: "alice", Text: "hello", ImageURL: "https://img",
 	}))
@@ -52,7 +52,7 @@ func TestSendNotification_rejectedTokensAreRemoved(t *testing.T) {
 	repo.EXPECT().MarkNotification(mock.Anything, idKey, notiKey).Return(nil)
 	repo.EXPECT().RemoveNotificationInfoByIdAndToken(mock.Anything, gocql.UUID(other), "stale").Return(nil)
 
-	err := s.SendNotification(context.Background(), messageId, 1, value(payload.NotificationMessage{
+	err := s.SendNotification(context.Background(), messageId, 1, value(common.NotificationMessage{
 		TokenMap: map[string]uuid.UUID{"token": memberId, "stale": other}, Title: "x", Text: "y",
 	}))
 
@@ -63,7 +63,7 @@ func TestSendNotification_alreadySentIsSkipped(t *testing.T) {
 	s, repo, _ := newService(t)
 	repo.EXPECT().DidNotification(mock.Anything, idKey, notiKey).Return(true, nil)
 
-	err := s.SendNotification(context.Background(), messageId, 1, value(payload.NotificationMessage{Title: "x"}))
+	err := s.SendNotification(context.Background(), messageId, 1, value(common.NotificationMessage{Title: "x"}))
 
 	assert.NoError(t, err)
 }
@@ -73,7 +73,7 @@ func TestSendNotification_idempotencyCheckErrorSkipsSending(t *testing.T) {
 	errValkey := errors.New("valkey down")
 	repo.EXPECT().DidNotification(mock.Anything, idKey, notiKey).Return(false, errValkey)
 
-	err := s.SendNotification(context.Background(), messageId, 1, value(payload.NotificationMessage{Title: "x"}))
+	err := s.SendNotification(context.Background(), messageId, 1, value(common.NotificationMessage{Title: "x"}))
 
 	assert.ErrorIs(t, err, errValkey)
 }
@@ -94,7 +94,7 @@ func TestSendNotification_failedSendIsNotMarked(t *testing.T) {
 	fcm.EXPECT().Send(mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 		Return(nil, errFCM)
 
-	err := s.SendNotification(context.Background(), messageId, 1, value(payload.NotificationMessage{
+	err := s.SendNotification(context.Background(), messageId, 1, value(common.NotificationMessage{
 		TokenMap: map[string]uuid.UUID{"token": memberId}, Title: "x", Text: "y",
 	}))
 
@@ -108,7 +108,7 @@ func TestSendNotification_failedMarkAfterSendIsNotAnError(t *testing.T) {
 	fcm.EXPECT().Send(mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
 	repo.EXPECT().MarkNotification(mock.Anything, idKey, notiKey).Return(errors.New("valkey down"))
 
-	err := s.SendNotification(context.Background(), messageId, 1, value(payload.NotificationMessage{
+	err := s.SendNotification(context.Background(), messageId, 1, value(common.NotificationMessage{
 		TokenMap: map[string]uuid.UUID{"token": memberId}, Title: "x", Text: "y",
 	}))
 

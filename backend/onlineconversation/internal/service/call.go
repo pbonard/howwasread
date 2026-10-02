@@ -1,7 +1,7 @@
 package service
 
 import (
-	"backend/common/payload"
+	"backend/common"
 	"backend/onlineconversation/internal/dto"
 	"context"
 	"crypto/hmac"
@@ -83,7 +83,7 @@ func (s *service) RemoveServerIP(ctx context.Context, memberId uuid.UUID) error 
 }
 
 func (s *service) PublishConversationSignal(fromId uuid.UUID, toIds [][]byte, signal []byte) error {
-	value := payload.Marshal(payload.OnlineConversationSignal{
+	value := common.Marshal(common.OnlineConversationSignal{
 		FromId: fromId[:],
 		ToIds:  toIds,
 		Signal: signal,

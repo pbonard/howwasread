@@ -1,8 +1,8 @@
 package test
 
 import (
+	"backend/common"
 	"backend/common/mocks"
-	"backend/common/payload"
 	"backend/common/proto"
 	"backend/messagerelay/internal/service"
 	"context"
@@ -32,14 +32,14 @@ type deps struct {
 	producer *mocks.MockSyncProducer
 	relay    *MockRelayClient
 	// PreparedMessages pushed to the notification topic
-	pushed []payload.PreparedMessage
+	pushed []common.PreparedMessage
 }
 
 func newService(t *testing.T) (service.Service, *deps) {
 	d := &deps{repo: NewMockRepository(t), producer: mocks.NewMockSyncProducer(t), relay: NewMockRelayClient(t)}
 	d.producer.EXPECT().Commit("notification", []byte(nil), mock.Anything, []sarama.RecordHeader(nil)).
 		Run(func(_ string, _ []byte, value []byte, _ []sarama.RecordHeader) {
-			var m payload.PreparedMessage
+			var m common.PreparedMessage
 			require.NoError(t, json.Unmarshal(value, &m))
 			d.pushed = append(d.pushed, m)
 		}).Return(nil).Maybe()

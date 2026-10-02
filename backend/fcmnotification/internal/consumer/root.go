@@ -2,7 +2,6 @@ package consumer
 
 import (
 	"backend/common"
-	"backend/common/payload"
 	"backend/common/producer"
 	"backend/fcmnotification/internal/service"
 	"context"
@@ -176,7 +175,7 @@ func (c *Consumer) distinguishMessage(ctx context.Context, message *sarama.Consu
 	}
 	err := c.service.SendNotification(ctx, uuid.UUID(message.Key[:16]), message.Key[16], message.Value)
 	if err != nil {
-		e := payload.RetryEvent{Reason: err.Error()}
+		e := common.RetryEvent{Reason: err.Error()}
 		for _, h := range message.Headers {
 			// a re-sent record carries the partition id of the group that failed, other groups treat it as a new record
 			if string(h.Key) == "partitionId" && strings.HasPrefix(string(h.Value), groupId+":") {
@@ -200,7 +199,7 @@ func (c *Consumer) distinguishMessage(ctx context.Context, message *sarama.Consu
 			e.Value = message.Value
 		}
 		// keyed by partition id so the events of one retry stay ordered in the job
-		return c.producer.Commit("exponential-backoff-retry", []byte(e.PartitionId), payload.Marshal(e), nil)
+		return c.producer.Commit("exponential-backoff-retry", []byte(e.PartitionId), common.Marshal(e), nil)
 	}
 	return nil
 }

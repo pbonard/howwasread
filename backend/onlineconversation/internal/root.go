@@ -3,6 +3,8 @@ package internal
 import (
 	"backend/common/producer"
 	pb "backend/common/proto"
+	"backend/onlineconversation/internal/client"
+	"backend/onlineconversation/internal/consumer"
 	"backend/onlineconversation/internal/controller"
 	"backend/onlineconversation/internal/grpccontroller"
 	"backend/onlineconversation/internal/repository"
@@ -27,9 +29,17 @@ func NewServer() {
 
 	r := repository.NewRepository()
 
-	s := service.NewService(r, kp, akp)
+	s := service.NewService(r, kp, akp, client.NewOllamaClient())
 
 	mux := http.NewServeMux()
+
+	kc := consumer.NewConsumer(s, kp)
+	go func() {
+		err := kc.GetMessage([]string{"online-conversation"})
+		if err != nil {
+			panic(err)
+		}
+	}()
 
 	c := controller.NewController(s, mux)
 

@@ -83,3 +83,10 @@ type GetTurnResponse struct {
 	Username   string   `json:"username"`
 	Credential string   `json:"credential"`
 }
+
+// Verdict is the moderation result of a reported conversation
+type Verdict struct {
+	Reason    string `json:"reason"`
+	Category  string `json:"category"`
+	Violation bool   `json:"violation"`
+}

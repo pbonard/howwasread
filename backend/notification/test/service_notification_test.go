@@ -1,8 +1,8 @@
 package test
 
 import (
+	"backend/common"
 	"backend/common/mocks"
-	"backend/common/payload"
 	"backend/notification/internal/projection"
 	"backend/notification/internal/service"
 	"context"
@@ -49,8 +49,8 @@ type pushed struct {
 	key, value []byte
 }
 
-func (p pushed) message(t *testing.T) payload.NotificationMessage {
-	var m payload.NotificationMessage
+func (p pushed) message(t *testing.T) common.NotificationMessage {
+	var m common.NotificationMessage
 	require.NoError(t, json.Unmarshal(p.value, &m))
 	return m
 }

@@ -26,7 +26,7 @@ var (
 )
 
 func newService(t *testing.T, repo *MockRepository) service.Service {
-	return service.NewService(repo, mocks.NewMockSyncProducer(t), mocks.NewMockAsyncProducer(t))
+	return service.NewService(repo, mocks.NewMockSyncProducer(t), mocks.NewMockAsyncProducer(t), NewMockModerationClient(t))
 }
 
 // ---------------------------------------------------------------- create

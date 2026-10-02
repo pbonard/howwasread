@@ -1,7 +1,7 @@
 package service
 
 import (
-	"backend/common/payload"
+	"backend/common"
 	"backend/common/proto"
 	"bytes"
 	"context"
@@ -55,7 +55,7 @@ func (s *service) RelayMessage(
 	log.Printf("pushToId: %v, relayToId: %v", pushToIds, relayToIdsByIP)
 
 	if pushToIds != nil {
-		p := payload.Marshal(payload.PreparedMessage{
+		p := common.Marshal(common.PreparedMessage{
 			NotificationId: 0,
 			Id:             id[:],
 			ToIds:          pushToIds,
@@ -120,7 +120,7 @@ func (s *service) RelayMessage(
 	}
 
 	if filteredIds != nil {
-		p := payload.Marshal(payload.PreparedMessage{
+		p := common.Marshal(common.PreparedMessage{
 			NotificationId: 1,
 			Id:             id[:],
 			ToIds:          filteredIds,

@@ -33,3 +33,5 @@ data:
   TURN_REALM: "turn.mikekim1032.shop"
   TURN_CERT_PATH: "/cert/turn/tls.crt"
   TURN_KEY_PATH: "/cert/turn/tls.key"
+  OLLAMA_URL: "http://ollama.backend.svc.cluster.local:11434"
+  OLLAMA_MODEL: "qwen3:8b"

@@ -2,7 +2,7 @@ package controller
 
 import (
 	"backend/chat/internal/dto"
-	"backend/common/payload"
+	"backend/common"
 	"bytes"
 	"context"
 	"errors"
@@ -133,13 +133,13 @@ func (c *Controller) RelayMessaging(
 		ContentType: contentType,
 		Contents:    contents,
 	}
-	resRaw := payload.Marshal(res)
+	resRaw := common.Marshal(res)
 	for _, toId := range toIds {
 		r := resRaw
 		if bytes.Equal(toId, roomId[:]) {
 			res1 := res
 			res1.RoomId = fromId
-			resRaw1 := payload.Marshal(res1)
+			resRaw1 := common.Marshal(res1)
 			r = resRaw1
 		}
 		wg.Add(1)

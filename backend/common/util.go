@@ -3,8 +3,10 @@ package common
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"math/rand/v2"
 	"net"
 	"net/http"
@@ -66,4 +68,13 @@ func AddJitter(base int64) int64 {
 	multiplier := (rand.Float64() * 2.0) - 1.0
 	jitterAmount := maxJitter * multiplier
 	return base + int64(jitterAmount)
+}
+
+func Marshal(v any) []byte {
+	b, err := json.Marshal(v)
+	if err != nil {
+		slog.Error("fail to marshal", "err", err)
+		return nil
+	}
+	return b
 }

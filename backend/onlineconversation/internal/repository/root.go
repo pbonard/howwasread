@@ -41,7 +41,7 @@ type Repository interface {
 	RemoveServerIP(ctx context.Context, memberId string) error
 	InsertConversation(ctx context.Context, session Session, conversationId uuid.UUID, req dto.CreateConversationRequest) error
 	UpdateConversationIfModerator(ctx context.Context, session Session, memberId uuid.UUID, req dto.UpdateConversationRequest) (bool, error)
-	DeleteOnlineConversationIfModerator(ctx context.Context, session Session, conversationId, memberId uuid.UUID) (bool, error)
+	DeleteConversationIfModerator(ctx context.Context, session Session, conversationId, memberId uuid.UUID) (bool, error)
 	AddBanIdIfModerator(ctx context.Context, session Session, conversationId, modId, banId uuid.UUID) (bool, error)
 	InsertModerator(ctx context.Context, session Session, conversationId, memberId uuid.UUID) error
 	InsertRegistrant(ctx context.Context, session Session, conversationId, memberId uuid.UUID) error
@@ -51,12 +51,15 @@ type Repository interface {
 	DecrementRegistrants(ctx context.Context, session Session, conversationId uuid.UUID) error
 	RemoveRegistrantId(ctx context.Context, session Session, conversationId, memberId uuid.UUID) error
 	RemoveNotificationId(ctx context.Context, session Session, conversationId, memberId uuid.UUID) error
-	FindNotificationIds(ctx context.Context, session Session, conversationId uuid.UUID) ([]uuid.UUID, error)
 	InsertOutbox(ctx context.Context, session Session, id, conversationId uuid.UUID, topic, taskType string, payload []byte) error
 	DeleteOutbox(ctx context.Context, session Session, id, conversationId uuid.UUID) error
 	BeginTx(ctx context.Context) (Tx, error)
 	Tx() Session
-	FindConversationContents(ctx context.Context, tx Tx, id uuid.UUID) (projection.Contents, error)
+	FindReportTarget(ctx context.Context, session Session, conversationId uuid.UUID) (projection.ReportTarget, error)
+	MarkEvaluatedIfUnchanged(ctx context.Context, session Session, conversationId uuid.UUID, updatedAt *time.Time) (bool, error)
+	InsertVerdict(ctx context.Context, session Session, conversationId uuid.UUID, target projection.ReportTarget, model string, v dto.Verdict) error
+	DeleteConversation(ctx context.Context, session Session, conversationId uuid.UUID) error
+	DeleteConversationMembers(ctx context.Context, session Session, conversationId uuid.UUID) error
 }
 
 type repository struct {

@@ -1,9 +1,11 @@
 package service
 
 import (
-	"backend/common/payload"
+	"backend/common"
 	"backend/onlineconversation/internal/dto"
+	"backend/onlineconversation/internal/repository"
 	"context"
+	"database/sql"
 	"errors"
 	"log/slog"
 	"time"
@@ -69,11 +71,7 @@ func (s *service) DeleteConversation(ctx context.Context, memberId, conversation
 		return err
 	}
 	defer tx.Rollback()
-	subscribers, err := s.repository.FindNotificationIds(ctx, tx, conversationId)
-	if err != nil {
-		return err
-	}
-	ok, err := s.repository.DeleteOnlineConversationIfModerator(ctx, tx, conversationId, memberId)
+	ok, err := s.repository.DeleteConversationIfModerator(ctx, tx, conversationId, memberId)
 	if err != nil {
 		return err
 	}
@@ -84,17 +82,9 @@ func (s *service) DeleteConversation(ctx context.Context, memberId, conversation
 			"memberId", memberId)
 		return err
 	}
-	// nobody gets a reminder for a deleted conversation
-	for _, subscriber := range subscribers {
-		err = s.publish(ctx, tx, conversationId, scheduledNotificationTopic, "",
-			payload.Marshal(payload.NotificationScheduling{
-				PartitionId: conversationId,
-				KeyId:       subscriber,
-				Type:        "cancel",
-			}))
-		if err != nil {
-			return err
-		}
+	err = s.removeConversationRest(ctx, tx, conversationId)
+	if err != nil {
+		return err
 	}
 	err = tx.Commit()
 	if err != nil {
@@ -102,6 +92,18 @@ func (s *service) DeleteConversation(ctx context.Context, memberId, conversation
 		return err
 	}
 	return nil
+}
+
+func (s *service) removeConversationRest(ctx context.Context, tx repository.Tx, conversationId uuid.UUID) error {
+	err := s.repository.DeleteConversationMembers(ctx, tx, conversationId)
+	if err != nil {
+		return err
+	}
+	return s.publish(ctx, tx, conversationId, scheduledNotificationTopic, "",
+		common.Marshal(common.NotificationScheduling{
+			PartitionId: conversationId,
+			Type:        "cancel-all",
+		}))
 }
 
 func (s *service) BanParticipant(ctx context.Context, modId, conversationId, banId uuid.UUID) error {
@@ -225,7 +227,7 @@ func (s *service) ScheduleNotification(ctx context.Context, memberId, conversati
 	if err = s.repository.AddNotificationId(ctx, tx, conversationId, memberId); err != nil {
 		return err
 	}
-	err = s.publish(ctx, tx, conversationId, scheduledNotificationTopic, "", payload.Marshal(payload.NotificationScheduling{
+	err = s.publish(ctx, tx, conversationId, scheduledNotificationTopic, "", common.Marshal(common.NotificationScheduling{
 		PartitionId:   conversationId,
 		KeyId:         memberId,
 		ScheduledTime: detail.Time.Add(-notificationTimeMinusInterval).UnixMilli(),
@@ -254,7 +256,7 @@ func (s *service) CancelNotification(ctx context.Context, memberId, conversation
 		return err
 	}
 	err = s.publish(ctx, tx, conversationId, scheduledNotificationTopic, "",
-		payload.Marshal(payload.NotificationScheduling{
+		common.Marshal(common.NotificationScheduling{
 			PartitionId: conversationId,
 			KeyId:       memberId,
 			Type:        "cancel",
@@ -270,18 +272,69 @@ func (s *service) CancelNotification(ctx context.Context, memberId, conversation
 	return nil
 }
 
-func (s *service) ReportConversation(ctx context.Context, conversationId uuid.UUID) error {
+func (s *service) ReportConversation(ctx context.Context, conversationId, memberId uuid.UUID) error {
+	err := s.producer.Commit("online-conversation", conversationId[:], nil, nil)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *service) ManageReport(ctx context.Context, conversationId uuid.UUID) error {
+	target, err := s.repository.FindReportTarget(ctx, s.repository.Tx(), conversationId)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	if target.IsEvaluated {
+		return nil
+	}
+
+	verdict, err := s.moderation.Evaluate(ctx, target.Contents)
+	if err != nil {
+		return err
+	}
+
 	tx, err := s.repository.BeginTx(ctx)
 	if err != nil {
 		return err
 	}
-	err = s.publish(ctx, tx, conversationId, onlineConversationTopic, reportTaskType,
-		payload.Marshal(payload.ConversationRequest{Id: conversationId}))
+	defer tx.Rollback()
+	marked, err := s.repository.MarkEvaluatedIfUnchanged(ctx, tx, conversationId, target.UpdatedAt)
 	if err != nil {
 		return err
 	}
+	if !marked {
+		slog.Info("conversation changed during report evaluation",
+			"conversationId", conversationId,
+			"violation", verdict.Violation)
+		if !verdict.Violation {
+			return errors.New("conversation contents was okay, but contents changed during report evaluation")
+		}
+		//so when it "was" a violation, we just delete the conversation even when it is updated while LLM work
+	}
+	err = s.repository.InsertVerdict(ctx, tx, conversationId, target, s.moderation.Model(), verdict)
+	if err != nil {
+		return err
+	}
+	if verdict.Violation {
+		slog.Info("delete violating conversation",
+			"conversationId", conversationId,
+			"category", verdict.Category)
+		err = s.repository.DeleteConversation(ctx, tx, conversationId)
+		if err != nil {
+			return err
+		}
+		err = s.removeConversationRest(ctx, tx, conversationId)
+		if err != nil {
+			return err
+		}
+	}
 	err = tx.Commit()
 	if err != nil {
+		slog.Error("fail to commit transaction for report", "err", err)
 		return err
 	}
 	return nil

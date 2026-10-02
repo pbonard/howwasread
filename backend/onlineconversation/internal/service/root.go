@@ -2,6 +2,7 @@ package service
 
 import (
 	"backend/common/producer"
+	"backend/onlineconversation/internal/client"
 	"backend/onlineconversation/internal/dto"
 	"backend/onlineconversation/internal/projection"
 	"backend/onlineconversation/internal/repository"
@@ -28,22 +29,25 @@ type Service interface {
 	DeregisterConversation(ctx context.Context, memberId, conversationId uuid.UUID) error
 	ScheduleNotification(ctx context.Context, memberId, conversationId uuid.UUID) error
 	CancelNotification(ctx context.Context, memberId, conversationId uuid.UUID) error
-	ReportConversation(ctx context.Context, conversationId uuid.UUID) error
+	ReportConversation(ctx context.Context, conversationId, memberId uuid.UUID) error
+	ManageReport(ctx context.Context, conversationId uuid.UUID) error
 }
 
 type service struct {
 	repository    repository.Repository
 	producer      producer.SyncProducer
 	asyncProducer producer.AsyncProducer
+	moderation    client.ModerationClient
 	turnSecret    string
 	turnRealm     string
 }
 
-func NewService(r repository.Repository, p producer.SyncProducer, ap producer.AsyncProducer) Service {
+func NewService(r repository.Repository, p producer.SyncProducer, ap producer.AsyncProducer, m client.ModerationClient) Service {
 	s := &service{
 		repository:    r,
 		producer:      p,
 		asyncProducer: ap,
+		moderation:    m,
 		turnSecret:    os.Getenv("TURN_SECRET"),
 		turnRealm:     os.Getenv("TURN_REALM"),
 	}
