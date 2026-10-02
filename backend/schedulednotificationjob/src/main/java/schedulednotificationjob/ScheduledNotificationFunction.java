@@ -46,8 +46,19 @@ public class ScheduledNotificationFunction extends KeyedProcessFunction<String, 
 
   @Override
   public void processElement(IncomingNotificationEvent event, Context ctx, Collector<OutgoingNotificationEvent> out) throws Exception {
-    if (event.getType() == null || event.getKeyId() == null) {
-      LOG.warn("drop notification event without type or keyId, partitionId: {}", event.getPartitionId());
+    if (event.getType() == null) {
+      LOG.warn("drop notification event without type, partitionId: {}", event.getPartitionId());
+      return;
+    }
+    // the partition is gone, so nobody in it is notified, a timer left behind fires on empty state and sends nothing
+    if (event.getType().equals("cancel-all")) {
+      elements.clear();
+      partitionType.clear();
+      sharedContents.clear();
+      return;
+    }
+    if (event.getKeyId() == null) {
+      LOG.warn("drop notification event without keyId, partitionId: {}", event.getPartitionId());
       return;
     }
     if (event.getType().equals("cancel")) {
