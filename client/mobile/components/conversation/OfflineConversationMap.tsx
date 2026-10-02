@@ -313,7 +313,7 @@ export default function OfflineConversationMap({
         </Pressable>
         {detailId ? (
           <View style={styles.container}>
-            <OfflineConversationDetail id={detailId} />
+            <OfflineConversationDetail id={detailId} sheet={sheet}/>
           </View>
         ) : isFetching ? (
           <ActivityIndicator style={{ paddingVertical: 50 }} />
@@ -405,7 +405,7 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: 300,
   },
-  ruleHeader: {
+  descriptionHeader: {
     marginTop: 6,
     fontSize: 18,
     fontWeight: 400,

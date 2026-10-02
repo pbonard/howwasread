@@ -148,7 +148,7 @@ func (s *service) GetConversationDetail(ctx context.Context, conversationId, mem
 		Play:                    detail.Play,
 		Film:                    detail.Film,
 		WrittenBy:               detail.WrittenBy,
-		Rule:                    detail.Rule,
+		Description:             detail.Description,
 		Capacity:                detail.Capacity,
 		Time:                    detail.Time,
 		LengthMinutes:           detail.LengthMinutes,

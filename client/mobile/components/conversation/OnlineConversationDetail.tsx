@@ -1,6 +1,7 @@
 import {
   ActivityIndicator,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -17,19 +18,22 @@ import CustomButton from "@/components/CustomButton";
 import { colors } from "@/constants";
 import Toast from "react-native-toast-message";
 import { useActionSheet } from "@expo/react-native-action-sheet";
-import { reportUser } from "@/api/chat";
 import { reportOnlineConversation } from "@/api/conversation";
 import { router } from "expo-router";
 import { requestRecordingPermissionsAsync } from "expo-audio";
 import { Ionicons } from "@expo/vector-icons";
 import { requestPermissionsAsync } from "expo-notifications";
+import { type RefObject } from "react";
+import { type TrueSheet } from "@lodev09/react-native-true-sheet";
 
 interface OnlineConversationDetailProps {
   id: string;
+  sheet: RefObject<TrueSheet | null>;
 }
 
 export default function OnlineConversationDetail({
   id,
+  sheet,
 }: OnlineConversationDetailProps) {
   const { data } = useGetOnlineConversationDetail({ id });
   const blockConversationMutation = useBlockConversation();
@@ -54,9 +58,7 @@ export default function OnlineConversationDetail({
             blockConversationMutation.mutate({
               id: id,
             });
-            const reportPromises = [
-              reportOnlineConversation({ id: id }),
-            ];
+            const reportPromises = [reportOnlineConversation({ id: id })];
             try {
               await Promise.all(reportPromises);
             } catch (e) {
@@ -68,6 +70,7 @@ export default function OnlineConversationDetail({
               text2:
                 "We will review this conversation, sorry for inconvenience.",
             });
+            sheet.current?.dismiss();
         }
       },
     );
@@ -85,7 +88,7 @@ export default function OnlineConversationDetail({
   return !data ? (
     <ActivityIndicator style={{ paddingVertical: 50 }} />
   ) : (
-    <View>
+    <ScrollView style={{ marginBottom: 100 }}>
       <View style={{ paddingVertical: 30 }}></View>
       <View style={styles.box}>
         <View style={[styles.content]}>
@@ -111,13 +114,13 @@ export default function OnlineConversationDetail({
           {data.play && <Text style={styles.detail}>Play: {data.play}</Text>}
           {data.film && <Text style={styles.detail}>Film: {data.film}</Text>}
           <Text style={styles.detail}>Written by: {data.writtenBy}</Text>
-          {data.rule ? (
+          {data.description ? (
             <View>
-              <Text style={styles.ruleHeader}>Rule</Text>{" "}
-              <Text style={styles.detail}>{data.rule}</Text>
+              <Text style={styles.descriptionHeader}>Description</Text>{" "}
+              <Text style={styles.detail}>{data.description}</Text>
             </View>
           ) : (
-            <Text style={styles.ruleHeader}>No rule</Text>
+            <Text style={styles.descriptionHeader}>No description</Text>
           )}
           <View style={{ gap: 30 }}>
             {data.canEnter ? (
@@ -190,7 +193,7 @@ export default function OnlineConversationDetail({
           <Text style={styles.reportText}>Report conversation</Text>
         </Pressable>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 const styles = StyleSheet.create({
@@ -224,7 +227,7 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: 300,
   },
-  ruleHeader: {
+  descriptionHeader: {
     marginTop: 6,
     fontSize: 18,
     fontWeight: 400,

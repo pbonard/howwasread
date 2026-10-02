@@ -16,6 +16,7 @@ export default function ShortStoryInput() {
           inputMode="text"
           value={value}
           onChangeText={onChange}
+          maxLength={50}
         />
       )}
     />

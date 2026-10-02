@@ -11,7 +11,7 @@ interface OnlineConversationRoomHeaderProps {
   play?: string;
   film?: string;
   writtenBy?: string;
-  rule?: string;
+  description?: string;
   time: string;
   length: string;
 }
@@ -23,7 +23,7 @@ export default function OnlineConversationRoomHeader({
   play,
   film,
   writtenBy,
-  rule,
+  description,
   time,
   length,
 }: OnlineConversationRoomHeaderProps) {
@@ -56,13 +56,13 @@ export default function OnlineConversationRoomHeader({
             {!!play && <Text style={styles.detail}>Play: {play}</Text>}
             {!!film && <Text style={styles.detail}>Film: {film}</Text>}
             {!!writtenBy && <Text style={styles.detail}>By: {writtenBy}</Text>}
-            {!!rule ? (
+            {!!description ? (
               <View>
-                <Text style={styles.ruleHeader}>Rule</Text>{" "}
-                <Text style={styles.detail}>{rule}</Text>
+                <Text style={styles.descriptionHeader}>Description</Text>{" "}
+                <Text style={styles.detail}>{description}</Text>
               </View>
             ) : (
-              <Text style={styles.ruleHeader}>No rule</Text>
+              <Text style={styles.descriptionHeader}>No description</Text>
             )}
           </View>
           <SimpleLineIcons
@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: 300,
   },
-  ruleHeader: {
+  descriptionHeader: {
     marginTop: 6,
     fontSize: 18,
     fontWeight: 400,

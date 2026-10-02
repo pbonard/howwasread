@@ -14,7 +14,7 @@ type CreateConversationRequest struct {
 	Play          string    `json:"play"`
 	Film          string    `json:"film"`
 	WrittenBy     string    `json:"writtenBy"`
-	Rule          string    `json:"rule"`
+	Description   string    `json:"description"`
 	Capacity      int       `json:"capacity"`
 	Time          time.Time `json:"time"`
 	LengthMinutes int       `json:"lengthMinutes"`
@@ -28,11 +28,17 @@ type UpdateConversationRequest struct {
 	Play          string    `json:"play"`
 	Film          string    `json:"film"`
 	WrittenBy     string    `json:"writtenBy"`
-	Rule          string    `json:"rule"`
+	Description   string    `json:"description"`
 	Capacity      int       `json:"capacity"`
 	Time          time.Time `json:"time"`
 	LengthMinutes int       `json:"lengthMinutes"`
 }
+
+// counted in characters, not bytes, so a Korean text gets the same room as an English one
+const (
+	maxTitleChars       = 50
+	maxDescriptionChars = 500
+)
 
 type OnlineConversationDetailResponse struct {
 	Novel                   string    `json:"novel,omitempty"`
@@ -41,7 +47,7 @@ type OnlineConversationDetailResponse struct {
 	Play                    string    `json:"play,omitempty"`
 	Film                    string    `json:"film,omitempty"`
 	WrittenBy               string    `json:"writtenBy"`
-	Rule                    string    `json:"rule,omitempty"`
+	Description             string    `json:"description,omitempty"`
 	Capacity                int       `json:"capacity"`
 	Time                    time.Time `json:"time"`
 	LengthMinutes           int       `json:"lengthMinutes"`

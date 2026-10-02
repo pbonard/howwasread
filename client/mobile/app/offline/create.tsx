@@ -15,7 +15,7 @@ import PoemInput from "@/components/conversation/PoemInput";
 import PlayInput from "@/components/conversation/PlayInput";
 import FilmInput from "@/components/conversation/FilmInput";
 import WrittenBy from "@/components/conversation/WrittenBy";
-import RuleInput from "@/components/conversation/RuleInput";
+import DescriptionInput from "@/components/conversation/DescriptionInput";
 import YearInput from "@/components/conversation/YearInput";
 import MonthDayInput from "@/components/conversation/MonthDayInput";
 import HourInput from "@/components/conversation/HourInput";
@@ -43,7 +43,7 @@ interface FormValue {
   play?: string;
   film?: string;
   writtenBy: string;
-  rule?: string;
+  description?: string;
   year: string;
   monthDay: string;
   hour: string;
@@ -71,7 +71,7 @@ export default function OfflineConversationScreen() {
       play: "",
       film: "",
       writtenBy: "",
-      rule: "",
+      description: "",
       year: String(now.getFullYear()),
       monthDay: `${now.getMonth() + 1}.${now.getDate()}`,
       hour: String(now.getHours()),
@@ -94,7 +94,7 @@ export default function OfflineConversationScreen() {
       play,
       film,
       writtenBy,
-      rule,
+      description,
       year,
       monthDay,
       hour,
@@ -136,7 +136,7 @@ export default function OfflineConversationScreen() {
         play: play,
         film: film,
         writtenBy: writtenBy,
-        rule: rule,
+        description: description,
         time: time,
         lengthMinutes: Number(length),
         mapsLink: mapsLink,
@@ -180,7 +180,7 @@ export default function OfflineConversationScreen() {
               <PlayInput />
               <FilmInput />
               <WrittenBy />
-              <RuleInput />
+              <DescriptionInput />
               <Text style={styles.whenLabel}>When</Text>
               <YearInput />
               <MonthDayInput />

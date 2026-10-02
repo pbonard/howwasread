@@ -14,7 +14,7 @@ public record OfflineConversationDetailResponse(
     String play,
     String film,
     String writtenBy,
-    String rule,
+    String description,
     Instant time,
     int lengthMinutes,
     String mapsLink,

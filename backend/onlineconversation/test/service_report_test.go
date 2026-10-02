@@ -116,7 +116,7 @@ func TestManageReport_contentChangedWithCleanVerdictIsRetried(t *testing.T) {
 
 func TestManageReport_contentChangedWithViolationIsStillApplied(t *testing.T) {
 	repo, tx, m := NewMockRepository(t), NewMockTx(t), NewMockModerationClient(t)
-	verdict := dto.Verdict{Reason: "slur in the rule", Category: "hate", Violation: true}
+	verdict := dto.Verdict{Reason: "slur in the description", Category: "hate", Violation: true}
 	repo.EXPECT().Tx().Return(nil)
 	repo.EXPECT().FindReportTarget(mock.Anything, mock.Anything, conversationId).Return(projection.ReportTarget{}, nil)
 	m.EXPECT().Evaluate(mock.Anything, mock.Anything).Return(verdict, nil)

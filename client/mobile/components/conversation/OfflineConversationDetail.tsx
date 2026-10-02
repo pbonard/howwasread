@@ -1,6 +1,7 @@
 import {
   ActivityIndicator,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -18,13 +19,16 @@ import Toast from "react-native-toast-message";
 import { router } from "expo-router";
 import { useActionSheet } from "@expo/react-native-action-sheet";
 import { reportOfflineConversation } from "@/api/conversation";
+import { type RefObject } from "react";
+import { TrueSheet } from "@lodev09/react-native-true-sheet";
 
 interface OfflineConversationDetailProps {
   id: string;
+  sheet: RefObject<TrueSheet | null>;
 }
 
 export default function OfflineConversationDetail({
-  id,
+  id, sheet
 }: OfflineConversationDetailProps) {
   const { data } = useGetOfflineConversationDetail(id);
   const joinOfflineConversationMutation = useJoinOfflineConversation();
@@ -58,7 +62,7 @@ export default function OfflineConversationDetail({
                 text2:
                   "We will review this conversation, sorry for inconvenience.",
               });
-              router.replace("/conversations");
+              sheet.current?.dismiss();
             }
         }
       },
@@ -89,7 +93,7 @@ export default function OfflineConversationDetail({
   return !data ? (
     <ActivityIndicator style={{ paddingVertical: 50 }} />
   ) : (
-    <View>
+    <ScrollView style={{ marginBottom: 100 }}>
       <View style={styles.box}>
         <View style={[styles.content, data.isModerator && styles.moderator]}>
           <Text style={styles.when}>
@@ -114,13 +118,13 @@ export default function OfflineConversationDetail({
           {data.play && <Text style={styles.detail}>Play: {data.play}</Text>}
           {data.film && <Text style={styles.detail}>Film: {data.film}</Text>}
           <Text style={styles.detail}>Written by: {data.writtenBy}</Text>
-          {data.rule ? (
+          {data.description ? (
             <View>
-              <Text style={styles.ruleHeader}>Rule</Text>{" "}
-              <Text style={styles.detail}>{data.rule}</Text>
+              <Text style={styles.descriptionHeader}>Description</Text>{" "}
+              <Text style={styles.detail}>{data.description}</Text>
             </View>
           ) : (
-            <Text style={styles.ruleHeader}>No rule</Text>
+            <Text style={styles.descriptionHeader}>No description</Text>
           )}
           {
             <Text style={styles.detail}>
@@ -159,7 +163,7 @@ export default function OfflineConversationDetail({
           <Text style={styles.reportText}>Report conversation</Text>
         </Pressable>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 const styles = StyleSheet.create({
@@ -193,7 +197,7 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: 300,
   },
-  ruleHeader: {
+  descriptionHeader: {
     marginTop: 6,
     fontSize: 18,
     fontWeight: 400,

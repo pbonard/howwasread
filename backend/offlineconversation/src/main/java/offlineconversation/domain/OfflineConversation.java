@@ -37,7 +37,7 @@ public class OfflineConversation {
   private String writtenBy;
 
   @Column(columnDefinition = "TEXT")
-  private String rule;
+  private String description;
 
   @Column(nullable = false)
   private Instant time;

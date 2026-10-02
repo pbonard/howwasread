@@ -14,11 +14,11 @@ import (
 func (r *repository) InsertConversation(ctx context.Context, session Session, conversationId uuid.UUID, req dto.CreateConversationRequest) error {
 	_, err := session.ExecContext(ctx, `
 		INSERT INTO online_conversation
-		(id, novel, short_story, poem, play, film, written_by, rule, capacity,
+		(id, novel, short_story, poem, play, film, written_by, description, capacity,
 		time, length_minutes, current_registrants)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
 		conversationId[:], req.Novel, req.ShortStory, req.Poem, req.Play, req.Film,
-		req.WrittenBy, req.Rule,
+		req.WrittenBy, req.Description,
 		req.Capacity, req.Time, req.LengthMinutes)
 	if err != nil {
 		slog.Error("fail to insert new online conversation", "err", err)
@@ -31,13 +31,13 @@ func (r *repository) UpdateConversationIfModerator(ctx context.Context, session 
 	res, err := session.ExecContext(ctx, `
 		UPDATE online_conversation
 		SET novel=?, short_story=?, poem=?, play=?, film=?,
-		written_by=?, rule=?, capacity=?, time=?, length_minutes=?,
+		written_by=?, description=?, capacity=?, time=?, length_minutes=?,
 		updated_at=UTC_TIMESTAMP(6), is_evaluated=FALSE
 		WHERE id=?
 		AND EXISTS (SELECT 1 FROM online_conversation_moderator
 		WHERE conversation_id=? AND member_id=?)`,
 		req.Novel, req.ShortStory, req.Poem, req.Play, req.Film,
-		req.WrittenBy, req.Rule, req.Capacity, req.Time, req.LengthMinutes,
+		req.WrittenBy, req.Description, req.Capacity, req.Time, req.LengthMinutes,
 		req.Id[:], req.Id[:], memberId[:])
 	if err != nil {
 		return false, err
@@ -151,7 +151,7 @@ func (r *repository) AddNotificationId(ctx context.Context, session Session, con
 
 func (r *repository) FindConversationDetail(ctx context.Context, session Session, conversationId, memberId uuid.UUID) (d projection.Detail, err error) {
 	row := session.QueryRowContext(ctx, `
-		SELECT novel, short_story, poem, play, film, written_by, rule, capacity,
+		SELECT novel, short_story, poem, play, film, written_by, description, capacity,
 		time, length_minutes, updated_at,
 		EXISTS(SELECT 1 FROM online_conversation_moderator
 		WHERE conversation_id = c.id AND member_id = ?),
@@ -166,7 +166,7 @@ func (r *repository) FindConversationDetail(ctx context.Context, session Session
 		memberId[:], memberId[:], memberId[:], memberId[:], conversationId[:],
 	)
 	err = row.Scan(
-		&d.Novel, &d.ShortStory, &d.Poem, &d.Play, &d.Film, &d.WrittenBy, &d.Rule, &d.Capacity,
+		&d.Novel, &d.ShortStory, &d.Poem, &d.Play, &d.Film, &d.WrittenBy, &d.Description, &d.Capacity,
 		&d.Time, &d.LengthMinutes, &d.UpdatedAt,
 		&d.IsModerator, &d.IsRegistrant, &d.IsBanned, &d.IsNotificationScheduled)
 	if err != nil {
@@ -240,12 +240,12 @@ func (r *repository) RemoveNotificationId(ctx context.Context, session Session, 
 
 func (r *repository) FindReportTarget(ctx context.Context, session Session, conversationId uuid.UUID) (t projection.ReportTarget, err error) {
 	err = session.QueryRowContext(ctx, `
-		SELECT novel, short_story, poem, play, film, written_by, rule, updated_at, is_evaluated
+		SELECT novel, short_story, poem, play, film, written_by, description, updated_at, is_evaluated
 		FROM online_conversation
 		WHERE id = ?`,
 		conversationId[:],
 	).Scan(
-		&t.Novel, &t.ShortStory, &t.Poem, &t.Play, &t.Film, &t.WrittenBy, &t.Rule,
+		&t.Novel, &t.ShortStory, &t.Poem, &t.Play, &t.Film, &t.WrittenBy, &t.Description,
 		&t.UpdatedAt, &t.IsEvaluated)
 	if err != nil {
 		slog.Error("fail to find online conversation report target",

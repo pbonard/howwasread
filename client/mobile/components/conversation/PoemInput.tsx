@@ -17,6 +17,7 @@ export default function PoemInput() {
           submitBehavior="submit"
           value={value}
           onChangeText={onChange}
+          maxLength={50}
         />
       )}
     />

@@ -4,19 +4,20 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 import java.time.Instant;
 import java.util.UUID;
 
 public record UpdateOfflineConversationRequest(
     @NotNull UUID id,
-    String novel,
-    String poem,
-    String shortStory,
-    String play,
-    String film,
-    @NotBlank String writtenBy,
-    String rule,
+    @Size(max = 50) String novel,
+    @Size(max = 50) String poem,
+    @Size(max = 50) String shortStory,
+    @Size(max = 50) String play,
+    @Size(max = 50) String film,
+    @NotBlank @Size(max = 50) String writtenBy,
+    @Size(max = 500) String description,
     @NotNull Instant time,
     @Min(value = 0) int lengthMinutes,
     @NotBlank String mapsLink,
