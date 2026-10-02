@@ -112,6 +112,12 @@ packages:
         configs:
           - dir: onlineconversation/test
             pkgname: test
+  backend/onlineconversation/internal/client:
+    interfaces:
+      ModerationClient:
+        configs:
+          - dir: onlineconversation/test
+            pkgname: test
   backend/fcmnotification/internal/client:
     interfaces:
       FCMClient:

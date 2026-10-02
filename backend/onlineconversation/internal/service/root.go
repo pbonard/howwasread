@@ -2,6 +2,7 @@ package service
 
 import (
 	"backend/common/producer"
+	"backend/onlineconversation/internal/client"
 	"backend/onlineconversation/internal/dto"
 	"backend/onlineconversation/internal/projection"
 	"backend/onlineconversation/internal/repository"
@@ -36,15 +37,17 @@ type service struct {
 	repository    repository.Repository
 	producer      producer.SyncProducer
 	asyncProducer producer.AsyncProducer
+	moderation    client.ModerationClient
 	turnSecret    string
 	turnRealm     string
 }
 
-func NewService(r repository.Repository, p producer.SyncProducer, ap producer.AsyncProducer) Service {
+func NewService(r repository.Repository, p producer.SyncProducer, ap producer.AsyncProducer, m client.ModerationClient) Service {
 	s := &service{
 		repository:    r,
 		producer:      p,
 		asyncProducer: ap,
+		moderation:    m,
 		turnSecret:    os.Getenv("TURN_SECRET"),
 		turnRealm:     os.Getenv("TURN_REALM"),
 	}

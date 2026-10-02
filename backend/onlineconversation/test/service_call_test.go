@@ -84,7 +84,7 @@ func TestPublishConversationSignal(t *testing.T) {
 	asyncProducer.EXPECT().Fire("conversation-signal", []byte(nil), mock.Anything, []sarama.RecordHeader(nil)).
 		Run(func(_ string, _ []byte, value []byte, _ []sarama.RecordHeader) { pushed = value }).Return()
 
-	err := service.NewService(NewMockRepository(t), mocks.NewMockSyncProducer(t), asyncProducer).
+	err := service.NewService(NewMockRepository(t), mocks.NewMockSyncProducer(t), asyncProducer, NewMockModerationClient(t)).
 		PublishConversationSignal(memberId, [][]byte{other[:]}, []byte(`{"sdp":"offer"}`))
 
 	require.NoError(t, err)

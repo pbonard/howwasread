@@ -392,12 +392,75 @@ func (_c *MockRepository_DecrementRegistrants_Call) RunAndReturn(run func(ctx co
 	return _c
 }
 
-// DeleteOnlineConversationIfModerator provides a mock function for the type MockRepository
-func (_mock *MockRepository) DeleteOnlineConversationIfModerator(ctx context.Context, session repository.Session, conversationId uuid.UUID, memberId uuid.UUID) (bool, error) {
+// DeleteConversation provides a mock function for the type MockRepository
+func (_mock *MockRepository) DeleteConversation(ctx context.Context, session repository.Session, conversationId uuid.UUID) error {
+	ret := _mock.Called(ctx, session, conversationId)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteConversation")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, repository.Session, uuid.UUID) error); ok {
+		r0 = returnFunc(ctx, session, conversationId)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockRepository_DeleteConversation_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeleteConversation'
+type MockRepository_DeleteConversation_Call struct {
+	*mock.Call
+}
+
+// DeleteConversation is a helper method to define mock.On call
+//   - ctx context.Context
+//   - session repository.Session
+//   - conversationId uuid.UUID
+func (_e *MockRepository_Expecter) DeleteConversation(ctx any, session any, conversationId any) *MockRepository_DeleteConversation_Call {
+	return &MockRepository_DeleteConversation_Call{Call: _e.mock.On("DeleteConversation", ctx, session, conversationId)}
+}
+
+func (_c *MockRepository_DeleteConversation_Call) Run(run func(ctx context.Context, session repository.Session, conversationId uuid.UUID)) *MockRepository_DeleteConversation_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 repository.Session
+		if args[1] != nil {
+			arg1 = args[1].(repository.Session)
+		}
+		var arg2 uuid.UUID
+		if args[2] != nil {
+			arg2 = args[2].(uuid.UUID)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *MockRepository_DeleteConversation_Call) Return(err error) *MockRepository_DeleteConversation_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockRepository_DeleteConversation_Call) RunAndReturn(run func(ctx context.Context, session repository.Session, conversationId uuid.UUID) error) *MockRepository_DeleteConversation_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// DeleteConversationIfModerator provides a mock function for the type MockRepository
+func (_mock *MockRepository) DeleteConversationIfModerator(ctx context.Context, session repository.Session, conversationId uuid.UUID, memberId uuid.UUID) (bool, error) {
 	ret := _mock.Called(ctx, session, conversationId, memberId)
 
 	if len(ret) == 0 {
-		panic("no return value specified for DeleteOnlineConversationIfModerator")
+		panic("no return value specified for DeleteConversationIfModerator")
 	}
 
 	var r0 bool
@@ -418,21 +481,21 @@ func (_mock *MockRepository) DeleteOnlineConversationIfModerator(ctx context.Con
 	return r0, r1
 }
 
-// MockRepository_DeleteOnlineConversationIfModerator_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeleteOnlineConversationIfModerator'
-type MockRepository_DeleteOnlineConversationIfModerator_Call struct {
+// MockRepository_DeleteConversationIfModerator_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeleteConversationIfModerator'
+type MockRepository_DeleteConversationIfModerator_Call struct {
 	*mock.Call
 }
 
-// DeleteOnlineConversationIfModerator is a helper method to define mock.On call
+// DeleteConversationIfModerator is a helper method to define mock.On call
 //   - ctx context.Context
 //   - session repository.Session
 //   - conversationId uuid.UUID
 //   - memberId uuid.UUID
-func (_e *MockRepository_Expecter) DeleteOnlineConversationIfModerator(ctx any, session any, conversationId any, memberId any) *MockRepository_DeleteOnlineConversationIfModerator_Call {
-	return &MockRepository_DeleteOnlineConversationIfModerator_Call{Call: _e.mock.On("DeleteOnlineConversationIfModerator", ctx, session, conversationId, memberId)}
+func (_e *MockRepository_Expecter) DeleteConversationIfModerator(ctx any, session any, conversationId any, memberId any) *MockRepository_DeleteConversationIfModerator_Call {
+	return &MockRepository_DeleteConversationIfModerator_Call{Call: _e.mock.On("DeleteConversationIfModerator", ctx, session, conversationId, memberId)}
 }
 
-func (_c *MockRepository_DeleteOnlineConversationIfModerator_Call) Run(run func(ctx context.Context, session repository.Session, conversationId uuid.UUID, memberId uuid.UUID)) *MockRepository_DeleteOnlineConversationIfModerator_Call {
+func (_c *MockRepository_DeleteConversationIfModerator_Call) Run(run func(ctx context.Context, session repository.Session, conversationId uuid.UUID, memberId uuid.UUID)) *MockRepository_DeleteConversationIfModerator_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -460,12 +523,75 @@ func (_c *MockRepository_DeleteOnlineConversationIfModerator_Call) Run(run func(
 	return _c
 }
 
-func (_c *MockRepository_DeleteOnlineConversationIfModerator_Call) Return(b bool, err error) *MockRepository_DeleteOnlineConversationIfModerator_Call {
+func (_c *MockRepository_DeleteConversationIfModerator_Call) Return(b bool, err error) *MockRepository_DeleteConversationIfModerator_Call {
 	_c.Call.Return(b, err)
 	return _c
 }
 
-func (_c *MockRepository_DeleteOnlineConversationIfModerator_Call) RunAndReturn(run func(ctx context.Context, session repository.Session, conversationId uuid.UUID, memberId uuid.UUID) (bool, error)) *MockRepository_DeleteOnlineConversationIfModerator_Call {
+func (_c *MockRepository_DeleteConversationIfModerator_Call) RunAndReturn(run func(ctx context.Context, session repository.Session, conversationId uuid.UUID, memberId uuid.UUID) (bool, error)) *MockRepository_DeleteConversationIfModerator_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// DeleteConversationMembers provides a mock function for the type MockRepository
+func (_mock *MockRepository) DeleteConversationMembers(ctx context.Context, session repository.Session, conversationId uuid.UUID) error {
+	ret := _mock.Called(ctx, session, conversationId)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteConversationMembers")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, repository.Session, uuid.UUID) error); ok {
+		r0 = returnFunc(ctx, session, conversationId)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockRepository_DeleteConversationMembers_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeleteConversationMembers'
+type MockRepository_DeleteConversationMembers_Call struct {
+	*mock.Call
+}
+
+// DeleteConversationMembers is a helper method to define mock.On call
+//   - ctx context.Context
+//   - session repository.Session
+//   - conversationId uuid.UUID
+func (_e *MockRepository_Expecter) DeleteConversationMembers(ctx any, session any, conversationId any) *MockRepository_DeleteConversationMembers_Call {
+	return &MockRepository_DeleteConversationMembers_Call{Call: _e.mock.On("DeleteConversationMembers", ctx, session, conversationId)}
+}
+
+func (_c *MockRepository_DeleteConversationMembers_Call) Run(run func(ctx context.Context, session repository.Session, conversationId uuid.UUID)) *MockRepository_DeleteConversationMembers_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 repository.Session
+		if args[1] != nil {
+			arg1 = args[1].(repository.Session)
+		}
+		var arg2 uuid.UUID
+		if args[2] != nil {
+			arg2 = args[2].(uuid.UUID)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *MockRepository_DeleteConversationMembers_Call) Return(err error) *MockRepository_DeleteConversationMembers_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockRepository_DeleteConversationMembers_Call) RunAndReturn(run func(ctx context.Context, session repository.Session, conversationId uuid.UUID) error) *MockRepository_DeleteConversationMembers_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -613,80 +739,6 @@ func (_c *MockRepository_FindConversationDetail_Call) Return(detail projection.D
 }
 
 func (_c *MockRepository_FindConversationDetail_Call) RunAndReturn(run func(ctx context.Context, session repository.Session, conversationId uuid.UUID, memberId uuid.UUID) (projection.Detail, error)) *MockRepository_FindConversationDetail_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// FindNotificationIds provides a mock function for the type MockRepository
-func (_mock *MockRepository) FindNotificationIds(ctx context.Context, session repository.Session, conversationId uuid.UUID) ([]uuid.UUID, error) {
-	ret := _mock.Called(ctx, session, conversationId)
-
-	if len(ret) == 0 {
-		panic("no return value specified for FindNotificationIds")
-	}
-
-	var r0 []uuid.UUID
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, repository.Session, uuid.UUID) ([]uuid.UUID, error)); ok {
-		return returnFunc(ctx, session, conversationId)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, repository.Session, uuid.UUID) []uuid.UUID); ok {
-		r0 = returnFunc(ctx, session, conversationId)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]uuid.UUID)
-		}
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, repository.Session, uuid.UUID) error); ok {
-		r1 = returnFunc(ctx, session, conversationId)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// MockRepository_FindNotificationIds_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FindNotificationIds'
-type MockRepository_FindNotificationIds_Call struct {
-	*mock.Call
-}
-
-// FindNotificationIds is a helper method to define mock.On call
-//   - ctx context.Context
-//   - session repository.Session
-//   - conversationId uuid.UUID
-func (_e *MockRepository_Expecter) FindNotificationIds(ctx any, session any, conversationId any) *MockRepository_FindNotificationIds_Call {
-	return &MockRepository_FindNotificationIds_Call{Call: _e.mock.On("FindNotificationIds", ctx, session, conversationId)}
-}
-
-func (_c *MockRepository_FindNotificationIds_Call) Run(run func(ctx context.Context, session repository.Session, conversationId uuid.UUID)) *MockRepository_FindNotificationIds_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 repository.Session
-		if args[1] != nil {
-			arg1 = args[1].(repository.Session)
-		}
-		var arg2 uuid.UUID
-		if args[2] != nil {
-			arg2 = args[2].(uuid.UUID)
-		}
-		run(
-			arg0,
-			arg1,
-			arg2,
-		)
-	})
-	return _c
-}
-
-func (_c *MockRepository_FindNotificationIds_Call) Return(uUIDs []uuid.UUID, err error) *MockRepository_FindNotificationIds_Call {
-	_c.Call.Return(uUIDs, err)
-	return _c
-}
-
-func (_c *MockRepository_FindNotificationIds_Call) RunAndReturn(run func(ctx context.Context, session repository.Session, conversationId uuid.UUID) ([]uuid.UUID, error)) *MockRepository_FindNotificationIds_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1121,6 +1173,87 @@ func (_c *MockRepository_InsertRegistrant_Call) Return(err error) *MockRepositor
 }
 
 func (_c *MockRepository_InsertRegistrant_Call) RunAndReturn(run func(ctx context.Context, session repository.Session, conversationId uuid.UUID, memberId uuid.UUID) error) *MockRepository_InsertRegistrant_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// InsertVerdict provides a mock function for the type MockRepository
+func (_mock *MockRepository) InsertVerdict(ctx context.Context, session repository.Session, conversationId uuid.UUID, target projection.ReportTarget, model string, v dto.Verdict) error {
+	ret := _mock.Called(ctx, session, conversationId, target, model, v)
+
+	if len(ret) == 0 {
+		panic("no return value specified for InsertVerdict")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, repository.Session, uuid.UUID, projection.ReportTarget, string, dto.Verdict) error); ok {
+		r0 = returnFunc(ctx, session, conversationId, target, model, v)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockRepository_InsertVerdict_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'InsertVerdict'
+type MockRepository_InsertVerdict_Call struct {
+	*mock.Call
+}
+
+// InsertVerdict is a helper method to define mock.On call
+//   - ctx context.Context
+//   - session repository.Session
+//   - conversationId uuid.UUID
+//   - target projection.ReportTarget
+//   - model string
+//   - v dto.Verdict
+func (_e *MockRepository_Expecter) InsertVerdict(ctx any, session any, conversationId any, target any, model any, v any) *MockRepository_InsertVerdict_Call {
+	return &MockRepository_InsertVerdict_Call{Call: _e.mock.On("InsertVerdict", ctx, session, conversationId, target, model, v)}
+}
+
+func (_c *MockRepository_InsertVerdict_Call) Run(run func(ctx context.Context, session repository.Session, conversationId uuid.UUID, target projection.ReportTarget, model string, v dto.Verdict)) *MockRepository_InsertVerdict_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 repository.Session
+		if args[1] != nil {
+			arg1 = args[1].(repository.Session)
+		}
+		var arg2 uuid.UUID
+		if args[2] != nil {
+			arg2 = args[2].(uuid.UUID)
+		}
+		var arg3 projection.ReportTarget
+		if args[3] != nil {
+			arg3 = args[3].(projection.ReportTarget)
+		}
+		var arg4 string
+		if args[4] != nil {
+			arg4 = args[4].(string)
+		}
+		var arg5 dto.Verdict
+		if args[5] != nil {
+			arg5 = args[5].(dto.Verdict)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3,
+			arg4,
+			arg5,
+		)
+	})
+	return _c
+}
+
+func (_c *MockRepository_InsertVerdict_Call) Return(err error) *MockRepository_InsertVerdict_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockRepository_InsertVerdict_Call) RunAndReturn(run func(ctx context.Context, session repository.Session, conversationId uuid.UUID, target projection.ReportTarget, model string, v dto.Verdict) error) *MockRepository_InsertVerdict_Call {
 	_c.Call.Return(run)
 	return _c
 }

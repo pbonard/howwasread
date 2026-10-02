@@ -4,6 +4,7 @@ import (
 	"backend/onlineconversation/internal/dto"
 	"backend/onlineconversation/internal/projection"
 	"context"
+	"encoding/json"
 	"log/slog"
 	"time"
 
@@ -45,7 +46,7 @@ func (r *repository) UpdateConversationIfModerator(ctx context.Context, session 
 	return n > 0, err
 }
 
-func (r *repository) DeleteOnlineConversationIfModerator(ctx context.Context, session Session, conversationId, memberId uuid.UUID) (bool, error) {
+func (r *repository) DeleteConversationIfModerator(ctx context.Context, session Session, conversationId, memberId uuid.UUID) (bool, error) {
 	res, err := session.ExecContext(ctx, `
 		DELETE FROM online_conversation
 		WHERE id = ?
@@ -57,6 +58,40 @@ func (r *repository) DeleteOnlineConversationIfModerator(ctx context.Context, se
 	}
 	n, err := res.RowsAffected()
 	return n > 0, err
+}
+
+func (r *repository) DeleteConversation(ctx context.Context, session Session, conversationId uuid.UUID) error {
+	_, err := session.ExecContext(ctx,
+		`DELETE FROM online_conversation WHERE id = ?`,
+		conversationId[:])
+	if err != nil {
+		slog.Error("fail to delete online conversation",
+			"err", err,
+			"conversationId", conversationId)
+		return err
+	}
+	return nil
+}
+
+func (r *repository) DeleteConversationMembers(ctx context.Context, session Session, conversationId uuid.UUID) error {
+	for _, table := range []string{
+		"online_conversation_moderator",
+		"online_conversation_registrant",
+		"online_conversation_ban",
+		"online_conversation_notification",
+	} {
+		_, err := session.ExecContext(ctx,
+			`DELETE FROM `+table+` WHERE conversation_id = ?`,
+			conversationId[:])
+		if err != nil {
+			slog.Error("fail to delete online conversation members",
+				"err", err,
+				"table", table,
+				"conversationId", conversationId)
+			return err
+		}
+	}
+	return nil
 }
 
 func (r *repository) AddBanIdIfModerator(ctx context.Context, session Session, conversationId, modId, banId uuid.UUID) (bool, error) {
@@ -188,30 +223,6 @@ func (r *repository) RemoveRegistrantId(ctx context.Context, session Session, co
 	return nil
 }
 
-func (r *repository) FindNotificationIds(ctx context.Context, session Session, conversationId uuid.UUID) ([]uuid.UUID, error) {
-	rows, err := session.QueryContext(ctx,
-		`SELECT member_id FROM online_conversation_notification WHERE conversation_id = ?`,
-		conversationId[:])
-	if err != nil {
-		slog.Error("fail to find online conversation notification ids", "err", err, "conversationId", conversationId)
-		return nil, err
-	}
-	defer rows.Close()
-	var ids []uuid.UUID
-	for rows.Next() {
-		var raw []byte
-		if err = rows.Scan(&raw); err != nil {
-			return nil, err
-		}
-		id, err := uuid.FromBytes(raw)
-		if err != nil {
-			return nil, err
-		}
-		ids = append(ids, id)
-	}
-	return ids, rows.Err()
-}
-
 func (r *repository) RemoveNotificationId(ctx context.Context, session Session, conversationId, memberId uuid.UUID) error {
 	_, err := session.ExecContext(ctx,
 		`DELETE FROM online_conversation_notification
@@ -258,4 +269,23 @@ func (r *repository) MarkEvaluatedIfUnchanged(ctx context.Context, session Sessi
 	}
 	n, err := res.RowsAffected()
 	return n > 0, err
+}
+
+func (r *repository) InsertVerdict(ctx context.Context, session Session, conversationId uuid.UUID, target projection.ReportTarget, model string, v dto.Verdict) error {
+	contents, err := json.Marshal(target.Contents)
+	if err != nil {
+		return err
+	}
+	_, err = session.ExecContext(ctx, `
+		INSERT INTO online_conversation_verdict
+		(conversation_id, content_updated_at, contents, model, violation, category, reason)
+		VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		conversationId[:], target.UpdatedAt, contents, model, v.Violation, v.Category, v.Reason)
+	if err != nil {
+		slog.Error("fail to insert online conversation verdict",
+			"err", err,
+			"conversationId", conversationId)
+		return err
+	}
+	return nil
 }

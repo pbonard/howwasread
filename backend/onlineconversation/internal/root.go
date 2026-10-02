@@ -3,6 +3,7 @@ package internal
 import (
 	"backend/common/producer"
 	pb "backend/common/proto"
+	"backend/onlineconversation/internal/client"
 	"backend/onlineconversation/internal/consumer"
 	"backend/onlineconversation/internal/controller"
 	"backend/onlineconversation/internal/grpccontroller"
@@ -28,7 +29,7 @@ func NewServer() {
 
 	r := repository.NewRepository()
 
-	s := service.NewService(r, kp, akp)
+	s := service.NewService(r, kp, akp, client.NewOllamaClient())
 
 	mux := http.NewServeMux()
 
