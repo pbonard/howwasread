@@ -56,9 +56,9 @@ spec:
           env:
             - name: OLLAMA_HOST
               value: 0.0.0.0:11434
-            # unloads the model after 5 idle minutes so the gpu and ram are free between reports
+            # never unloads the model, the gpu is dedicated to this node and a cold load takes ~40s
             - name: OLLAMA_KEEP_ALIVE
-              value: 5m
+              value: "-1"
             # one evaluation at a time, reports are consumed one by one per partition anyway
             - name: OLLAMA_NUM_PARALLEL
               value: "1"
