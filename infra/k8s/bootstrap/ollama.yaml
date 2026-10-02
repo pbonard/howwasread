@@ -1,0 +1,106 @@
+# http://ollama.backend.svc.cluster.local:11434/v1/chat/completions (OpenAI-compatible)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ollama-models
+  namespace: backend
+spec:
+  storageClassName: local-path
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ollama
+  namespace: backend
+  labels:
+    app: ollama
+spec:
+  replicas: 1
+  # the gpu and the ReadWriteOnce volume can't be held by two pods, so the old pod stops before the new one starts
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: ollama
+  template:
+    metadata:
+      labels:
+        app: ollama
+    spec:
+      runtimeClassName: nvidia
+      initContainers:
+        # a missing model is an error on request, so pull it before serving, a model already on the volume is skipped
+        - name: pull-model
+          image: ollama/ollama:latest
+          command:
+            - sh
+            - -c
+            - |
+              ollama serve &
+              until ollama list >/dev/null 2>&1; do sleep 1; done
+              ollama pull "$MODEL"
+          env:
+            - name: MODEL
+              value: qwen3:8b
+          volumeMounts:
+            - name: models
+              mountPath: /root/.ollama
+      containers:
+        - name: ollama
+          image: ollama/ollama:latest
+          env:
+            - name: OLLAMA_HOST
+              value: 0.0.0.0:11434
+            # unloads the model after 5 idle minutes so the gpu and ram are free between reports
+            - name: OLLAMA_KEEP_ALIVE
+              value: 5m
+            # one evaluation at a time, reports are consumed one by one per partition anyway
+            - name: OLLAMA_NUM_PARALLEL
+              value: "1"
+            - name: OLLAMA_MAX_LOADED_MODELS
+              value: "1"
+            - name: OLLAMA_CONTEXT_LENGTH
+              value: "4096"
+            # halves the kv cache, q8_0 needs flash attention
+            - name: OLLAMA_FLASH_ATTENTION
+              value: "1"
+            - name: OLLAMA_KV_CACHE_TYPE
+              value: q8_0
+          ports:
+            - containerPort: 11434
+          resources:
+            # requested at the loaded peak so the scheduler keeps the room free while the model is unloaded
+            requests:
+              memory: 3Gi
+            limits:
+              nvidia.com/gpu: 1
+              memory: 6Gi
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 11434
+            periodSeconds: 10
+          volumeMounts:
+            - name: models
+              mountPath: /root/.ollama
+      volumes:
+        - name: models
+          persistentVolumeClaim:
+            claimName: ollama-models
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ollama
+  namespace: backend
+spec:
+  selector:
+    app: ollama
+  ports:
+    - port: 11434
+      targetPort: 11434
