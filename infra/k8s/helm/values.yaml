@@ -65,7 +65,7 @@ apps:
 #    cpuLimits: "0.1"
 #    memoryLimits: "10Mi"
   fcmnotification:
-    image: "backend/fcmnotification:latest"
+    image: "backend/fcmnotification:a478668"
     port: 8080
     routePath: false
     authentication: false
