@@ -19,6 +19,9 @@ jobs:
     steps:
       - name: checkout github
         uses: actions/checkout@v6
+        with:
+          #to compare our commit hash with commit hash on image tag of helm values
+          fetch-depth: 0
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
@@ -57,11 +60,18 @@ jobs:
           # services built together race on this push, a rejected push resets and tries again on the new main
           for attempt in $(seq 10); do
             git pull --rebase --quiet origin "$GITHUB_REF_NAME"
-            sed -E -i "s#(image: \"?)${IMAGE}:[^\" ]+#\1${IMAGE}:${TAG}#" "$VALUES"
-            if git diff --quiet; then
-              echo "$IMAGE is already at $TAG"
+            HELM_VALUES_HASH=$(grep -oE "image: \"?${IMAGE}:[^\" ]+" "$VALUES" | sed -E 's#.*:##')
+            if [ "$HELM_VALUES_HASH" = "$TAG" ]; then
+              echo "$IMAGE is already at $TAG, no need to rewrite."
               exit 0
             fi
+            # two builds of the same service can finish out of order, an older build must not replace a newer tag
+            if git cat-file -e "${HELM_VALUES_HASH}^{commit}" 2>/dev/null \
+              && git merge-base --is-ancestor "$GITHUB_SHA" "$HELM_VALUES_HASH"; then
+              echo "skip: this build ($TAG) is older than the one already in values.yaml ($HELM_VALUES_HASH), we don't rewrite."
+              exit 0
+            fi
+            sed -E -i "s#(image: \"?)${IMAGE}:[^\" ]+#\1${IMAGE}:${TAG}#" "$VALUES"
             git commit -qam "deploy: ${IMAGE} ${TAG}"
             # a push made with GITHUB_TOKEN triggers no workflow, so this can't loop
             if git push --quiet origin "HEAD:$GITHUB_REF_NAME"; then
