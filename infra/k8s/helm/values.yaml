@@ -299,7 +299,7 @@ flink:
         taskmanager.memory.managed.size: "64m"
         jobmanager.memory.jvm-metaspace.size: "128m"
     conversation-cdc-job:
-      image: flink/conversationcdcjob:latest
+      image: flink/conversationcdcjob:a478668
       jar: conversationcdcjob.jar
       entryClass: conversationcdcjob.ConversationCdcJob
       parallelism: 1
