@@ -11,7 +11,7 @@ circuitBreaker:
 
 apps:
   auth:
-    image: "backend/auth:a478668"
+    image: "backend/auth:176c125"
     port: 8080
     routePath: /auth
     authentication: true
@@ -31,7 +31,7 @@ apps:
 #    cpuLimits: "0.1"
 #    memoryLimits: "10Mi"
   chat:
-    image: "backend/chat:a478668"
+    image: "backend/chat:176c125"
     port: 8080
     routePath: /chat
     authentication: false
@@ -49,7 +49,7 @@ apps:
 #    cpuLimits: "0.1"
 #    memoryLimits: "10Mi"
   expo-notification:
-    image: "backend/expo-notification:a478668"
+    image: "backend/expo-notification:176c125"
     port: 8080
     routePath: false
     authentication: false
@@ -65,7 +65,7 @@ apps:
 #    cpuLimits: "0.1"
 #    memoryLimits: "10Mi"
   fcmnotification:
-    image: "backend/fcmnotification:a478668"
+    image: "backend/fcmnotification:176c125"
     port: 8080
     routePath: false
     authentication: false
@@ -83,7 +83,7 @@ apps:
 #    cpuLimits: "0.1"
 #    memoryLimits: "10Mi"
   messagepersist:
-    image: "backend/messagepersist:a478668"
+    image: "backend/messagepersist:176c125"
     port: 8080
     routePath: false
     authentication: false
@@ -101,7 +101,7 @@ apps:
 #    cpuLimits: "0.1"
 #    memoryLimits: "10Mi"
   messagepreprocess:
-    image: "backend/messagepreprocess:a478668"
+    image: "backend/messagepreprocess:176c125"
     port: 8080
     routePath: false
     authentication: false
@@ -119,7 +119,7 @@ apps:
 #    cpuLimits: "0.1"
 #    memoryLimits: "10Mi"
   messagerelay:
-    image: "backend/messagerelay:a478668"
+    image: "backend/messagerelay:176c125"
     port: 8080
     routePath: false
     authentication: false
@@ -137,7 +137,7 @@ apps:
 #    cpuLimits: "0.1"
 #    memoryLimits: "10Mi"
   notification:
-    image: "backend/notification:a478668"
+    image: "backend/notification:176c125"
     port: 8080
     routePath: /notification
     authentication: false
@@ -155,7 +155,7 @@ apps:
 #    cpuLimits: "0.1"
 #    memoryLimits: "10Mi"
   onlineconversation:
-    image: "backend/onlineconversation:a478668"
+    image: "backend/onlineconversation:176c125"
     port: 8080
     routePath: /onlineconversation
     authentication: false
@@ -174,7 +174,7 @@ apps:
 #    cpuLimits: "0.1"
 #    memoryLimits: "10Mi"
   signalrelay:
-    image: "backend/signalrelay:a478668"
+    image: "backend/signalrelay:176c125"
     port: 8080
     routePath: false
     authentication: false
@@ -192,7 +192,7 @@ apps:
 #    cpuLimits: "0.1"
 #    memoryLimits: "10Mi"
   offlineconversation:
-    image: "backend/offlineconversation:a478668"
+    image: "backend/offlineconversation:176c125"
     port: 8080
     routePath: /offlineconversation
     authentication: false
@@ -212,7 +212,7 @@ apps:
 #    cpuLimits: "0.4"
 #    memoryLimits: "100Mi"
   search:
-    image: "backend/search:a478668"
+    image: "backend/search:176c125"
     port: 8080
     routePath: /search
     authentication: false
@@ -232,7 +232,7 @@ apps:
   #    cpuLimits: "0.4"
   #    memoryLimits: "100Mi"
   turn:
-    image: "backend/turn:a478668"
+    image: "backend/turn:176c125"
     port: 3478
     routePath: false
     turn: true
@@ -279,7 +279,7 @@ flink:
     VITESS_VTGATE_GRPC_PORT: "15999"
   jobs:
     scheduled-notification-job:
-      image: flink/schedulednotificationjob:a478668
+      image: flink/schedulednotificationjob:176c125
       jar: schedulednotificationjob.jar
       entryClass: schedulednotificationjob.ScheduledNotificationJob
       parallelism: 2
@@ -289,7 +289,7 @@ flink:
         taskmanager.memory.managed.size: "64m"
         jobmanager.memory.jvm-metaspace.size: "128m"
     exponential-backoff-retry-job:
-      image: flink/exponentialbackoffretryjob:a478668
+      image: flink/exponentialbackoffretryjob:176c125
       jar: exponentialbackoffretryjob.jar
       entryClass: exponentialbackoffretryjob.ExponentialBackoffRetryJob
       parallelism: 2
@@ -299,7 +299,7 @@ flink:
         taskmanager.memory.managed.size: "64m"
         jobmanager.memory.jvm-metaspace.size: "128m"
     conversation-cdc-job:
-      image: flink/conversationcdcjob:a478668
+      image: flink/conversationcdcjob:176c125
       jar: conversationcdcjob.jar
       entryClass: conversationcdcjob.ConversationCdcJob
       parallelism: 1
