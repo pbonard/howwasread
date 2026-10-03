@@ -49,7 +49,7 @@ apps:
 #    cpuLimits: "0.1"
 #    memoryLimits: "10Mi"
   expo-notification:
-    image: "backend/expo-notification:latest"
+    image: "backend/expo-notification:a478668"
     port: 8080
     routePath: false
     authentication: false
