@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import {
   useBlockConversation,
+  useDeleteOfflineConversation,
   useGetOfflineConversationDetail,
   useJoinOfflineConversation,
   useQuitOfflineConversation,
@@ -28,16 +29,18 @@ interface OfflineConversationDetailProps {
 }
 
 export default function OfflineConversationDetail({
-  id, sheet
+  id,
+  sheet,
 }: OfflineConversationDetailProps) {
   const { data } = useGetOfflineConversationDetail(id);
   const joinOfflineConversationMutation = useJoinOfflineConversation();
   const quitOfflineConversationMutation = useQuitOfflineConversation();
   const blockConversationMutation = useBlockConversation();
+  const deleteOfflineConversationMutation = useDeleteOfflineConversation();
 
   const { showActionSheetWithOptions } = useActionSheet();
 
-  const handlePress = () => {
+  const handleReport = () => {
     showActionSheetWithOptions(
       {
         options: [`Report and Delete from map`, "Cancel"],
@@ -64,6 +67,33 @@ export default function OfflineConversationDetail({
               });
               sheet.current?.dismiss();
             }
+        }
+      },
+    );
+  };
+
+  const handleDelete = () => {
+    showActionSheetWithOptions(
+      {
+        options: ["Delete conversation", "Cancel"],
+        destructiveButtonIndex: 0,
+        cancelButtonIndex: 1,
+      },
+      (selectedIndex?: number) => {
+        switch (selectedIndex) {
+          case 0:
+            deleteOfflineConversationMutation.mutate(
+              { conversationId: id },
+              {
+                onSuccess: () => {
+                  Toast.show({
+                    type: "success",
+                    text1: "Conversation deleted",
+                  });
+                  sheet.current?.dismiss();
+                },
+              },
+            );
         }
       },
     );
@@ -154,10 +184,28 @@ export default function OfflineConversationDetail({
             quitOfflineConversationMutation.isPending
           }
         />
+        {data.isModerator && (
+          <CustomButton
+            label={"Update conversation"}
+            onPress={() => {
+              sheet.current?.dismiss();
+              router.push(`/offline/update/${id}`);
+            }}
+            style={{ paddingHorizontal: 20 }}
+          />
+        )}
+        {data.isModerator && (
+          <CustomButton
+            label={"Delete conversation"}
+            onPress={handleDelete}
+            style={{ paddingHorizontal: 20 }}
+            disabled={deleteOfflineConversationMutation.isPending}
+          />
+        )}
       </View>
       <View style={styles.footer}>
         <Pressable
-          onPress={async () => handlePress()}
+          onPress={async () => handleReport()}
           style={({ pressed }) => [pressed && styles.reportPressed]}
         >
           <Text style={styles.reportText}>Report conversation</Text>

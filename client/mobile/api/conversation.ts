@@ -9,6 +9,8 @@ import {
   OfflineConversationSearchResponse,
   OnlineConversationDetailResponse,
   OnlineConversationFeedResponse,
+  UpdateOfflineConversationRequest,
+  UpdateOnlineConversationRequest,
 } from "@/types/conversation";
 
 export async function getOnlineConversations(
@@ -54,6 +56,20 @@ export async function createOnlineConversation(
   body: CreateOnlineConversationRequest,
 ): Promise<{ id: string }> {
   const { data } = await axiosInstance.post("/onlineconversation/create", body);
+  return data;
+}
+
+export async function updateOnlineConversation(
+  body: UpdateOnlineConversationRequest,
+) {
+  const { data } = await axiosInstance.put("/onlineconversation/update", body);
+  return data;
+}
+
+export async function deleteOnlineConversation({ id }: { id: string }) {
+  const { data } = await axiosInstance.delete(
+    `/onlineconversation/delete?id=${id}`,
+  );
   return data;
 }
 
@@ -125,6 +141,24 @@ export async function createOfflineConversation(
   const { data } = await axiosInstance.post(
     "/offlineconversation/create",
     body,
+  );
+  return data;
+}
+
+export async function updateOfflineConversation(
+  body: UpdateOfflineConversationRequest,
+) {
+  const { data } = await axiosInstance.put("/offlineconversation/update", body);
+  return data;
+}
+
+export async function deleteOfflineConversation({
+  conversationId,
+}: {
+  conversationId: string;
+}) {
+  const { data } = await axiosInstance.delete(
+    `/offlineconversation/delete?conversationId=${conversationId}`,
   );
   return data;
 }

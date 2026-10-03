@@ -88,3 +88,13 @@ export function makeTime(
   ).toISOString();
   return time;
 }
+
+export function splitTime(isoString: string) {
+  const date = new Date(isoString);
+  return {
+    year: String(date.getFullYear()),
+    monthDay: `${date.getMonth() + 1}.${date.getDate()}`,
+    hour: String(date.getHours()),
+    minute: String(date.getMinutes()),
+  };
+}
