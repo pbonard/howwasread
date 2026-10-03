@@ -137,7 +137,7 @@ apps:
 #    cpuLimits: "0.1"
 #    memoryLimits: "10Mi"
   notification:
-    image: "backend/notification:latest"
+    image: "backend/notification:a478668"
     port: 8080
     routePath: /notification
     authentication: false
