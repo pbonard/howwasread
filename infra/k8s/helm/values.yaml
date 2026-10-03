@@ -174,7 +174,7 @@ apps:
 #    cpuLimits: "0.1"
 #    memoryLimits: "10Mi"
   signalrelay:
-    image: "backend/signalrelay:latest"
+    image: "backend/signalrelay:a478668"
     port: 8080
     routePath: false
     authentication: false
