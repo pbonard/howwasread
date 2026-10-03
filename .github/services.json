@@ -1,0 +1,155 @@
+[
+  {
+    "name": "auth",
+    "image": "backend/auth",
+    "dockerfile": "./backend/auth/Dockerfile",
+    "context": "./backend",
+    "paths": [
+      "backend/auth/"
+    ]
+  },
+  {
+    "name": "chat",
+    "image": "backend/chat",
+    "dockerfile": "./backend/chat/Dockerfile",
+    "context": "./backend",
+    "paths": [
+      "backend/chat/",
+      "backend/common/"
+    ]
+  },
+  {
+    "name": "conversationcdcjob",
+    "image": "flink/conversationcdcjob",
+    "dockerfile": "./backend/conversationcdcjob/Dockerfile",
+    "context": "./backend/conversationcdcjob",
+    "paths": [
+      "backend/conversationcdcjob/"
+    ]
+  },
+  {
+    "name": "expo-notification",
+    "image": "backend/expo-notification",
+    "dockerfile": "./backend/expo-notification/Dockerfile",
+    "context": "./backend/expo-notification",
+    "paths": [
+      "backend/expo-notification/"
+    ]
+  },
+  {
+    "name": "exponentialbackoffretryjob",
+    "image": "flink/exponentialbackoffretryjob",
+    "dockerfile": "./backend/exponentialbackoffretryjob/Dockerfile",
+    "context": "./backend/exponentialbackoffretryjob",
+    "paths": [
+      "backend/exponentialbackoffretryjob/"
+    ]
+  },
+  {
+    "name": "fcmnotification",
+    "image": "backend/fcmnotification",
+    "dockerfile": "./backend/fcmnotification/Dockerfile",
+    "context": "./backend",
+    "paths": [
+      "backend/fcmnotification/",
+      "backend/common/"
+    ]
+  },
+  {
+    "name": "messagepersist",
+    "image": "backend/messagepersist",
+    "dockerfile": "./backend/messagepersist/Dockerfile",
+    "context": "./backend",
+    "paths": [
+      "backend/messagepersist/",
+      "backend/common/"
+    ]
+  },
+  {
+    "name": "messagepreprocess",
+    "image": "backend/messagepreprocess",
+    "dockerfile": "./backend/messagepreprocess/Dockerfile",
+    "context": "./backend",
+    "paths": [
+      "backend/messagepreprocess/",
+      "backend/common/"
+    ]
+  },
+  {
+    "name": "messagerelay",
+    "image": "backend/messagerelay",
+    "dockerfile": "./backend/messagerelay/Dockerfile",
+    "context": "./backend",
+    "paths": [
+      "backend/messagerelay/",
+      "backend/common/"
+    ]
+  },
+  {
+    "name": "notification",
+    "image": "backend/notification",
+    "dockerfile": "./backend/notification/Dockerfile",
+    "context": "./backend",
+    "paths": [
+      "backend/notification/",
+      "backend/common/"
+    ]
+  },
+  {
+    "name": "offlineconversation",
+    "image": "backend/offlineconversation",
+    "dockerfile": "./backend/offlineconversation/Dockerfile",
+    "context": "./backend/offlineconversation",
+    "paths": [
+      "backend/offlineconversation/"
+    ]
+  },
+  {
+    "name": "onlineconversation",
+    "image": "backend/onlineconversation",
+    "dockerfile": "./backend/onlineconversation/Dockerfile",
+    "context": "./backend",
+    "paths": [
+      "backend/onlineconversation/",
+      "backend/common/"
+    ]
+  },
+  {
+    "name": "schedulednotificationjob",
+    "image": "flink/schedulednotificationjob",
+    "dockerfile": "./backend/schedulednotificationjob/Dockerfile",
+    "context": "./backend/schedulednotificationjob",
+    "paths": [
+      "backend/schedulednotificationjob/"
+    ]
+  },
+  {
+    "name": "search",
+    "image": "backend/search",
+    "dockerfile": "./backend/search/Dockerfile",
+    "context": "./backend/search",
+    "paths": [
+      "backend/search/"
+    ]
+  },
+  {
+    "name": "signalrelay",
+    "image": "backend/signalrelay",
+    "dockerfile": "./backend/signalrelay/Dockerfile",
+    "context": "./backend",
+    "paths": [
+      "backend/signalrelay/",
+      "backend/common/"
+    ]
+  },
+  {
+    "name": "turn",
+    "image": "backend/turn",
+    "dockerfile": "./backend/turn/Dockerfile",
+    "context": "./backend",
+    "paths": [
+      "backend/turn/",
+      "backend/common/"
+    ]
+  }
+]
