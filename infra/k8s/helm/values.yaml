@@ -155,7 +155,7 @@ apps:
 #    cpuLimits: "0.1"
 #    memoryLimits: "10Mi"
   onlineconversation:
-    image: "backend/onlineconversation:latest"
+    image: "backend/onlineconversation:a478668"
     port: 8080
     routePath: /onlineconversation
     authentication: false
