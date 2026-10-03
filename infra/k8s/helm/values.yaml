@@ -119,7 +119,7 @@ apps:
 #    cpuLimits: "0.1"
 #    memoryLimits: "10Mi"
   messagerelay:
-    image: "backend/messagerelay:latest"
+    image: "backend/messagerelay:a478668"
     port: 8080
     routePath: false
     authentication: false
