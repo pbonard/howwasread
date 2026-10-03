@@ -279,7 +279,7 @@ flink:
     VITESS_VTGATE_GRPC_PORT: "15999"
   jobs:
     scheduled-notification-job:
-      image: flink/schedulednotificationjob:latest
+      image: flink/schedulednotificationjob:a478668
       jar: schedulednotificationjob.jar
       entryClass: schedulednotificationjob.ScheduledNotificationJob
       parallelism: 2
