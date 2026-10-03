@@ -101,7 +101,7 @@ apps:
 #    cpuLimits: "0.1"
 #    memoryLimits: "10Mi"
   messagepreprocess:
-    image: "backend/messagepreprocess:latest"
+    image: "backend/messagepreprocess:a478668"
     port: 8080
     routePath: false
     authentication: false
