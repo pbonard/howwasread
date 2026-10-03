@@ -212,7 +212,7 @@ apps:
 #    cpuLimits: "0.4"
 #    memoryLimits: "100Mi"
   search:
-    image: "backend/search:latest"
+    image: "backend/search:a478668"
     port: 8080
     routePath: /search
     authentication: false
