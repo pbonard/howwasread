@@ -289,7 +289,7 @@ flink:
         taskmanager.memory.managed.size: "64m"
         jobmanager.memory.jvm-metaspace.size: "128m"
     exponential-backoff-retry-job:
-      image: flink/exponentialbackoffretryjob:latest
+      image: flink/exponentialbackoffretryjob:a478668
       jar: exponentialbackoffretryjob.jar
       entryClass: exponentialbackoffretryjob.ExponentialBackoffRetryJob
       parallelism: 2
