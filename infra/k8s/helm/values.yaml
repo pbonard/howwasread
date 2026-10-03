@@ -83,7 +83,7 @@ apps:
 #    cpuLimits: "0.1"
 #    memoryLimits: "10Mi"
   messagepersist:
-    image: "backend/messagepersist:latest"
+    image: "backend/messagepersist:a478668"
     port: 8080
     routePath: false
     authentication: false
