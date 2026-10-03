@@ -21,7 +21,19 @@ export default function OnlineLayout() {
         name="[id]"
         options={{
           title: "",
-          headerShown: false
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="update/[id]"
+        options={{
+          title: "Update your online conversation",
+          headerShown: true,
+          headerLeft: () => (
+            <Pressable onPress={() => router.back()}>
+              <Ionicons name="chevron-back" size={28} color="black" />
+            </Pressable>
+          ),
         }}
       />
     </Stack>

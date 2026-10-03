@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import {
   useBlockConversation,
+  useDeleteOnlineConversation,
   useCancelOnlineConversationNotification,
   useDeregisterOnlineConversation,
   useGetOnlineConversationDetail,
@@ -44,6 +45,34 @@ export default function OnlineConversationDetail({
   const scheduleNotificationMutation =
     useScheduleOnlineConversationNotification();
   const cancelNotificationMutation = useCancelOnlineConversationNotification();
+  const deleteOnlineConversationMutation = useDeleteOnlineConversation();
+
+  const handleDelete = () => {
+    showActionSheetWithOptions(
+      {
+        options: ["Delete conversation", "Cancel"],
+        destructiveButtonIndex: 0,
+        cancelButtonIndex: 1,
+      },
+      (selectedIndex?: number) => {
+        switch (selectedIndex) {
+          case 0:
+            deleteOnlineConversationMutation.mutate(
+              { id },
+              {
+                onSuccess: () => {
+                  Toast.show({
+                    type: "success",
+                    text1: "Conversation deleted",
+                  });
+                  sheet.current?.dismiss();
+                },
+              },
+            );
+        }
+      },
+    );
+  };
 
   const handleReport = () => {
     showActionSheetWithOptions(
@@ -58,9 +87,8 @@ export default function OnlineConversationDetail({
             blockConversationMutation.mutate({
               id: id,
             });
-            const reportPromises = [reportOnlineConversation({ id: id })];
             try {
-              await Promise.all(reportPromises);
+              await reportOnlineConversation({ id: id });
             } catch (e) {
               console.log(e);
             }
@@ -180,6 +208,22 @@ export default function OnlineConversationDetail({
                   registerOnlineConversationMutation.mutate({ id: id })
                 }
                 disabled={registerOnlineConversationMutation.isPending}
+              />
+            )}
+            {data.isModerator && (
+              <CustomButton
+                label={"Update conversation"}
+                onPress={() => {
+                  sheet.current?.dismiss();
+                  router.push(`/online/update/${id}`);
+                }}
+              />
+            )}
+            {data.isModerator && (
+              <CustomButton
+                label={"Delete conversation"}
+                onPress={handleDelete}
+                disabled={deleteOnlineConversationMutation.isPending}
               />
             )}
           </View>

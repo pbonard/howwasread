@@ -11,6 +11,10 @@ export interface CreateOnlineConversationRequest {
   lengthMinutes: number;
 }
 
+export interface UpdateOnlineConversationRequest extends CreateOnlineConversationRequest {
+  id: string;
+}
+
 export interface OnlineConversationDetailResponse {
   novel?: string;
   shortStory?: string;
@@ -110,6 +114,10 @@ export interface CreateOfflineConversationRequest {
   lng: number;
   h3Res5: string;
   h3Res7: string;
+}
+
+export interface UpdateOfflineConversationRequest extends CreateOfflineConversationRequest {
+  id: string;
 }
 
 export interface OfflineConversationDetailResponse {

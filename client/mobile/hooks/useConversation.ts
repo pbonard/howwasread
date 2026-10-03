@@ -10,6 +10,8 @@ import {
   cancelOnlineConversationNotification,
   createOfflineConversation,
   createOnlineConversation,
+  deleteOfflineConversation,
+  deleteOnlineConversation,
   deregisterOnlineConversation,
   getBlockedConversations,
   getOfflineConversationDetail,
@@ -23,6 +25,8 @@ import {
   scheduleOnlineConversationNotification,
   searchOfflineConversations,
   searchOnlineConversations,
+  updateOfflineConversation,
+  updateOnlineConversation,
 } from "@/api/conversation";
 import { queryKey } from "@/constants";
 import { AxiosError } from "axios";
@@ -61,6 +65,57 @@ export function useCreateOnlineConversation() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: [queryKey.CONVERSATION, queryKey.GET_ONLINE_CONVERSATIONS],
+      });
+    },
+    onError: (error: AxiosError) => {
+      console.log(error?.response?.data);
+      Toast.show({
+        type: "error",
+        text1: String(error?.response?.data),
+      });
+    },
+  });
+}
+
+export function useUpdateOnlineConversation() {
+  return useMutation({
+    mutationFn: updateOnlineConversation,
+    onSuccess: async (data, variables) => {
+      await queryClient.invalidateQueries({
+        queryKey: [
+          queryKey.CONVERSATION,
+          queryKey.GET_ONLINE_CONVERSATION_DETAIL,
+          variables.id,
+        ],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: [queryKey.CONVERSATION, queryKey.SEARCH_ONLINE_CONVERSATIONS],
+      });
+    },
+    onError: (error: AxiosError) => {
+      console.log(error?.response?.data);
+      Toast.show({
+        type: "error",
+        text1: String(error?.response?.data),
+      });
+    },
+  });
+}
+
+export function useDeleteOnlineConversation() {
+  return useMutation({
+    mutationFn: deleteOnlineConversation,
+    onSuccess: async (data, variables) => {
+      // removed, not invalidated, a refetch of a deleted conversation fails
+      queryClient.removeQueries({
+        queryKey: [
+          queryKey.CONVERSATION,
+          queryKey.GET_ONLINE_CONVERSATION_DETAIL,
+          variables.id,
+        ],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: [queryKey.CONVERSATION, queryKey.SEARCH_ONLINE_CONVERSATIONS],
       });
     },
     onError: (error: AxiosError) => {
@@ -163,6 +218,69 @@ export function useCreateOfflineConversation() {
           queryKey.MAP_OFFLINE_CONVERSATIONS,
           variables?.h3Res7,
         ],
+      });
+    },
+  });
+}
+
+export function useUpdateOfflineConversation() {
+  return useMutation({
+    mutationFn: updateOfflineConversation,
+    onSuccess: async (data, variables) => {
+      await queryClient.invalidateQueries({
+        queryKey: [
+          queryKey.CONVERSATION,
+          queryKey.GET_OFFLINE_CONVERSATION_DETAIL,
+          variables.id,
+        ],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: [queryKey.CONVERSATION, queryKey.MAP_OFFLINE_CONVERSATIONS],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: [
+          queryKey.CONVERSATION,
+          queryKey.SEARCH_OFFLINE_CONVERSATIONS,
+        ],
+      });
+    },
+    onError: (error: AxiosError) => {
+      console.log(error?.response?.data);
+      Toast.show({
+        type: "error",
+        text1: String(error?.response?.data),
+      });
+    },
+  });
+}
+
+export function useDeleteOfflineConversation() {
+  return useMutation({
+    mutationFn: deleteOfflineConversation,
+    onSuccess: async (data, variables) => {
+      // removed, not invalidated, a refetch of a deleted conversation fails
+      queryClient.removeQueries({
+        queryKey: [
+          queryKey.CONVERSATION,
+          queryKey.GET_OFFLINE_CONVERSATION_DETAIL,
+          variables.conversationId,
+        ],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: [queryKey.CONVERSATION, queryKey.MAP_OFFLINE_CONVERSATIONS],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: [
+          queryKey.CONVERSATION,
+          queryKey.SEARCH_OFFLINE_CONVERSATIONS,
+        ],
+      });
+    },
+    onError: (error: AxiosError) => {
+      console.log(error?.response?.data);
+      Toast.show({
+        type: "error",
+        text1: String(error?.response?.data),
       });
     },
   });
