@@ -1,0 +1,75 @@
+name: build-and-deploy
+on:
+  workflow_call:
+    inputs:
+      image:
+        description: image name under the owner, as written in values.yaml, e.g. backend/onlineconversation
+        required: true
+        type: string
+      dockerfile:
+        required: true
+        type: string
+      context:
+        required: true
+        type: string
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout github
+        uses: actions/checkout@v6
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: build and push ${{ inputs.image }}
+        env:
+          REPOSITORY: ghcr.io/${{ github.repository_owner }}/${{ inputs.image }}
+        run: |
+          IMAGE=$(echo "$REPOSITORY" | tr '[:upper:]' '[:lower:]')
+          # :latest is kept until nothing pulls it anymore
+          docker buildx build --platform linux/amd64 \
+            -t "$IMAGE:${GITHUB_SHA::7}" \
+            -t "$IMAGE:latest" \
+            -f ${{ inputs.dockerfile }} ${{ inputs.context }} --push
+
+      - name: write the tag into helm values
+        env:
+          IMAGE: ${{ inputs.image }}
+          VALUES: infra/k8s/helm/values.yaml
+        run: |
+          TAG=${GITHUB_SHA::7}
+          # the image name appears once in values.yaml, so only its tag is replaced and the rest of the file is untouched
+          if [ "$(grep -cE "image: \"?${IMAGE}:" "$VALUES")" != "1" ]; then
+            echo "expected exactly one image line for $IMAGE in $VALUES"
+            exit 1
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # services built together race on this push, a rejected push resets and tries again on the new main
+          for attempt in $(seq 10); do
+            git pull --rebase --quiet origin "$GITHUB_REF_NAME"
+            sed -E -i "s#(image: \"?)${IMAGE}:[^\" ]+#\1${IMAGE}:${TAG}#" "$VALUES"
+            if git diff --quiet; then
+              echo "$IMAGE is already at $TAG"
+              exit 0
+            fi
+            git commit -qam "deploy: ${IMAGE} ${TAG}"
+            # a push made with GITHUB_TOKEN triggers no workflow, so this can't loop
+            if git push --quiet origin "HEAD:$GITHUB_REF_NAME"; then
+              exit 0
+            fi
+            git reset --quiet --hard "origin/$GITHUB_REF_NAME"
+            # a random 1-5s wait, so runs that collided don't retry in lockstep
+            sleep $((RANDOM % 5 + 1))
+          done
+          echo "could not push the tag after 10 attempts"
+          exit 1
