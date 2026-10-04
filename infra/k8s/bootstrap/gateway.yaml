@@ -58,44 +58,55 @@ kind: Gateway
 metadata:
   name: cluster-gateway
   namespace: envoy-gateway-system
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt
+#  annotations:
+#    cert-manager.io/cluster-issuer: letsencrypt
 spec:
   gatewayClassName: eg
   listeners:
     - name: backend-http
-      hostname: "backend.mikekim1032.shop"
+      hostname: "backend.pbonard.com"
       port: 80
       protocol: HTTP
       allowedRoutes:
         namespaces:
           from: All
+    # github's argo cd webhook, the only route on it is POST /api/webhook (argocd-webhook.yaml)
+    - name: argocd-webhook-http
+      hostname: "argocd-webhook.pbonard.com"
+      port: 80
+      protocol: HTTP
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels:
+              kubernetes.io/metadata.name: argocd
 #    - name: backend-https
-#      hostname: "backend.mikekim1032.shop"
+#      hostname: "backend.pbonard.com"
 #      port: 443
 #      protocol: HTTPS
 #      tls:
 #        mode: Terminate
 #        certificateRefs:
-#          - name: backend-mikekim1032-tls
+#          - name: backend-pbonard-tls
 #      allowedRoutes:
 #        namespaces:
 #          from: All
 #    - name: argocd-http
-#      hostname: "argocd.mikekim1032.shop"
+#      hostname: "argocd.pbonard.com"
 #      port: 80
 #      protocol: HTTP
 #      allowedRoutes:
 #        namespaces:
 #          from: All
 #    - name: argocd-https
-#      hostname: "argocd.mikekim1032.shop"
+#      hostname: "argocd.pbonard.com"
 #      protocol: HTTPS
 #      port: 443
 #      tls:
 #        mode: Terminate
 #        certificateRefs:
-#          - name: argocd-mikekim1032-tls
+#          - name: argocd-pbonard-tls
 #      allowedRoutes:
 #        namespaces:
 #          from: All

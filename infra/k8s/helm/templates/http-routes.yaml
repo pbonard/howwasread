@@ -36,7 +36,7 @@ spec:
     - name: cluster-gateway
       namespace: envoy-gateway-system
   hostnames:
-    - "backend.mikekim1032.shop"
+    - "backend.pbonard.com"
   rules:
     - matches:
         - path:

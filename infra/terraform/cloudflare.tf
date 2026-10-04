@@ -1,45 +1,48 @@
+locals {
+  cloudflare_account_id = "974f94f87ea3d25fca82e9fb1f408b83"
+  # cloudflared routes every hostname of the zone to the envoy gateway, the gateway picks the service by hostname
+  envoy_gateway = "http://static-envoy-ingress.envoy-gateway-system.svc.cluster.local:80"
+}
+
 resource "cloudflare_zone" "main" {
-  account_id = "974f94f87ea3d25fca82e9fb1f408b83"
-  zone       = "mikekim1032.shop"
-  plan       = "free"
+  account = {
+    id = local.cloudflare_account_id
+  }
+  name = "pbonard.com"
 }
 
-resource "cloudflare_record" "apex" {
+resource "cloudflare_dns_record" "apex" {
   zone_id = cloudflare_zone.main.id
-  name    = "@"
-  content = cloudflare_zero_trust_tunnel_cloudflared.kind_cluster.cname
+  name    = "pbonard.com"
+  content = "${cloudflare_zero_trust_tunnel_cloudflared.kind_cluster.id}.cfargotunnel.com"
   type    = "CNAME"
   proxied = true
+  # 1 is automatic
+  ttl = 1
 }
 
-# 2. CNAME record for all subdomains (*.mikekim1032.shop)
-resource "cloudflare_record" "wildcard" {
+# every subdomain (*.pbonard.com) goes through the tunnel too
+resource "cloudflare_dns_record" "wildcard" {
   zone_id = cloudflare_zone.main.id
-  name    = "*"
-  content = cloudflare_zero_trust_tunnel_cloudflared.kind_cluster.cname
+  name    = "*.pbonard.com"
+  content = "${cloudflare_zero_trust_tunnel_cloudflared.kind_cluster.id}.cfargotunnel.com"
   type    = "CNAME"
   proxied = true
+  ttl     = 1
 }
 
-resource "cloudflare_record" "turn" {
+resource "cloudflare_dns_record" "turn" {
   zone_id = cloudflare_zone.main.id
-  name    = "turn"
+  name    = "turn.pbonard.com"
+  # placeholder, the turn service writes the home ip whenever it changes
   content = "127.0.0.1"
   type    = "A"
   proxied = false
+  ttl     = 1
 
   lifecycle {
     ignore_changes = [content]
   }
-}
-
-resource "cloudflare_record" "vercel_app" {
-  zone_id = cloudflare_zone.main.id
-  name    = "app"
-  content   = "1c285eb961bd2418.vercel-dns-017.com"
-  type    = "CNAME"
-  proxied = false
-  ttl     = 1
 }
 
 resource "random_id" "tunnel_secret" {
@@ -47,50 +50,61 @@ resource "random_id" "tunnel_secret" {
 }
 
 resource "cloudflare_zero_trust_tunnel_cloudflared" "kind_cluster" {
-  account_id = "974f94f87ea3d25fca82e9fb1f408b83"
+  account_id = local.cloudflare_account_id
   name       = "local-kind-cluster"
-  secret     = random_id.tunnel_secret.b64_std
+  # the ingress rules are kept at cloudflare (the config resource below), not in a local config file
+  config_src    = "cloudflare"
+  tunnel_secret = random_id.tunnel_secret.b64_std
+
+  lifecycle {
+    # the api never returns the secret, an imported tunnel would otherwise be replaced to set it again
+    ignore_changes = [tunnel_secret]
+  }
 }
 
 resource "cloudflare_zero_trust_tunnel_cloudflared_config" "kind_cluster_config" {
-  account_id = "974f94f87ea3d25fca82e9fb1f408b83"
+  account_id = local.cloudflare_account_id
   tunnel_id  = cloudflare_zero_trust_tunnel_cloudflared.kind_cluster.id
 
-  config {
-
-    ingress_rule {
-      hostname = "mikekim1032.shop"
-      service  = "http://static-envoy-ingress.envoy-gateway-system.svc.cluster.local:80"
-    }
-
-    ingress_rule {
-      hostname = "*.mikekim1032.shop"
-      service  = "http://static-envoy-ingress.envoy-gateway-system.svc.cluster.local:80"
-    }
-
-    ingress_rule {
-      service = "http_status:404"
-    }
+  config = {
+    ingress = [
+      {
+        hostname = "pbonard.com"
+        service  = local.envoy_gateway
+      },
+      {
+        hostname = "*.pbonard.com"
+        service  = local.envoy_gateway
+      },
+      {
+        service = "http_status:404"
+      },
+    ]
   }
+}
+
+data "cloudflare_zero_trust_tunnel_cloudflared_token" "kind_cluster" {
+  account_id = local.cloudflare_account_id
+  tunnel_id  = cloudflare_zero_trust_tunnel_cloudflared.kind_cluster.id
 }
 
 output "cloudflare_nameservers" {
   value       = cloudflare_zone.main.name_servers
-  description = "Copy these nameservers and paste them into your Gabia domain management dashboard."
+  description = "The nameservers of the zone, already set since the domain is registered at cloudflare"
 }
 
 output "cloudflare_zone_id" {
   value       = cloudflare_zone.main.id
-  description = "The Cloudflare Zone ID for mikekim1032.shop"
+  description = "The Cloudflare Zone ID for pbonard.com"
 }
 
 output "cloudflare_turn_record_id" {
-  value       = cloudflare_record.turn.id
-  description = "The DNS Record ID for turn.mikekim1032.shop"
+  value       = cloudflare_dns_record.turn.id
+  description = "The DNS Record ID for turn.pbonard.com"
 }
 
 output "tunnel_token" {
-  value       = cloudflare_zero_trust_tunnel_cloudflared.kind_cluster.tunnel_token
+  value       = data.cloudflare_zero_trust_tunnel_cloudflared_token.kind_cluster.token
   sensitive   = true
   description = "The token required for the cloudflared pod."
 }
