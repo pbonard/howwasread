@@ -72,3 +72,16 @@ metadata:
 spec:
   partitions: 3
   replicas: 1
+---
+
+# offline conversation reports, keyed by conversation id, consumed by offlineconversation
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaTopic
+metadata:
+  name: offline-conversation
+  namespace: kafka-system
+  labels:
+    strimzi.io/cluster: kafka-cluster
+spec:
+  partitions: 3
+  replicas: 1

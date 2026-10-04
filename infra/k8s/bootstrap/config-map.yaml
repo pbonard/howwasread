@@ -35,7 +35,7 @@ data:
   TURN_KEY_PATH: "/cert/turn/tls.key"
   OLLAMA_URL: "http://ollama.llm.svc.cluster.local:11434"
   OLLAMA_MODEL: "qwen3:8b"
-  # read at startup, change it here and restart onlineconversation, no image build
+  # read at startup, change it here and restart onlineconversation and offlineconversation, no image build
   MODERATION_CATEGORIES: "hate,harassment,sexual,violent_threat,advertising,contact,scam,manipulation,other"
   MODERATION_POLICY: |
     You are a content moderator for a meetup app where people discuss novels, short stories, poems, plays and films.
