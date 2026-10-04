@@ -28,7 +28,8 @@ data:
         city           TEXT,
         h3_res5        VARCHAR(15) NOT NULL,
         h3_res7        VARCHAR(15) NOT NULL,
-        updated_at     DATETIME NULL,
+        updated_at     DATETIME(6) NULL,
+        is_evaluated   BOOLEAN     NOT NULL DEFAULT FALSE,
         PRIMARY KEY (id)
     );
 
@@ -44,6 +45,21 @@ data:
         conversation_id BINARY(16) NOT NULL,
         member_id       BINARY(16) NOT NULL,
         PRIMARY KEY (conversation_id, member_id)
+    );
+
+    -- every report evaluation, kept after a violating conversation is deleted
+    CREATE TABLE offline_conversation_verdict
+    (
+        conversation_id    BINARY(16)  NOT NULL,
+        created_at         DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+        -- updated_at of the evaluated content, NULL if it was never updated
+        content_updated_at DATETIME(6) NULL,
+        contents           JSON        NOT NULL,
+        model              VARCHAR(64) NOT NULL,
+        violation          BOOLEAN     NOT NULL,
+        category           VARCHAR(32) NOT NULL,
+        reason             TEXT        NOT NULL,
+        PRIMARY KEY (conversation_id, created_at)
     );
 
     -- ============================================================
@@ -195,6 +211,13 @@ data:
           ]
         },
         "offline_conversation_participant": {
+          "column_vindexes": [
+            {
+              "column": "conversation_id",
+              "name": "binary_md5"}
+          ]
+        },
+        "offline_conversation_verdict": {
           "column_vindexes": [
             {
               "column": "conversation_id",

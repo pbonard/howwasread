@@ -169,6 +169,27 @@ class OfflineConversationControllerTest {
   }
 
   @Test
+  void report_delegatesWithConversationId() {
+    assertThat(mvc.post().uri(BASE + "/report")
+        .header("X-User-Id", memberId.toString())
+        .contentType(MediaType.APPLICATION_JSON)
+        .content("{\"conversationId\":\"" + conversationId + "\"}"))
+        .hasStatusOk()
+        .hasBodyTextEqualTo("ok");
+    verify(offlineConversationService).report(conversationId);
+  }
+
+  @Test
+  void report_withoutConversationId_isBadRequest() {
+    assertThat(mvc.post().uri(BASE + "/report")
+        .header("X-User-Id", memberId.toString())
+        .contentType(MediaType.APPLICATION_JSON)
+        .content("{}"))
+        .hasStatus(HttpStatus.BAD_REQUEST);
+    verifyNoInteractions(offlineConversationService);
+  }
+
+  @Test
   void detail_returnsJson() {
     when(offlineConversationService.detail(conversationId, memberId)).thenReturn(
         OfflineConversationDetailResponse.builder()
