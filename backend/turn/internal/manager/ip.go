@@ -41,7 +41,7 @@ func (tm *TurnManager) monitorAndReflectIPChange(interval time.Duration) {
 
 func (tm *TurnManager) updateCloudflareDNS(newIP string) error {
 	url := fmt.Sprintf("https://api.cloudflare.com/client/v4/zones/%s/dns_records/%s", tm.zoneID, tm.recordID)
-	payload := fmt.Sprintf(`{"type":"A","name":"turn.mikekim1032.shop","content":"%s","proxied":false}`, newIP)
+	payload := fmt.Sprintf(`{"type":"A","name":"%s","content":"%s","proxied":false}`, tm.realm, newIP)
 	req, err := http.NewRequest("PATCH", url, bytes.NewBuffer([]byte(payload)))
 	if err != nil {
 		return err

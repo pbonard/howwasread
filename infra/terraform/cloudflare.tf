@@ -1,6 +1,6 @@
 resource "cloudflare_zone" "main" {
   account_id = "974f94f87ea3d25fca82e9fb1f408b83"
-  zone       = "mikekim1032.shop"
+  zone       = "pbonard.com"
   plan       = "free"
 }
 
@@ -12,7 +12,7 @@ resource "cloudflare_record" "apex" {
   proxied = true
 }
 
-# 2. CNAME record for all subdomains (*.mikekim1032.shop)
+# 2. CNAME record for all subdomains (*.pbonard.com)
 resource "cloudflare_record" "wildcard" {
   zone_id = cloudflare_zone.main.id
   name    = "*"
@@ -33,15 +33,6 @@ resource "cloudflare_record" "turn" {
   }
 }
 
-resource "cloudflare_record" "vercel_app" {
-  zone_id = cloudflare_zone.main.id
-  name    = "app"
-  content   = "1c285eb961bd2418.vercel-dns-017.com"
-  type    = "CNAME"
-  proxied = false
-  ttl     = 1
-}
-
 resource "random_id" "tunnel_secret" {
   byte_length = 35
 }
@@ -59,12 +50,12 @@ resource "cloudflare_zero_trust_tunnel_cloudflared_config" "kind_cluster_config"
   config {
 
     ingress_rule {
-      hostname = "mikekim1032.shop"
+      hostname = "pbonard.com"
       service  = "http://static-envoy-ingress.envoy-gateway-system.svc.cluster.local:80"
     }
 
     ingress_rule {
-      hostname = "*.mikekim1032.shop"
+      hostname = "*.pbonard.com"
       service  = "http://static-envoy-ingress.envoy-gateway-system.svc.cluster.local:80"
     }
 
@@ -76,17 +67,17 @@ resource "cloudflare_zero_trust_tunnel_cloudflared_config" "kind_cluster_config"
 
 output "cloudflare_nameservers" {
   value       = cloudflare_zone.main.name_servers
-  description = "Copy these nameservers and paste them into your Gabia domain management dashboard."
+  description = "The nameservers of the zone, already set since the domain is registered at cloudflare"
 }
 
 output "cloudflare_zone_id" {
   value       = cloudflare_zone.main.id
-  description = "The Cloudflare Zone ID for mikekim1032.shop"
+  description = "The Cloudflare Zone ID for pbonard.com"
 }
 
 output "cloudflare_turn_record_id" {
   value       = cloudflare_record.turn.id
-  description = "The DNS Record ID for turn.mikekim1032.shop"
+  description = "The DNS Record ID for turn.pbonard.com"
 }
 
 output "tunnel_token" {

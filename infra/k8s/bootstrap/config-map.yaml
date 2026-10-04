@@ -30,7 +30,7 @@ data:
   KAFKA_USER_KEY_PATH: "/cert/kafka/user/user.key"
   K8SSANDRA_HOST: "k8ssandra-cluster-dc1-service.k8ssandra.svc.cluster.local"
   K8SSANDRA_CA_CERT_PATH: "/cert/k8ssandra/ca.crt"
-  TURN_REALM: "turn.mikekim1032.shop"
+  TURN_REALM: "turn.pbonard.com"
   TURN_CERT_PATH: "/cert/turn/tls.crt"
   TURN_KEY_PATH: "/cert/turn/tls.key"
   OLLAMA_URL: "http://ollama.llm.svc.cluster.local:11434"
