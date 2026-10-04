@@ -9,6 +9,11 @@ metadata:
     app: {{ $name }}
 spec:
   # replicas: 1
+  {{- if $app.turn }}
+  # host ports can't be held by the old and the new pod at once, so the old pod stops before the new one starts
+  strategy:
+    type: Recreate
+  {{- end }}
   selector:
     matchLabels:
       app: {{ $name }}
