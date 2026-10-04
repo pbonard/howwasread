@@ -192,7 +192,7 @@ apps:
 #    cpuLimits: "0.1"
 #    memoryLimits: "10Mi"
   offlineconversation:
-    image: "backend/offlineconversation:176c125"
+    image: "backend/offlineconversation:06cc065"
     port: 8080
     routePath: /offlineconversation
     authentication: false
