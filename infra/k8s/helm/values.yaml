@@ -232,7 +232,7 @@ apps:
   #    cpuLimits: "0.4"
   #    memoryLimits: "100Mi"
   turn:
-    image: "backend/turn:176c125"
+    image: "backend/turn:6e475af"
     port: 3478
     routePath: false
     turn: true
