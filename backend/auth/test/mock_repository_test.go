@@ -47,66 +47,6 @@ func (_m *MockRepository) EXPECT() *MockRepository_Expecter {
 	return &MockRepository_Expecter{mock: &_m.Mock}
 }
 
-// CheckNonce provides a mock function for the type MockRepository
-func (_mock *MockRepository) CheckNonce(nonce string) (bool, error) {
-	ret := _mock.Called(nonce)
-
-	if len(ret) == 0 {
-		panic("no return value specified for CheckNonce")
-	}
-
-	var r0 bool
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(string) (bool, error)); ok {
-		return returnFunc(nonce)
-	}
-	if returnFunc, ok := ret.Get(0).(func(string) bool); ok {
-		r0 = returnFunc(nonce)
-	} else {
-		r0 = ret.Get(0).(bool)
-	}
-	if returnFunc, ok := ret.Get(1).(func(string) error); ok {
-		r1 = returnFunc(nonce)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// MockRepository_CheckNonce_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CheckNonce'
-type MockRepository_CheckNonce_Call struct {
-	*mock.Call
-}
-
-// CheckNonce is a helper method to define mock.On call
-//   - nonce string
-func (_e *MockRepository_Expecter) CheckNonce(nonce any) *MockRepository_CheckNonce_Call {
-	return &MockRepository_CheckNonce_Call{Call: _e.mock.On("CheckNonce", nonce)}
-}
-
-func (_c *MockRepository_CheckNonce_Call) Run(run func(nonce string)) *MockRepository_CheckNonce_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 string
-		if args[0] != nil {
-			arg0 = args[0].(string)
-		}
-		run(
-			arg0,
-		)
-	})
-	return _c
-}
-
-func (_c *MockRepository_CheckNonce_Call) Return(b bool, err error) *MockRepository_CheckNonce_Call {
-	_c.Call.Return(b, err)
-	return _c
-}
-
-func (_c *MockRepository_CheckNonce_Call) RunAndReturn(run func(nonce string) (bool, error)) *MockRepository_CheckNonce_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // DeleteAccount provides a mock function for the type MockRepository
 func (_mock *MockRepository) DeleteAccount(ctx context.Context, id gocql.UUID, email string, phoneNumber string) error {
 	ret := _mock.Called(ctx, id, email, phoneNumber)
@@ -177,35 +117,43 @@ func (_c *MockRepository_DeleteAccount_Call) RunAndReturn(run func(ctx context.C
 }
 
 // FindEmailAndOTPByVerificationId provides a mock function for the type MockRepository
-func (_mock *MockRepository) FindEmailAndOTPByVerificationId(verificationId gocql.UUID) (string, string, error) {
+func (_mock *MockRepository) FindEmailAndOTPByVerificationId(verificationId gocql.UUID) (gocql.UUID, string, string, error) {
 	ret := _mock.Called(verificationId)
 
 	if len(ret) == 0 {
 		panic("no return value specified for FindEmailAndOTPByVerificationId")
 	}
 
-	var r0 string
+	var r0 gocql.UUID
 	var r1 string
-	var r2 error
-	if returnFunc, ok := ret.Get(0).(func(gocql.UUID) (string, string, error)); ok {
+	var r2 string
+	var r3 error
+	if returnFunc, ok := ret.Get(0).(func(gocql.UUID) (gocql.UUID, string, string, error)); ok {
 		return returnFunc(verificationId)
 	}
-	if returnFunc, ok := ret.Get(0).(func(gocql.UUID) string); ok {
+	if returnFunc, ok := ret.Get(0).(func(gocql.UUID) gocql.UUID); ok {
 		r0 = returnFunc(verificationId)
 	} else {
-		r0 = ret.Get(0).(string)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(gocql.UUID)
+		}
 	}
 	if returnFunc, ok := ret.Get(1).(func(gocql.UUID) string); ok {
 		r1 = returnFunc(verificationId)
 	} else {
 		r1 = ret.Get(1).(string)
 	}
-	if returnFunc, ok := ret.Get(2).(func(gocql.UUID) error); ok {
+	if returnFunc, ok := ret.Get(2).(func(gocql.UUID) string); ok {
 		r2 = returnFunc(verificationId)
 	} else {
-		r2 = ret.Error(2)
+		r2 = ret.Get(2).(string)
 	}
-	return r0, r1, r2
+	if returnFunc, ok := ret.Get(3).(func(gocql.UUID) error); ok {
+		r3 = returnFunc(verificationId)
+	} else {
+		r3 = ret.Error(3)
+	}
+	return r0, r1, r2, r3
 }
 
 // MockRepository_FindEmailAndOTPByVerificationId_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FindEmailAndOTPByVerificationId'
@@ -232,12 +180,12 @@ func (_c *MockRepository_FindEmailAndOTPByVerificationId_Call) Run(run func(veri
 	return _c
 }
 
-func (_c *MockRepository_FindEmailAndOTPByVerificationId_Call) Return(email string, otp string, err error) *MockRepository_FindEmailAndOTPByVerificationId_Call {
-	_c.Call.Return(email, otp, err)
+func (_c *MockRepository_FindEmailAndOTPByVerificationId_Call) Return(id gocql.UUID, email string, otp string, err error) *MockRepository_FindEmailAndOTPByVerificationId_Call {
+	_c.Call.Return(id, email, otp, err)
 	return _c
 }
 
-func (_c *MockRepository_FindEmailAndOTPByVerificationId_Call) RunAndReturn(run func(verificationId gocql.UUID) (string, string, error)) *MockRepository_FindEmailAndOTPByVerificationId_Call {
+func (_c *MockRepository_FindEmailAndOTPByVerificationId_Call) RunAndReturn(run func(verificationId gocql.UUID) (gocql.UUID, string, string, error)) *MockRepository_FindEmailAndOTPByVerificationId_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -774,16 +722,16 @@ func (_c *MockRepository_LinkAndMarkVerifiedPhoneNumber_Call) RunAndReturn(run f
 }
 
 // MarkEmailVerified provides a mock function for the type MockRepository
-func (_mock *MockRepository) MarkEmailVerified(email string) error {
-	ret := _mock.Called(email)
+func (_mock *MockRepository) MarkEmailVerified(id gocql.UUID, email string) error {
+	ret := _mock.Called(id, email)
 
 	if len(ret) == 0 {
 		panic("no return value specified for MarkEmailVerified")
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(string) error); ok {
-		r0 = returnFunc(email)
+	if returnFunc, ok := ret.Get(0).(func(gocql.UUID, string) error); ok {
+		r0 = returnFunc(id, email)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -796,19 +744,25 @@ type MockRepository_MarkEmailVerified_Call struct {
 }
 
 // MarkEmailVerified is a helper method to define mock.On call
+//   - id gocql.UUID
 //   - email string
-func (_e *MockRepository_Expecter) MarkEmailVerified(email any) *MockRepository_MarkEmailVerified_Call {
-	return &MockRepository_MarkEmailVerified_Call{Call: _e.mock.On("MarkEmailVerified", email)}
+func (_e *MockRepository_Expecter) MarkEmailVerified(id any, email any) *MockRepository_MarkEmailVerified_Call {
+	return &MockRepository_MarkEmailVerified_Call{Call: _e.mock.On("MarkEmailVerified", id, email)}
 }
 
-func (_c *MockRepository_MarkEmailVerified_Call) Run(run func(email string)) *MockRepository_MarkEmailVerified_Call {
+func (_c *MockRepository_MarkEmailVerified_Call) Run(run func(id gocql.UUID, email string)) *MockRepository_MarkEmailVerified_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 string
+		var arg0 gocql.UUID
 		if args[0] != nil {
-			arg0 = args[0].(string)
+			arg0 = args[0].(gocql.UUID)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
 		}
 		run(
 			arg0,
+			arg1,
 		)
 	})
 	return _c
@@ -819,7 +773,7 @@ func (_c *MockRepository_MarkEmailVerified_Call) Return(err error) *MockReposito
 	return _c
 }
 
-func (_c *MockRepository_MarkEmailVerified_Call) RunAndReturn(run func(email string) error) *MockRepository_MarkEmailVerified_Call {
+func (_c *MockRepository_MarkEmailVerified_Call) RunAndReturn(run func(id gocql.UUID, email string) error) *MockRepository_MarkEmailVerified_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -951,16 +905,16 @@ func (_c *MockRepository_ReplaceAndLinkMemberWithOldAccount_Call) RunAndReturn(r
 }
 
 // SaveEmailAndOtpByVerificationId provides a mock function for the type MockRepository
-func (_mock *MockRepository) SaveEmailAndOtpByVerificationId(verificationId gocql.UUID, email string, otp string) error {
-	ret := _mock.Called(verificationId, email, otp)
+func (_mock *MockRepository) SaveEmailAndOtpByVerificationId(verificationId gocql.UUID, id gocql.UUID, email string, otp string) error {
+	ret := _mock.Called(verificationId, id, email, otp)
 
 	if len(ret) == 0 {
 		panic("no return value specified for SaveEmailAndOtpByVerificationId")
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(gocql.UUID, string, string) error); ok {
-		r0 = returnFunc(verificationId, email, otp)
+	if returnFunc, ok := ret.Get(0).(func(gocql.UUID, gocql.UUID, string, string) error); ok {
+		r0 = returnFunc(verificationId, id, email, otp)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -974,30 +928,36 @@ type MockRepository_SaveEmailAndOtpByVerificationId_Call struct {
 
 // SaveEmailAndOtpByVerificationId is a helper method to define mock.On call
 //   - verificationId gocql.UUID
+//   - id gocql.UUID
 //   - email string
 //   - otp string
-func (_e *MockRepository_Expecter) SaveEmailAndOtpByVerificationId(verificationId any, email any, otp any) *MockRepository_SaveEmailAndOtpByVerificationId_Call {
-	return &MockRepository_SaveEmailAndOtpByVerificationId_Call{Call: _e.mock.On("SaveEmailAndOtpByVerificationId", verificationId, email, otp)}
+func (_e *MockRepository_Expecter) SaveEmailAndOtpByVerificationId(verificationId any, id any, email any, otp any) *MockRepository_SaveEmailAndOtpByVerificationId_Call {
+	return &MockRepository_SaveEmailAndOtpByVerificationId_Call{Call: _e.mock.On("SaveEmailAndOtpByVerificationId", verificationId, id, email, otp)}
 }
 
-func (_c *MockRepository_SaveEmailAndOtpByVerificationId_Call) Run(run func(verificationId gocql.UUID, email string, otp string)) *MockRepository_SaveEmailAndOtpByVerificationId_Call {
+func (_c *MockRepository_SaveEmailAndOtpByVerificationId_Call) Run(run func(verificationId gocql.UUID, id gocql.UUID, email string, otp string)) *MockRepository_SaveEmailAndOtpByVerificationId_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 gocql.UUID
 		if args[0] != nil {
 			arg0 = args[0].(gocql.UUID)
 		}
-		var arg1 string
+		var arg1 gocql.UUID
 		if args[1] != nil {
-			arg1 = args[1].(string)
+			arg1 = args[1].(gocql.UUID)
 		}
 		var arg2 string
 		if args[2] != nil {
 			arg2 = args[2].(string)
 		}
+		var arg3 string
+		if args[3] != nil {
+			arg3 = args[3].(string)
+		}
 		run(
 			arg0,
 			arg1,
 			arg2,
+			arg3,
 		)
 	})
 	return _c
@@ -1008,7 +968,7 @@ func (_c *MockRepository_SaveEmailAndOtpByVerificationId_Call) Return(err error)
 	return _c
 }
 
-func (_c *MockRepository_SaveEmailAndOtpByVerificationId_Call) RunAndReturn(run func(verificationId gocql.UUID, email string, otp string) error) *MockRepository_SaveEmailAndOtpByVerificationId_Call {
+func (_c *MockRepository_SaveEmailAndOtpByVerificationId_Call) RunAndReturn(run func(verificationId gocql.UUID, id gocql.UUID, email string, otp string) error) *MockRepository_SaveEmailAndOtpByVerificationId_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -78,6 +78,10 @@ func getStatusCode(err error) int {
 		return http.StatusBadRequest
 	case service.ErrVerifyEmailOTP:
 		return http.StatusUnauthorized
+	case service.ErrEmailSignedUpAgain:
+		return http.StatusConflict
+	case service.ErrSessionExpired:
+		return http.StatusUnauthorized
 	case service.ErrSendSMSOTP:
 		return http.StatusBadRequest
 	case service.ErrPhoneNumberAlreadyLinked:

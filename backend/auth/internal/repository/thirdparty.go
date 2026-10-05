@@ -8,71 +8,70 @@ import (
 	gocql "github.com/apache/cassandra-gocql-driver/v2"
 )
 
-func (r *repository) CheckNonce(nonce string) (bool, error) {
-	var c int64
-	err := r.session.Query(
-		`SELECT COUNT(1) FROM nonce WHERE nonce = ?`,
-		nonce,
-	).Scan(&c)
-	if c == 0 {
-		return false, nil
-	}
-	if err != nil {
-		slog.Error("fail to check nonce",
-			"err", err,
-			"nonce", nonce,
-		)
-		return false, err
-	}
-	return true, nil
-}
-
+// SaveNonce claims the nonce once, a nonce already saved by a concurrent request returns ErrAlreadyExists
 func (r *repository) SaveNonce(nonce string) error {
-	err := r.session.Query(
-		`INSERT INTO nonce (nonce) VALUES (?)`, nonce).Exec()
+	applied, err := r.session.Query(
+		`INSERT INTO nonce (nonce) VALUES (?) IF NOT EXISTS USING TTL ?`, nonce, constant.NonceTTL,
+	).MapScanCAS(map[string]any{})
 	if err != nil {
 		slog.Error("fail to insert nonce",
 			"err", err,
 			"nonce", nonce)
 		return err
 	}
+	if !applied {
+		slog.Info("nonce is already used", "nonce", nonce)
+		return ErrAlreadyExists
+	}
 	return nil
 }
 
+// SaveThirdPartySignInInfo claims member_by_email before writing member_by_id, so a sign in that loses a race
+// to another member with the same email returns ErrAlreadyExists instead of overwriting it
 func (r *repository) SaveThirdPartySignInInfo(ctx context.Context, id gocql.UUID, email string, phoneNumberVerified, emailVerified bool) error {
-	err := r.session.Batch(gocql.LoggedBatch).
-		Query(
-			`INSERT INTO member_by_id (
-                          email_verified, phone_number_verified, id, email, role
-                          ) VALUES (?, ?, ?, ?, ?)`,
-			true, phoneNumberVerified, id, email, constant.RoleUser).
-		ExecContext(ctx)
+	var applied bool
+	var err error
+	existing := map[string]any{}
+	if emailVerified {
+		// a new member, or the verified member itself whose row is left as it is
+		applied, err = r.session.Query(
+			`INSERT INTO member_by_email (
+                             email_verified, phone_number_verified, id, email, role
+                             ) VALUES (?, ?, ?, ?, ?) IF NOT EXISTS`,
+			emailVerified, phoneNumberVerified, id, email, constant.RoleUser).MapScanCASContext(ctx, existing)
+		if err == nil && !applied && existing["id"] == id {
+			applied = true
+		}
+	} else {
+		// the third party proves the email, so it takes over an email sign up which is not verified yet
+		applied, err = r.session.Query(
+			`UPDATE member_by_email SET email_verified = ?, password = ?, phone_number_verified = ?, id = ?, role = ?
+                             WHERE email = ? IF email_verified = ?`,
+			true, nil, phoneNumberVerified, id, constant.RoleUser, email, false).MapScanCASContext(ctx, existing)
+	}
 	if err != nil {
-		slog.Error("fail to save apple sign in info",
+		slog.Error("fail to save third party sign in info at member_by_email",
 			"err", err,
 			"id", id.String(),
 		)
 		return err
 	}
-	if emailVerified {
-		err = r.session.Query(
-			`INSERT INTO member_by_email (
-                             email_verified, phone_number_verified, id, email, role
-                             ) VALUES (?, ?, ?, ?, ?);`,
-			emailVerified, phoneNumberVerified, id, email, constant.RoleUser).ExecContext(ctx)
-		if err != nil {
-			slog.Error("fail to save apple sign in info",
-				"err", err,
-				"id", id.String(),
-			)
-			return err
-		}
-		return nil
+	if !applied {
+		slog.Info("email is already claimed by another member", "id", id.String())
+		return ErrAlreadyExists
 	}
 	err = r.session.Query(
-		`INSERT INTO member_by_email (
-                             email_verified, password, phone_number_verified, id, email, role
-                             ) VALUES (?, ?, ?, ?, ?, ?);`,
-		true, nil, phoneNumberVerified, id, email, constant.RoleUser).ExecContext(ctx)
+		`INSERT INTO member_by_id (
+                          email_verified, phone_number_verified, id, email, role
+                          ) VALUES (?, ?, ?, ?, ?)`,
+		true, phoneNumberVerified, id, email, constant.RoleUser).
+		ExecContext(ctx)
+	if err != nil {
+		slog.Error("fail to save third party sign in info at member_by_id",
+			"err", err,
+			"id", id.String(),
+		)
+		return err
+	}
 	return nil
 }

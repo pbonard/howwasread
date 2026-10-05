@@ -10,6 +10,8 @@ var (
 	ErrLoginWithEmail           = errors.New("email or password is(are) incorrect")
 	ErrSendEmailOTP             = errors.New("fail to send email OTP")
 	ErrVerifyEmailOTP           = errors.New("fail to verify email OTP")
+	ErrEmailSignedUpAgain       = errors.New("this email was signed up again, please sign up again")
+	ErrSessionExpired           = errors.New("session expired, please verify again")
 	ErrPhoneNumberAlreadyLinked = errors.New("this phone number already linked with other account")
 	ErrSendSMSOTP               = errors.New("fail to send SMS OTP")
 	ErrVerifySMSOTP             = errors.New("fail to verify SMS OTP")
