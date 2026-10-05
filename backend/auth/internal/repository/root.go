@@ -3,6 +3,7 @@ package repository
 import (
 	"backend/common"
 	"context"
+	"errors"
 	"log"
 	"log/slog"
 	"os"
@@ -13,13 +14,19 @@ import (
 	_ "github.com/joho/godotenv/autoload"
 )
 
+// ErrAlreadyExists is returned when an email, phone number or nonce is already claimed by someone else
+var ErrAlreadyExists = errors.New("already exists")
+
+// ErrNotOwner is returned when an email is signed up again by another member after its OTP was sent
+var ErrNotOwner = errors.New("not owner")
+
 type Repository interface {
 	SaveEmailLoginInfo(id gocql.UUID, email, password string) error
 	VerifiedEmailExists(ctx context.Context, email string) (bool, error)
 	FindLoginInfoByEmail(email string) (emailVerified, phoneNumberVerified bool, id gocql.UUID, password, role string, err error)
-	SaveEmailAndOtpByVerificationId(verificationId gocql.UUID, email, otp string) error
-	FindEmailAndOTPByVerificationId(verificationId gocql.UUID) (email string, otp string, err error)
-	MarkEmailVerified(email string) error
+	SaveEmailAndOtpByVerificationId(verificationId, id gocql.UUID, email, otp string) error
+	FindEmailAndOTPByVerificationId(verificationId gocql.UUID) (id gocql.UUID, email string, otp string, err error)
+	MarkEmailVerified(id gocql.UUID, email string) error
 	SaveEmailBySessionId(sessionId gocql.UUID, email string) error
 	FindEmailBySessionId(sessionId gocql.UUID) (email string, err error)
 	UpdatePasswordByEmail(ctx context.Context, password string, email string) error
@@ -37,7 +44,6 @@ type Repository interface {
 	FindEmailByPhoneNumber(phoneNumber string) (email string, err error)
 	ReplaceAndLinkMemberWithOldAccount(newId, oldAccountId gocql.UUID, email, phoneNumber string) error
 	WasBanned(phoneNumber string) error
-	CheckNonce(nonce string) (bool, error)
 	SaveNonce(nonce string) error
 	SaveThirdPartySignInInfo(ctx context.Context, id gocql.UUID, email string, phoneNumberVerified, emailVerified bool) error
 }
@@ -57,6 +63,7 @@ func NewRepository() Repository {
 	}
 	cluster.Timeout = 1 * time.Minute
 	cluster.Consistency = gocql.LocalOne
+	cluster.SerialConsistency = gocql.LocalSerial
 	cluster.Compressor = &lz4.LZ4Compressor{}
 	cluster.PageSize = 1000
 	cluster.NextPagePrefetch = 0.25
@@ -90,6 +97,7 @@ func NewRepository() Repository {
 		`CREATE TABLE IF NOT EXISTS member_by_verification_id (
 			verification_id uuid PRIMARY KEY, email text, phone_number text, otp text
 		);`,
+		`ALTER TABLE member_by_verification_id ADD IF NOT EXISTS id uuid;`,
 		`CREATE TABLE IF NOT EXISTS member_by_session_id (
 			session_id uuid PRIMARY KEY, email text
 		);`,

@@ -2,6 +2,7 @@ package service
 
 import (
 	"backend/auth/internal/dto"
+	"backend/auth/internal/repository"
 	"context"
 	"errors"
 	"log"
@@ -55,11 +56,14 @@ func (s *service) CreateMemberByEmail(ctx context.Context, email, password strin
 	}
 	id := gocql.UUID(idv7)
 	err = s.repository.SaveEmailLoginInfo(id, email, password)
+	if errors.Is(err, repository.ErrAlreadyExists) {
+		return nil, ErrSignUpWithEmail
+	}
 	if err != nil {
 		return nil, ErrInternalServer
 	}
 
-	vid, err := s.sendEmailOTP(email)
+	vid, err := s.sendEmailOTP(id, email)
 	if err != nil {
 		return nil, ErrInternalServer
 	}
@@ -85,7 +89,7 @@ func (s *service) LoginWithEmail(email, password string) (*dto.LoginWithEmailRes
 	}
 
 	if !emailVerified {
-		resp.VerificationId, err = s.sendEmailOTP(email)
+		resp.VerificationId, err = s.sendEmailOTP(id, email)
 		if err != nil {
 			return nil, "", ErrInternalServer
 		}
@@ -119,7 +123,7 @@ func (s *service) LoginWithEmail(email, password string) (*dto.LoginWithEmailRes
 	return &resp, rt, nil
 }
 
-func (s *service) sendEmailOTP(email string) (uuid.UUID, error) {
+func (s *service) sendEmailOTP(id gocql.UUID, email string) (uuid.UUID, error) {
 	otp := strconv.Itoa(rand.Intn(900000) + 100000)
 	vid, err := gocql.RandomUUID()
 	if err != nil {
@@ -128,7 +132,7 @@ func (s *service) sendEmailOTP(email string) (uuid.UUID, error) {
 		)
 		return uuid.UUID{}, ErrInternalServer
 	}
-	err = s.repository.SaveEmailAndOtpByVerificationId(vid, email, otp)
+	err = s.repository.SaveEmailAndOtpByVerificationId(vid, id, email, otp)
 	if err != nil {
 		return uuid.UUID{}, ErrInternalServer
 	}
@@ -145,7 +149,7 @@ func (s *service) sendEmailOTP(email string) (uuid.UUID, error) {
 }
 
 func (s *service) VerifyEmailOTP(otp string, verificationId uuid.UUID) (*dto.VerifyEmailOTPResponse, error) {
-	email, dbOTP, err := s.repository.FindEmailAndOTPByVerificationId(gocql.UUID(verificationId))
+	id, email, dbOTP, err := s.repository.FindEmailAndOTPByVerificationId(gocql.UUID(verificationId))
 	if err != nil {
 		return nil, ErrVerifyEmailOTP
 	}
@@ -156,7 +160,10 @@ func (s *service) VerifyEmailOTP(otp string, verificationId uuid.UUID) (*dto.Ver
 		)
 		return nil, ErrVerifyEmailOTP
 	}
-	err = s.repository.MarkEmailVerified(email)
+	err = s.repository.MarkEmailVerified(id, email)
+	if errors.Is(err, repository.ErrNotOwner) {
+		return nil, ErrEmailSignedUpAgain
+	}
 	if err != nil {
 		return nil, ErrInternalServer
 	}
@@ -178,14 +185,17 @@ func (s *service) VerifyEmailOTP(otp string, verificationId uuid.UUID) (*dto.Ver
 }
 
 func (s *service) ForgetPassword(ctx context.Context, email string) (map[string]uuid.UUID, error) {
-	e, err := s.repository.VerifiedEmailExists(ctx, email)
+	emailVerified, _, id, _, _, err := s.repository.FindLoginInfoByEmail(email)
+	if errors.Is(err, gocql.ErrNotFound) {
+		return nil, nil
+	}
 	if err != nil {
 		return nil, err
 	}
-	if !e {
-		return nil, err
+	if !emailVerified {
+		return nil, nil
 	}
-	vid, err := s.sendEmailOTP(email)
+	vid, err := s.sendEmailOTP(id, email)
 	if err != nil {
 		return nil, ErrInternalServer
 	}
@@ -195,7 +205,7 @@ func (s *service) ForgetPassword(ctx context.Context, email string) (map[string]
 func (s *service) SetNewPassword(ctx context.Context, password string, sessionId uuid.UUID) error {
 	email, err := s.repository.FindEmailBySessionId(gocql.UUID(sessionId))
 	if err != nil {
-		return err
+		return ErrSessionExpired
 	}
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {

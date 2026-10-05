@@ -2,6 +2,7 @@ package test
 
 import (
 	"backend/auth/internal/constant"
+	"backend/auth/internal/repository"
 	"backend/auth/internal/service"
 	"context"
 	"errors"
@@ -89,7 +90,7 @@ func TestSignInWithApple_rejectsBadTokens(t *testing.T) {
 
 func TestSignInWithApple_replayedNonceIsRejected(t *testing.T) {
 	s, d := newService(t)
-	d.repo.EXPECT().CheckNonce("nonce-1").Return(true, nil)
+	d.repo.EXPECT().SaveNonce("nonce-1").Return(repository.ErrAlreadyExists)
 
 	_, _, err := s.SignInWithApple(context.Background(), appleToken(t, nil))
 
@@ -99,7 +100,6 @@ func TestSignInWithApple_replayedNonceIsRejected(t *testing.T) {
 func TestSignInWithApple_verifiedMemberGetsTokens(t *testing.T) {
 	s, d := newService(t)
 	id := uuid.New()
-	d.repo.EXPECT().CheckNonce("nonce-1").Return(false, nil)
 	d.repo.EXPECT().SaveNonce("nonce-1").Return(nil)
 	d.repo.EXPECT().FindLoginInfoByEmail(email).Return(true, true, gid(id), "", "user", nil)
 	d.repo.EXPECT().SaveThirdPartySignInInfo(mock.Anything, gid(id), email, true, true).Return(nil)

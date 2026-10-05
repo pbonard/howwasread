@@ -1,6 +1,7 @@
 package test
 
 import (
+	"backend/auth/internal/repository"
 	"backend/auth/internal/service"
 	"context"
 	"testing"
@@ -45,21 +46,33 @@ func TestCreateMemberByEmail_existingEmailIsRejected(t *testing.T) {
 	assert.ErrorIs(t, err, service.ErrSignUpWithEmail)
 }
 
+func TestCreateMemberByEmail_concurrentlyVerifiedEmailIsRejected(t *testing.T) {
+	s, d := newService(t)
+	d.repo.EXPECT().VerifiedEmailExists(mock.Anything, email).Return(false, nil)
+	d.repo.EXPECT().SaveEmailLoginInfo(mock.Anything, email, mock.Anything).Return(repository.ErrAlreadyExists)
+
+	_, err := s.CreateMemberByEmail(context.Background(), email, "password123")
+
+	assert.ErrorIs(t, err, service.ErrSignUpWithEmail)
+}
+
 func TestCreateMemberByEmail_savesHashedPasswordAndMailsOTP(t *testing.T) {
 	s, d := newService(t)
 	d.repo.EXPECT().VerifiedEmailExists(mock.Anything, email).Return(false, nil)
+	var memberId, otpMemberId gocql.UUID
 	d.repo.EXPECT().SaveEmailLoginInfo(mock.Anything, email, mock.MatchedBy(func(hashed string) bool {
 		return bcrypt.CompareHashAndPassword([]byte(hashed), []byte("password123")) == nil
-	})).Return(nil)
+	})).Run(func(id gocql.UUID, _ string, _ string) { memberId = id }).Return(nil)
 	var savedOTP string
 	var verificationId gocql.UUID
-	d.repo.EXPECT().SaveEmailAndOtpByVerificationId(mock.Anything, email, mock.Anything).
-		Run(func(vid gocql.UUID, _ string, otp string) { verificationId, savedOTP = vid, otp }).Return(nil)
+	d.repo.EXPECT().SaveEmailAndOtpByVerificationId(mock.Anything, mock.Anything, email, mock.Anything).
+		Run(func(vid, id gocql.UUID, _ string, otp string) { verificationId, otpMemberId, savedOTP = vid, id, otp }).Return(nil)
 	sent := expectMail(t, d.mailer, email)
 
 	resp, err := s.CreateMemberByEmail(context.Background(), email, "password123")
 
 	require.NoError(t, err)
+	assert.Equal(t, memberId, otpMemberId)
 	assert.Equal(t, uuid.UUID(verificationId), resp["verificationId"])
 	assert.Regexp(t, `^\d{6}$`, savedOTP)
 	assert.Equal(t, savedOTP, waitMail(t, sent))
@@ -86,7 +99,7 @@ func TestLoginWithEmail(t *testing.T) {
 	t.Run("unverified email gets a new OTP", func(t *testing.T) {
 		s, d := newService(t)
 		d.repo.EXPECT().FindLoginInfoByEmail(email).Return(false, false, gid(id), hash(t, "password123"), "user", nil)
-		d.repo.EXPECT().SaveEmailAndOtpByVerificationId(mock.Anything, email, mock.Anything).Return(nil)
+		d.repo.EXPECT().SaveEmailAndOtpByVerificationId(mock.Anything, gid(id), email, mock.Anything).Return(nil)
 		sent := expectMail(t, d.mailer, email)
 
 		resp, rt, err := s.LoginWithEmail(email, "password123")
@@ -127,9 +140,10 @@ func TestLoginWithEmail(t *testing.T) {
 
 func TestVerifyEmailOTP(t *testing.T) {
 	vid := uuid.New()
+	id := uuid.New()
 	t.Run("wrong code", func(t *testing.T) {
 		s, d := newService(t)
-		d.repo.EXPECT().FindEmailAndOTPByVerificationId(gid(vid)).Return(email, "123456", nil)
+		d.repo.EXPECT().FindEmailAndOTPByVerificationId(gid(vid)).Return(gid(id), email, "123456", nil)
 
 		_, err := s.VerifyEmailOTP("654321", vid)
 
@@ -137,8 +151,8 @@ func TestVerifyEmailOTP(t *testing.T) {
 	})
 	t.Run("correct code verifies the email and opens a session", func(t *testing.T) {
 		s, d := newService(t)
-		d.repo.EXPECT().FindEmailAndOTPByVerificationId(gid(vid)).Return(email, "123456", nil)
-		d.repo.EXPECT().MarkEmailVerified(email).Return(nil)
+		d.repo.EXPECT().FindEmailAndOTPByVerificationId(gid(vid)).Return(gid(id), email, "123456", nil)
+		d.repo.EXPECT().MarkEmailVerified(gid(id), email).Return(nil)
 		var sessionId gocql.UUID
 		d.repo.EXPECT().SaveEmailBySessionId(mock.Anything, email).
 			Run(func(sid gocql.UUID, _ string) { sessionId = sid }).Return(nil)
@@ -148,6 +162,37 @@ func TestVerifyEmailOTP(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, uuid.UUID(sessionId), resp.SessionId)
 	})
+	t.Run("email signed up again after the code was sent", func(t *testing.T) {
+		s, d := newService(t)
+		d.repo.EXPECT().FindEmailAndOTPByVerificationId(gid(vid)).Return(gid(id), email, "123456", nil)
+		d.repo.EXPECT().MarkEmailVerified(gid(id), email).Return(repository.ErrNotOwner)
+
+		_, err := s.VerifyEmailOTP("123456", vid)
+
+		assert.ErrorIs(t, err, service.ErrEmailSignedUpAgain)
+	})
+}
+
+func TestForgetPassword_bindsOTPToTheMember(t *testing.T) {
+	s, d := newService(t)
+	id := uuid.New()
+	d.repo.EXPECT().FindLoginInfoByEmail(email).Return(true, true, gid(id), "", "user", nil)
+	d.repo.EXPECT().SaveEmailAndOtpByVerificationId(mock.Anything, gid(id), email, mock.Anything).Return(nil)
+	sent := expectMail(t, d.mailer, email)
+
+	resp, err := s.ForgetPassword(context.Background(), email)
+
+	require.NoError(t, err)
+	assert.NotEqual(t, uuid.Nil, resp["verificationId"])
+	waitMail(t, sent)
+}
+
+func TestSetNewPassword_expiredSessionIsRejected(t *testing.T) {
+	s, d := newService(t)
+	sid := uuid.New()
+	d.repo.EXPECT().FindEmailBySessionId(gid(sid)).Return("", gocql.ErrNotFound)
+
+	assert.ErrorIs(t, s.SetNewPassword(context.Background(), "new-password", sid), service.ErrSessionExpired)
 }
 
 func TestSetNewPassword_storesAHash(t *testing.T) {

@@ -10,18 +10,28 @@ import (
 )
 
 func (r *repository) SaveEmailLoginInfo(id gocql.UUID, email, password string) error {
-	err := r.session.Batch(gocql.LoggedBatch).
-		Query(
-			`INSERT INTO member_by_email (
+	applied, err := r.session.Query(
+		`INSERT INTO member_by_email (
                              email_verified, phone_number_verified, id, email, password, role
-                             ) VALUES (?, ?, ?, ?, ?, ?);`,
-			false, false, id, email, password, constant.RoleUser).
-		Query(
+                             ) VALUES (?, ?, ?, ?, ?, ?) IF NOT EXISTS`,
+		false, false, id, email, password, constant.RoleUser).MapScanCAS(map[string]any{})
+	if err == nil && !applied {
+		applied, err = r.session.Query(
+			`UPDATE member_by_email SET phone_number_verified = ?, id = ?, password = ?, role = ?
+                             WHERE email = ? IF email_verified = ?`,
+			false, id, password, constant.RoleUser, email, false).MapScanCAS(map[string]any{})
+	}
+	if err == nil && !applied {
+		slog.Info("email is already verified by another member", "id", id.String())
+		return ErrAlreadyExists
+	}
+	if err == nil {
+		err = r.session.Query(
 			`INSERT INTO member_by_id (
                           email_verified, phone_number_verified, id, email, role
                           ) VALUES (?, ?, ?, ?, ?)`,
-			false, false, id, email, constant.RoleUser).
-		Exec()
+			false, false, id, email, constant.RoleUser).Exec()
+	}
 	if err != nil {
 		slog.Error("fail to save member",
 			"err", err,
@@ -66,10 +76,10 @@ func (r *repository) FindLoginInfoByEmail(email string) (emailVerified, phoneNum
 	return emailVerified, phoneNumberVerified, id, password, role, nil
 }
 
-func (r *repository) SaveEmailAndOtpByVerificationId(verificationId gocql.UUID, email, otp string) error {
+func (r *repository) SaveEmailAndOtpByVerificationId(verificationId, id gocql.UUID, email, otp string) error {
 	err := r.session.Query(
-		"INSERT INTO member_by_verification_id (verification_id, email, otp) VALUES (?, ?, ?) USING TTL ?",
-		verificationId, email, otp, constant.AuthIdTTL,
+		"INSERT INTO member_by_verification_id (verification_id, id, email, otp) VALUES (?, ?, ?, ?) USING TTL ?",
+		verificationId, id, email, otp, constant.AuthIdTTL,
 	).Exec()
 	if err != nil {
 		slog.Error("fail to save email otp by verificationId",
@@ -80,33 +90,40 @@ func (r *repository) SaveEmailAndOtpByVerificationId(verificationId gocql.UUID, 
 	return nil
 }
 
-func (r *repository) FindEmailAndOTPByVerificationId(verificationId gocql.UUID) (email string, otp string, err error) {
+func (r *repository) FindEmailAndOTPByVerificationId(verificationId gocql.UUID) (id gocql.UUID, email string, otp string, err error) {
 	err = r.session.Query(
-		"SELECT email, otp FROM member_by_verification_id WHERE verification_id = ?",
+		"SELECT id, email, otp FROM member_by_verification_id WHERE verification_id = ?",
 		verificationId,
-	).Scan(&email, &otp)
+	).Scan(&id, &email, &otp)
 	if err != nil {
 		slog.Info("fail to select email and otp by verification_id",
 			"err", err,
 			"verificationId", verificationId.String(),
 		)
-		return "", "", err
+		return gocql.UUID{}, "", "", err
 	}
-	return email, otp, nil
+	return id, email, otp, nil
 }
 
-func (r *repository) MarkEmailVerified(email string) error {
-	var id gocql.UUID
-	err := r.session.Query(
-		"SELECT id FROM member_by_email WHERE email = ?",
-		email,
-	).Scan(&id)
+func (r *repository) MarkEmailVerified(id gocql.UUID, email string) error {
+	applied, err := r.session.Query(
+		"UPDATE member_by_email SET email_verified = ? WHERE email = ? IF id = ?",
+		true, email, id,
+	).MapScanCAS(map[string]any{})
 	if err != nil {
-		slog.Error("fail to select id by email",
+		slog.Error("fail to update email_verified at member_by_email",
 			"err", err,
+			"id", id.String(),
 			"email", email,
 		)
 		return err
+	}
+	if !applied {
+		slog.Info("email is signed up again by another member after its otp was sent",
+			"id", id.String(),
+			"email", email,
+		)
+		return ErrNotOwner
 	}
 	err = r.session.Query(
 		"UPDATE member_by_id SET email_verified = ? WHERE id = ?",
@@ -114,18 +131,6 @@ func (r *repository) MarkEmailVerified(email string) error {
 	).Exec()
 	if err != nil {
 		slog.Error("fail to update email_verified at member_by_id",
-			"err", err,
-			"id", id.String(),
-			"email", email,
-		)
-		return err
-	}
-	err = r.session.Query(
-		"UPDATE member_by_email SET email_verified = ? WHERE email = ?",
-		true, email,
-	).Exec()
-	if err != nil {
-		slog.Error("fail to update email_verified at member_by_email",
 			"err", err,
 			"id", id.String(),
 			"email", email,
@@ -147,6 +152,7 @@ func (r *repository) SaveEmailBySessionId(sessionId gocql.UUID, email string) er
 			"sessionId", sessionId.String(),
 			"email", email,
 		)
+		return err
 	}
 	return nil
 }
@@ -161,6 +167,7 @@ func (r *repository) FindEmailBySessionId(sessionId gocql.UUID) (email string, e
 			"err", err,
 			"sessionId", sessionId,
 		)
+		return "", err
 	}
 	return email, nil
 }

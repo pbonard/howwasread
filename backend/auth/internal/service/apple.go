@@ -3,6 +3,7 @@ package service
 import (
 	"backend/auth/internal/constant"
 	"backend/auth/internal/dto"
+	"backend/auth/internal/repository"
 	"context"
 	"errors"
 	"log/slog"
@@ -62,14 +63,10 @@ func (s *service) SignInWithApple(ctx context.Context, identityToken string) (*d
 		slog.Info("no nonce in claims")
 		return nil, "", ErrSignInWithApple
 	}
-	exist, err := s.repository.CheckNonce(nonce)
-	if err != nil {
-		return nil, "", ErrInternalServer
-	}
-	if exist {
+	err = s.repository.SaveNonce(nonce)
+	if errors.Is(err, repository.ErrAlreadyExists) {
 		return nil, "", ErrSignInWithApple
 	}
-	err = s.repository.SaveNonce(nonce)
 	if err != nil {
 		return nil, "", ErrInternalServer
 	}

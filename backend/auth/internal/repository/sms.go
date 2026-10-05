@@ -37,16 +37,24 @@ func (r *repository) FindPhoneNumberByVerificationId(verificationId gocql.UUID) 
 	return phoneNumber, nil
 }
 
+// SavePhoneNumberLoginInfo claims member_by_phone_number before writing member_by_id, the phone number of the member
+// itself is left as it is, one claimed by another member returns ErrAlreadyExists
 func (r *repository) SavePhoneNumberLoginInfo(phoneNumber string, id gocql.UUID) error {
-	err := r.session.Batch(gocql.LoggedBatch).
-		Query(
-			"INSERT INTO member_by_phone_number (phone_number_verified, id, phone_number, role) VALUES (?, ?, ?, ?)",
-			true, id, phoneNumber, constant.RoleUser,
-		).
-		Query(
+	existing := map[string]any{}
+	applied, err := r.session.Query(
+		"INSERT INTO member_by_phone_number (phone_number_verified, id, phone_number, role) VALUES (?, ?, ?, ?) IF NOT EXISTS",
+		true, id, phoneNumber, constant.RoleUser,
+	).MapScanCAS(existing)
+	if err == nil && !applied && existing["id"] != id {
+		slog.Info("phone number is already claimed by another member", "id", id.String())
+		return ErrAlreadyExists
+	}
+	if err == nil {
+		err = r.session.Query(
 			"INSERT INTO member_by_id (phone_number_verified, id, phone_number, role) VALUES (?, ?, ?, ?)",
 			true, id, phoneNumber, constant.RoleUser,
 		).Exec()
+	}
 	if err != nil {
 		slog.Error("fail to insert member at member_by_id",
 			"err", err,
@@ -57,15 +65,25 @@ func (r *repository) SavePhoneNumberLoginInfo(phoneNumber string, id gocql.UUID)
 	return nil
 }
 
+// LinkAndMarkVerifiedPhoneNumber claims member_by_phone_number before linking it, a phone number claimed by another
+// member in the meantime returns ErrAlreadyExists
 func (r *repository) LinkAndMarkVerifiedPhoneNumber(id gocql.UUID, email, phoneNumber, role string) error {
-	err := r.session.Batch(gocql.LoggedBatch).
-		Query("UPDATE member_by_email SET phone_number_verified = ?, phone_number = ? WHERE email = ?",
-			true, phoneNumber, email).
-		Query("UPDATE member_by_id SET phone_number_verified = ?, phone_number = ? WHERE id = ?",
-			true, phoneNumber, id).
-		Query("INSERT INTO member_by_phone_number (phone_number_verified, id, email, phone_number, role) VALUES (?, ?, ?, ?, ?)",
-			true, id, email, phoneNumber, role).
-		Exec()
+	applied, err := r.session.Query(
+		"INSERT INTO member_by_phone_number (phone_number_verified, id, email, phone_number, role) VALUES (?, ?, ?, ?, ?) IF NOT EXISTS",
+		true, id, email, phoneNumber, role,
+	).MapScanCAS(map[string]any{})
+	if err == nil && !applied {
+		slog.Info("phone number is already claimed by another member", "id", id.String())
+		return ErrAlreadyExists
+	}
+	if err == nil {
+		err = r.session.Batch(gocql.LoggedBatch).
+			Query("UPDATE member_by_email SET phone_number_verified = ?, phone_number = ? WHERE email = ?",
+				true, phoneNumber, email).
+			Query("UPDATE member_by_id SET phone_number_verified = ?, phone_number = ? WHERE id = ?",
+				true, phoneNumber, id).
+			Exec()
+	}
 	if err != nil {
 		slog.Error("fail to set phone_number",
 			"err", err,
