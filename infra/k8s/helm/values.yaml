@@ -82,6 +82,16 @@ apps:
 #    memoryRequests: "10Mi"
 #    cpuLimits: "0.1"
 #    memoryLimits: "10Mi"
+  k8s-watcher:
+    image: "backend/k8s-watcher:latest"
+    routePath: false
+    watcher: true
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        memory: 96Mi
   messagepersist:
     image: "backend/messagepersist:176c125"
     port: 8080

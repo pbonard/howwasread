@@ -1,0 +1,24 @@
+# Rust services share one workspace like the Go services share go.mod: one Cargo.lock, one target/ and these versions
+[workspace]
+resolver = "3"
+members = ["k8s-watcher"]
+
+[workspace.package]
+edition = "2024"
+
+[workspace.dependencies]
+anyhow = "1.0.104"
+futures = "0.3.34"
+k8s-openapi = { version = "0.28.0", features = ["latest"] }
+# one TLS crypto provider for kube and reqwest, rustls refuses to start when two are compiled in
+kube = { version = "4.2.0", default-features = false, features = ["runtime", "client", "rustls-tls", "aws-lc-rs"] }
+reqwest = { version = "0.13.5", default-features = false, features = ["json", "rustls"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1.0.151"
+tokio = { version = "1.53.2", features = ["rt-multi-thread", "macros", "time", "sync"] }
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter", "json"] }
+
+[profile.release]
+strip = true
+lto = true
