@@ -1,0 +1,48 @@
+{{- range $name, $app := .Values.apps }}
+{{- if $app.watcher }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $name }}
+  namespace: {{ $.Values.namespace }}
+---
+# read only, and no access to secrets or configmaps
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ $.Values.namespace }}-{{ $name }}
+rules:
+  - apiGroups: [""]
+    resources: [pods, events, nodes]
+    verbs: [get, list, watch]
+  - apiGroups: [""]
+    resources: [pods/log]
+    verbs: [get]
+  - apiGroups: [metrics.k8s.io]
+    resources: [pods]
+    verbs: [list]
+  - apiGroups: [planetscale.com]
+    resources: [vitessshards]
+    verbs: [list, watch]
+  - apiGroups: [flink.apache.org]
+    resources: [flinkdeployments]
+    verbs: [list, watch]
+  - apiGroups: [kafka.strimzi.io]
+    resources: [kafkas]
+    verbs: [list, watch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ $.Values.namespace }}-{{ $name }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ $.Values.namespace }}-{{ $name }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ $name }}
+    namespace: {{ $.Values.namespace }}
+{{- end }}
+{{- end }}

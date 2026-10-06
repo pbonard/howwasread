@@ -14,6 +14,11 @@ spec:
   strategy:
     type: Recreate
   {{- end }}
+  {{- if $app.watcher }}
+  # two watchers would send every alert twice, so the old pod stops before the new one starts
+  strategy:
+    type: Recreate
+  {{- end }}
   selector:
     matchLabels:
       app: {{ $name }}
@@ -23,6 +28,9 @@ spec:
         app: {{ $name }}
         framework: {{ $app.framework | default "none" }}
     spec:
+      {{- if $app.watcher }}
+      serviceAccountName: {{ $name }}
+      {{- end }}
       {{- if $app.turn }}
       hostNetwork: true
       affinity:
@@ -44,8 +52,10 @@ spec:
         - name: {{ $name }}
           image: "{{ $.Values.registry }}/{{ $app.image }}"
           imagePullPolicy: Always
+          {{- if $app.port }}
           ports:
             - containerPort: {{ $app.port }}
+          {{- end }}
 {{/*          resources:*/}}
 {{/*            requests:*/}}
 {{/*              cpu: {{ $app.cpuRequests }}*/}}
@@ -53,6 +63,10 @@ spec:
 {{/*            limits:*/}}
 {{/*              cpu: {{ $app.cpuLimits }}*/}}
 {{/*              memory: {{ $app.memoryLimits }}*/}}
+          {{- with $app.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           env:
             {{- if $app.valkey }}
             - name: VALKEY_PASSWORD
@@ -103,6 +117,12 @@ spec:
             {{- if $app.opensearch }}
             - secretRef:
                 name: opensearch
+            {{- end }}
+            {{- if $app.watcher }}
+            # where alerts are sent, without it they are only logged
+            - secretRef:
+                name: {{ $name }}-notify
+                optional: true
             {{- end }}
           volumeMounts:
             {{- if $app.authentication}}
@@ -196,7 +216,7 @@ spec:
                 path: ca.crt
         {{- end }}
 
-{{- if not $app.turn }}
+{{- if and $app.port (not $app.turn) }}
 ---
 apiVersion: v1
 kind: Service

@@ -56,6 +56,17 @@
     ]
   },
   {
+    "name": "k8s-watcher",
+    "image": "backend/k8s-watcher",
+    "dockerfile": "./backend/k8s-watcher/Dockerfile",
+    "context": "./backend",
+    "paths": [
+      "backend/k8s-watcher/",
+      "backend/Cargo.toml",
+      "backend/Cargo.lock"
+    ]
+  },
+  {
     "name": "messagepersist",
     "image": "backend/messagepersist",
     "dockerfile": "./backend/messagepersist/Dockerfile",
