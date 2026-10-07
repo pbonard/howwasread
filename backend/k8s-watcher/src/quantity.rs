@@ -1,4 +1,4 @@
-// two letter units come first, so "Mi" is never read as "M"
+// binary (Ki = 1024) and decimal (k = 1000) units, plus m for milli
 const UNITS: [(&str, f64); 9] = [
     ("Ki", 1024.0),
     ("Mi", 1048576.0),

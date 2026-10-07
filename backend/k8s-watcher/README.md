@@ -4,7 +4,7 @@ Watches the cluster and records every problem, alerting only on the ones that ne
 
 | Watches | Records | Alerts |
 |---|---|---|
-| Pods | every container restart, with exit code, memory before it ended, limit, last log lines | out of memory, SIGKILL (137), 3+ restarts in an hour |
+| Pods | every container restart, with exit code, reason, memory limit, last log lines | `OOMKilled`, SIGKILL (137), 3+ restarts in an hour |
 | Pods | many containers ending in the same seconds, as one incident | one message for the node or runtime restart |
 | Warning events | all of them | OOMKilling, Evicted, FailedScheduling, NodeNotReady, FailedMount, … (once per 30 min) |
 | Nodes | Ready / memory, disk, PID pressure changes | when it goes bad and when it recovers |
@@ -43,7 +43,6 @@ In the cluster they come from the optional secret `k8s-watcher-notify`, keep it 
 
 | Env | Default | |
 |---|---|---|
-| `METRICS_INTERVAL` | `30` | seconds between memory samples, memory growing faster than this is not seen |
 | `CRD_GRACE_SECONDS` | `120` | how long an operator resource may be unhealthy before alerting |
 | `CLUSTER_RESTART_MIN` | `5` | containers ending together that count as one node or runtime restart |
 | `LOG_TAIL_LINES` | `30` | previous log lines kept per restart |
@@ -52,7 +51,7 @@ In the cluster they come from the optional secret `k8s-watcher-notify`, keep it 
 
 Like the other backends: a push to `main` that changes `backend/k8s-watcher/` builds the image and writes its tag into
 `infra/k8s/helm/values.yaml`, and Argo CD syncs it to the `backend` namespace. `watcher: true` in values adds the
-service account, the read only cluster role and the data volume (`templates/watchers.yaml`).
+service account and the read only cluster role (`templates/watchers.yaml`).
 
 ## Query the history
 
@@ -71,10 +70,9 @@ watcher.
 
 ## Known limits
 
-- This cluster reports a container killed for using too much memory as `exit 137, reason Error`, not `OOMKilled`.
-  It is then classified as out of memory only when the last sample was at least 90% of the limit.
-- Containers that live shorter than one metrics-server scrape have no memory sample, only samples taken while the
-  ended instance ran are used.
+- This cluster reports a container killed for using too much memory as `exit 137, reason Error`, not `OOMKilled`, so
+  those restarts alert as "killed (SIGKILL)". Memory usage is not tracked, a metrics pipeline (Alloy scraping the
+  kubelet's cAdvisor into Grafana Cloud) is the place for that.
 - Warning events that happen while the watch is reconnecting are not recorded, restarts are, through the relist.
 - History is as long as the Grafana Cloud log retention, and records written while Alloy can't reach Grafana Cloud
   may be lost.

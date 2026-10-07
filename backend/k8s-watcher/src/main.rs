@@ -2,22 +2,20 @@
 
 use std::fmt::Debug;
 use std::str::FromStr;
-use std::time::Duration;
 
 use futures::StreamExt;
 use k8s_openapi::api::core::v1::{Event as CoreEvent, Node, Pod};
-use kube::api::{ApiResource, DynamicObject, GroupVersionKind, ListParams};
+use kube::api::{ApiResource, DynamicObject, GroupVersionKind};
 use kube::runtime::{WatchStreamExt, watcher};
-use kube::{Api, Client, Resource, ResourceExt};
+use kube::{Api, Client, Resource};
 use serde::de::DeserializeOwned;
 use tokio::sync::mpsc;
 use tokio::task::JoinSet;
 use tracing::{info, warn};
 
 use k8s_watcher::health;
-use k8s_watcher::monitor::{self, Monitor, Msg, Settings};
+use k8s_watcher::monitor::{Monitor, Msg, Settings};
 use k8s_watcher::notify::Notifier;
-use k8s_watcher::quantity::parse_quantity;
 
 fn env_or<T: FromStr>(name: &str, default: T) -> T {
     std::env::var(name)
@@ -50,53 +48,6 @@ async fn forward<K>(
     }
 }
 
-async fn sample_memory(client: Client, tx: mpsc::Sender<Msg>, every: Duration) {
-    let resource = ApiResource::from_gvk_with_plural(
-        &GroupVersionKind::gvk("metrics.k8s.io", "v1beta1", "PodMetrics"),
-        "pods",
-    );
-    let api: Api<DynamicObject> = Api::all_with(client, &resource);
-    let mut tick = tokio::time::interval(every);
-    loop {
-        tick.tick().await;
-        let pods = match api.list(&ListParams::default()).await {
-            Ok(pods) => pods,
-            Err(e) => {
-                warn!("fail to sample memory: {e}");
-                continue;
-            }
-        };
-        let mut samples = Vec::new();
-        for pod in &pods.items {
-            for c in pod.data["containers"].as_array().into_iter().flatten() {
-                if let (Some(name), Some(bytes)) = (
-                    c["name"].as_str(),
-                    c["usage"]["memory"].as_str().and_then(parse_quantity),
-                ) {
-                    samples.push((
-                        (
-                            pod.namespace().unwrap_or_default(),
-                            pod.name_any(),
-                            name.to_string(),
-                        ),
-                        bytes,
-                    ));
-                }
-            }
-        }
-        if tx
-            .send(Msg::Memory {
-                at: monitor::now(),
-                samples,
-            })
-            .await
-            .is_err()
-        {
-            return;
-        }
-    }
-}
-
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     // logs are JSON lines on stdout like the records and the go services, so every line parses the same way in Loki
@@ -115,7 +66,6 @@ async fn main() -> anyhow::Result<()> {
         cluster_restart_min: env_or("CLUSTER_RESTART_MIN", 5),
         log_tail_lines: env_or("LOG_TAIL_LINES", 30),
     };
-    let metrics_interval = Duration::from_secs(env_or("METRICS_INTERVAL", 30));
 
     let (tx, rx) = mpsc::channel(1024);
     let mut tasks = JoinSet::new();
@@ -158,9 +108,8 @@ async fn main() -> anyhow::Result<()> {
             },
         ));
     }
-    tasks.spawn(sample_memory(client.clone(), tx.clone(), metrics_interval));
     info!(
-        "watching pods, events, nodes, metrics, {}",
+        "watching pods, events, nodes, {}",
         health::RESOURCES
             .iter()
             .map(|r| r.plural)

@@ -24,8 +24,6 @@ use crate::record::record;
 const GROUP_WINDOW: f64 = 30.0;
 const CRASH_LOOP_RESTARTS: usize = 3;
 const CRASH_LOOP_WINDOW: f64 = 3600.0;
-const MEMORY_ALERT_RATIO: f64 = 0.9;
-const MEMORY_SAMPLES_KEPT: usize = 4;
 const ALERT_EVENT_REASONS: [&str; 7] = [
     "OOMKilling",
     "SystemOOM",
@@ -56,10 +54,6 @@ pub enum Msg {
         check: Check,
         event: Box<Event<DynamicObject>>,
     },
-    Memory {
-        at: f64,
-        samples: Vec<(ContainerKey, f64)>,
-    },
     Restart(Box<Restart>),
 }
 
@@ -81,8 +75,6 @@ pub struct Restart {
     finished_at: Option<String>,
     restart_count: i32,
     memory_limit: Option<f64>,
-    memory_before: Option<f64>,
-    memory_sampled_seconds_before: Option<i64>,
     last_logs: String,
     #[serde(skip)]
     finished: f64,
@@ -100,9 +92,7 @@ pub struct Monitor {
     settings: Settings,
     // a log fetch runs in its own task and sends the finished restart back through this
     tx: mpsc::Sender<Msg>,
-    pods_listed: bool,
     restart_counts: HashMap<ContainerKey, i32>,
-    memory: HashMap<ContainerKey, VecDeque<(f64, f64)>>,
     restart_times: HashMap<ContainerKey, VecDeque<f64>>,
     crash_loop_alerted: HashMap<ContainerKey, f64>,
     pending: HashMap<i64, Vec<Restart>>,
@@ -136,9 +126,7 @@ impl Monitor {
             notifier,
             settings,
             tx,
-            pods_listed: false,
             restart_counts: HashMap::new(),
-            memory: HashMap::new(),
             restart_times: HashMap::new(),
             crash_loop_alerted: HashMap::new(),
             pending: HashMap::new(),
@@ -179,15 +167,6 @@ impl Monitor {
                 check,
                 event,
             } => self.on_resource(plural, check, &event),
-            Msg::Memory { at, samples } => {
-                for (key, bytes) in samples {
-                    let kept = self.memory.entry(key).or_default();
-                    kept.push_back((at, bytes));
-                    if kept.len() > MEMORY_SAMPLES_KEPT {
-                        kept.pop_front();
-                    }
-                }
-            }
             Msg::Restart(restart) => {
                 let bucket = restart.finished as i64 / 5;
                 self.pending.entry(bucket).or_default().push(*restart);
@@ -200,11 +179,8 @@ impl Monitor {
 
     fn on_pod(&mut self, event: &Event<Pod>) {
         match event {
-            Event::Init => {}
-            Event::InitDone => self.pods_listed = true,
-            // the first list only sets the baseline, a relist after a dropped watch still catches restarts in the gap
-            Event::InitApply(pod) => self.on_pod_apply(pod, !self.pods_listed),
-            Event::Apply(pod) => self.on_pod_apply(pod, false),
+            Event::Init | Event::InitDone => {}
+            Event::InitApply(pod) | Event::Apply(pod) => self.on_pod_apply(pod),
             Event::Delete(pod) => {
                 for cs in container_statuses(pod) {
                     let key = (
@@ -213,7 +189,6 @@ impl Monitor {
                         cs.name.clone(),
                     );
                     self.restart_counts.remove(&key);
-                    self.memory.remove(&key);
                     self.restart_times.remove(&key);
                     self.crash_loop_alerted.remove(&key);
                 }
@@ -221,7 +196,7 @@ impl Monitor {
         }
     }
 
-    fn on_pod_apply(&mut self, pod: &Pod, baseline: bool) {
+    fn on_pod_apply(&mut self, pod: &Pod) {
         for cs in container_statuses(pod) {
             let key = (
                 pod.namespace().unwrap_or_default(),
@@ -230,7 +205,7 @@ impl Monitor {
             );
             let previous = self.restart_counts.insert(key.clone(), cs.restart_count);
             let Some(previous) = previous else { continue };
-            if baseline || cs.restart_count <= previous {
+            if cs.restart_count <= previous {
                 continue;
             }
             if let Some(terminated) = cs.last_state.as_ref().and_then(|s| s.terminated.as_ref()) {
@@ -256,21 +231,6 @@ impl Monitor {
             .and_then(|spec| spec.containers.iter().find(|c| c.name == cs.name))
             .and_then(|c| c.resources.as_ref()?.limits.as_ref()?.get("memory"))
             .and_then(|q| parse_quantity(&q.0));
-        let started = terminated
-            .started_at
-            .as_ref()
-            .map_or(0.0, |t| t.0.as_second() as f64);
-        // a sample from while this instance ran, an earlier one belongs to the previous instance and a later one to the
-        // next
-        let before = self
-            .memory
-            .get(&key)
-            .and_then(|kept| {
-                kept.iter()
-                    .rev()
-                    .find(|(at, _)| (started..=finished).contains(at))
-            })
-            .copied();
         let mut restart = Restart {
             namespace: key.0.clone(),
             pod: key.1.clone(),
@@ -282,8 +242,6 @@ impl Monitor {
             finished_at: terminated.finished_at.as_ref().map(|t| t.0.to_string()),
             restart_count: cs.restart_count,
             memory_limit: limit,
-            memory_before: before.map(|(_, bytes)| bytes),
-            memory_sampled_seconds_before: before.map(|(at, _)| (finished - at) as i64),
             last_logs: String::new(),
             finished,
         };
@@ -378,12 +336,8 @@ impl Monitor {
 
     fn classify_restart(&mut self, r: Restart) {
         let key = (r.namespace.clone(), r.pod.clone(), r.container.clone());
-        let ratio = r
-            .memory_before
-            .zip(r.memory_limit)
-            .map(|(before, limit)| before / limit);
-        let oom = r.reason.as_deref() == Some("OOMKilled")
-            || (r.exit_code == 137 && ratio.is_some_and(|ratio| ratio >= MEMORY_ALERT_RATIO));
+        // only when kubernetes says so: this cluster reports a container killed for its memory as 137 with reason Error
+        let oom = r.reason.as_deref() == Some("OOMKilled");
         let now = now();
         let times = self.restart_times.entry(key.clone()).or_default();
         times.push_back(now);
@@ -422,14 +376,6 @@ impl Monitor {
             _ => format!("exited with {}", r.exit_code),
         };
         let title = format!("{}{what}", if crash_loop { "crash loop: " } else { "" });
-        // samples are taken every METRICS_INTERVAL, memory that grows faster than that is not seen
-        let sampled = ratio.map_or(String::new(), |ratio| {
-            format!(
-                " ({:.0}%, sampled {}s before)",
-                ratio * 100.0,
-                r.memory_sampled_seconds_before.unwrap_or(0)
-            )
-        });
         let lines: Vec<&str> = r.last_logs.lines().collect();
         let logs = lines[lines.len().saturating_sub(8)..].join("\n");
         let logs: String = logs
@@ -448,10 +394,9 @@ impl Monitor {
         self.notifier.notify(
             format!("{title} · {}/{} [{}]", r.namespace, r.pod, r.container),
             format!(
-                "exit {} ({}) · memory {} / {}{sampled} · restart #{}{in_window}\n```\n{logs}\n```",
+                "exit {} ({}) · memory limit {} · restart #{}{in_window}\n```\n{logs}\n```",
                 r.exit_code,
                 r.reason.as_deref().unwrap_or("None"),
-                mib(r.memory_before),
                 mib(r.memory_limit),
                 r.restart_count,
             ),
