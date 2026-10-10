@@ -41,7 +41,9 @@ spec:
       initContainers:
         # a missing model is an error on request, so pull it before serving, a model already on the volume is skipped
         - name: pull-model
-          image: ollama/ollama:latest
+          # pinned, a moved latest re-pulls a ~3.7GB cuda image on every redeploy and that pull starved the wsl node
+          image: ollama/ollama:0.40.0
+          imagePullPolicy: IfNotPresent
           command:
             - sh
             - -c
@@ -49,6 +51,12 @@ spec:
               ollama serve &
               until ollama list >/dev/null 2>&1; do sleep 1; done
               ollama pull "$MODEL"
+          # caps the pull's page cache to this cgroup instead of the whole wsl vm
+          resources:
+            requests:
+              memory: 512Mi
+            limits:
+              memory: 2Gi
           env:
             - name: MODEL
               value: qwen3:8b
@@ -57,7 +65,8 @@ spec:
               mountPath: /root/.ollama
       containers:
         - name: ollama
-          image: ollama/ollama:latest
+          image: ollama/ollama:0.40.0
+          imagePullPolicy: IfNotPresent
           env:
             - name: OLLAMA_HOST
               value: 0.0.0.0:11434

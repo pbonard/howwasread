@@ -1,0 +1,81 @@
+# host settings of the single wsl k3s node, kept here so a rebuilt node gets them back with kubectl apply -f
+# the job compares before writing, re-applying with unchanged files touches nothing and doesn't restart k3s
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: node-config
+  namespace: kube-system
+data:
+  99-inotify.conf: |
+    # k8s pods each hold inotify instances, the default 128 runs out after a reboot and the nvidia device plugin fails to start
+    fs.inotify.max_user_instances = 8192
+  # a kubelet drop-in, the 1.36 kubelet rejects image-maximum-gc-age as a flag and crash-loops k3s, only the config field works
+  50-image-gc.conf: |
+    apiVersion: kubelet.config.k8s.io/v1beta1
+    kind: KubeletConfiguration
+    # image gc otherwise only runs above 85% disk, this also drops images unused for a week
+    imageMaximumGCAge: 168h
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: node-config
+  namespace: kube-system
+spec:
+  backoffLimit: 0
+  # removed after a day so a later apply runs it again
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: apply
+          image: busybox:1.37
+          imagePullPolicy: IfNotPresent
+          # writes host files, applies the sysctl and restarts k3s through chroot
+          securityContext:
+            privileged: true
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+              sysctl_file=/host/etc/sysctl.d/99-inotify.conf
+              kubelet_file=/host/var/lib/rancher/k3s/agent/etc/kubelet.conf.d/50-image-gc.conf
+
+              if cmp -s /config/99-inotify.conf "$sysctl_file"; then
+                echo "99-inotify.conf unchanged"
+              else
+                cp /config/99-inotify.conf "$sysctl_file"
+                chroot /host sysctl -p /etc/sysctl.d/99-inotify.conf
+                echo "99-inotify.conf written and applied"
+              fi
+
+              if cmp -s /config/50-image-gc.conf "$kubelet_file"; then
+                echo "50-image-gc.conf unchanged"
+              else
+                cp /config/50-image-gc.conf "$kubelet_file"
+                chmod 600 "$kubelet_file"
+                # the kubelet reads its config only at start, running pods survive a k3s restart
+                chroot /host systemctl restart --no-block k3s
+                echo "50-image-gc.conf written, k3s restarting"
+              fi
+          resources:
+            requests:
+              memory: 16Mi
+            limits:
+              memory: 64Mi
+          volumeMounts:
+            - name: host
+              mountPath: /host
+            - name: config
+              mountPath: /config
+              readOnly: true
+      volumes:
+        - name: host
+          hostPath:
+            path: /
+            type: Directory
+        - name: config
+          configMap:
+            name: node-config
