@@ -8,7 +8,6 @@ Watches the cluster and records every problem, alerting only on the ones that ne
 | Pods | many containers ending in the same seconds, as one incident | one message for the node or runtime restart |
 | Warning events | all of them | OOMKilling, Evicted, FailedScheduling, NodeNotReady, FailedMount, … (once per 30 min) |
 | Nodes | Ready / memory, disk, PID pressure changes | when it goes bad and when it recovers |
-| VitessShard, FlinkDeployment, Kafka | health changes | unhealthy for longer than `CRD_GRACE_SECONDS`, and recovery |
 
 Every record is one JSON line on stdout. Alloy ships the logs of pods labeled `framework: none` (the helm default)
 to Grafana Cloud Loki, so the history is kept and searched there.
@@ -43,7 +42,6 @@ In the cluster they come from the optional secret `k8s-watcher-notify`, keep it 
 
 | Env | Default | |
 |---|---|---|
-| `CRD_GRACE_SECONDS` | `120` | how long an operator resource may be unhealthy before alerting |
 | `CLUSTER_RESTART_MIN` | `5` | containers ending together that count as one node or runtime restart |
 | `LOG_TAIL_LINES` | `30` | previous log lines kept per restart |
 
@@ -70,9 +68,12 @@ watcher.
 
 ## Known limits
 
-- This cluster reports a container killed for using too much memory as `exit 137, reason Error`, not `OOMKilled`, so
-  those restarts alert as "killed (SIGKILL)". Memory usage is not tracked, a metrics pipeline (Alloy scraping the
-  kubelet's cAdvisor into Grafana Cloud) is the place for that.
+- Every workload is watched the same way: no operator gets special health checks. A lasting problem that causes no
+  container restart and no alerting warning event (e.g. a Flink job FAILED inside a running JobManager) is not
+  alerted. Operators' warning events are still recorded; add their reasons to `ALERT_EVENT_REASONS` to alert on them.
+- Some node setups report a container killed for its memory as `exit 137, reason Error` instead of `OOMKilled`;
+  those restarts alert as "killed (SIGKILL)" rather than "out of memory". Memory usage is not tracked, a metrics
+  pipeline (Alloy scraping the kubelet's cAdvisor into Grafana Cloud) is the place for that.
 - Warning events that happen while the watch is reconnecting are not recorded, restarts are, through the relist.
 - History is as long as the Grafana Cloud log retention, and records written while Alloy can't reach Grafana Cloud
   may be lost.

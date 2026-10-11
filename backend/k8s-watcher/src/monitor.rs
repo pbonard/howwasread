@@ -8,7 +8,7 @@ use std::time::Duration;
 use k8s_openapi::api::core::v1::{
     ContainerStateTerminated, ContainerStatus, Event as CoreEvent, Node, Pod,
 };
-use kube::api::{DynamicObject, LogParams};
+use kube::api::LogParams;
 use kube::runtime::watcher::Event;
 use kube::{Api, Client, ResourceExt};
 use serde::Serialize;
@@ -16,7 +16,6 @@ use serde_json::json;
 use tokio::sync::mpsc;
 use tokio::time::{interval, timeout};
 
-use crate::health::{Check, Problems};
 use crate::notify::{Notifier, Severity};
 use crate::quantity::parse_quantity;
 use crate::record::record;
@@ -49,16 +48,10 @@ pub enum Msg {
     Pod(Box<Event<Pod>>),
     Warning(Box<Event<CoreEvent>>),
     Node(Box<Event<Node>>),
-    Resource {
-        plural: &'static str,
-        check: Check,
-        event: Box<Event<DynamicObject>>,
-    },
     Restart(Box<Restart>),
 }
 
 pub struct Settings {
-    pub crd_grace: f64,
     pub cluster_restart_min: usize,
     pub log_tail_lines: i64,
 }
@@ -80,12 +73,6 @@ pub struct Restart {
     finished: f64,
 }
 
-struct Unhealthy {
-    since: f64,
-    problem: String,
-    alerted: bool,
-}
-
 pub struct Monitor {
     client: Client,
     notifier: Notifier,
@@ -99,8 +86,6 @@ pub struct Monitor {
     pending_since: HashMap<i64, f64>,
     event_alerted: HashMap<(String, String, String), f64>,
     node_conditions: HashMap<(String, String), String>,
-    // (plural, namespace, name, check)
-    unhealthy: HashMap<(String, String, String, String), Unhealthy>,
 }
 
 pub fn now() -> f64 {
@@ -133,18 +118,15 @@ impl Monitor {
             pending_since: HashMap::new(),
             event_alerted: HashMap::new(),
             node_conditions: HashMap::new(),
-            unhealthy: HashMap::new(),
         }
     }
 
     pub async fn run(mut self, mut rx: mpsc::Receiver<Msg>) {
         let mut flush = interval(Duration::from_secs(2));
-        let mut grace = interval(Duration::from_secs(10));
         loop {
             tokio::select! {
                 Some(msg) = rx.recv() => self.handle(msg),
                 _ = flush.tick() => self.flush_restart_groups(),
-                _ = grace.tick() => self.check_crd_grace(),
             }
         }
     }
@@ -162,11 +144,6 @@ impl Monitor {
                     self.on_node(node);
                 }
             }
-            Msg::Resource {
-                plural,
-                check,
-                event,
-            } => self.on_resource(plural, check, &event),
             Msg::Restart(restart) => {
                 let bucket = restart.finished as i64 / 5;
                 self.pending.entry(bucket).or_default().push(*restart);
@@ -482,96 +459,6 @@ impl Monitor {
                 severity,
             );
         }
-    }
-
-    // ---- operator resources ---------------------------------------------------
-
-    fn on_resource(&mut self, plural: &'static str, check: Check, event: &Event<DynamicObject>) {
-        let (object, deleted) = match event {
-            Event::Apply(object) | Event::InitApply(object) => (object, false),
-            Event::Delete(object) => (object, true),
-            Event::Init | Event::InitDone => return,
-        };
-        let namespace = object.namespace().unwrap_or_default();
-        let name = object.name_any();
-        let problems = if deleted {
-            Problems::new()
-        } else {
-            check(&object.data)
-        };
-        let now = now();
-        for (check_name, problem) in &problems {
-            let key = (
-                plural.to_string(),
-                namespace.clone(),
-                name.clone(),
-                check_name.clone(),
-            );
-            match problem {
-                Some(problem) => {
-                    self.unhealthy
-                        .entry(key)
-                        .and_modify(|state| state.problem = problem.clone())
-                        .or_insert_with(|| Unhealthy {
-                            since: now,
-                            problem: problem.clone(),
-                            alerted: false,
-                        });
-                }
-                None => {
-                    if let Some(state) = self.unhealthy.remove(&key)
-                        && state.alerted
-                    {
-                        self.resolved(&key, now - state.since);
-                    }
-                }
-            }
-        }
-        self.unhealthy.retain(|(p, ns, n, check_name), _| {
-            !(p == plural && *ns == namespace && *n == name && !problems.contains_key(check_name))
-        });
-    }
-
-    // an operator resource is unhealthy for a moment during every rollout, so only a lasting problem alerts
-    fn check_crd_grace(&mut self) {
-        let now = now();
-        // unhealthy is borrowed mutably while notifier is borrowed shared, which is fine for separate fields
-        for ((plural, namespace, name, check_name), state) in self.unhealthy.iter_mut() {
-            if state.alerted || now - state.since < self.settings.crd_grace {
-                continue;
-            }
-            state.alerted = true;
-            let seconds = (now - state.since) as i64;
-            record(
-                "resource",
-                Severity::Critical,
-                Some(namespace),
-                Some(&format!("{plural}/{name}")),
-                json!({"check": check_name, "problem": state.problem, "for_seconds": seconds}),
-            );
-            self.notifier.notify(
-                format!("{plural}/{name} unhealthy for {seconds}s"),
-                format!("{namespace}: {}", state.problem),
-                Severity::Critical,
-            );
-        }
-    }
-
-    fn resolved(&self, key: &(String, String, String, String), duration: f64) {
-        let (plural, namespace, name, check_name) = key;
-        let seconds = duration as i64;
-        record(
-            "resource",
-            Severity::Resolved,
-            Some(namespace),
-            Some(&format!("{plural}/{name}")),
-            json!({"check": check_name, "after_seconds": seconds}),
-        );
-        self.notifier.notify(
-            format!("{plural}/{name} recovered"),
-            format!("{namespace}: {check_name} is healthy after {seconds}s"),
-            Severity::Resolved,
-        );
     }
 }
 

@@ -5,7 +5,6 @@ use std::str::FromStr;
 
 use futures::StreamExt;
 use k8s_openapi::api::core::v1::{Event as CoreEvent, Node, Pod};
-use kube::api::{ApiResource, DynamicObject, GroupVersionKind};
 use kube::runtime::{WatchStreamExt, watcher};
 use kube::{Api, Client, Resource};
 use serde::de::DeserializeOwned;
@@ -13,7 +12,6 @@ use tokio::sync::mpsc;
 use tokio::task::JoinSet;
 use tracing::{info, warn};
 
-use k8s_watcher::health;
 use k8s_watcher::monitor::{Monitor, Msg, Settings};
 use k8s_watcher::notify::Notifier;
 
@@ -62,7 +60,6 @@ async fn main() -> anyhow::Result<()> {
     // the in-cluster service account when running in a pod, otherwise the current kubeconfig
     let client = Client::try_default().await?;
     let settings = Settings {
-        crd_grace: env_or("CRD_GRACE_SECONDS", 120.0),
         cluster_restart_min: env_or("CLUSTER_RESTART_MIN", 5),
         log_tail_lines: env_or("LOG_TAIL_LINES", 30),
     };
@@ -90,32 +87,7 @@ async fn main() -> anyhow::Result<()> {
         tx.clone(),
         |e| Msg::Node(Box::new(e)),
     ));
-    for watched in &health::RESOURCES {
-        let resource = ApiResource::from_gvk_with_plural(
-            &GroupVersionKind::gvk(watched.group, watched.version, watched.kind),
-            watched.plural,
-        );
-        let (plural, check) = (watched.plural, watched.check);
-        tasks.spawn(forward(
-            plural,
-            Api::<DynamicObject>::all_with(client.clone(), &resource),
-            watcher::Config::default(),
-            tx.clone(),
-            move |event| Msg::Resource {
-                plural,
-                check,
-                event: Box::new(event),
-            },
-        ));
-    }
-    info!(
-        "watching pods, events, nodes, {}",
-        health::RESOURCES
-            .iter()
-            .map(|r| r.plural)
-            .collect::<Vec<_>>()
-            .join(", ")
-    );
+    info!("watching pods, events, nodes");
 
     let monitor = Monitor::new(client, Notifier::spawn(), settings, tx);
     // the watch tasks only end when the monitor is gone, so either one ending is a bug, and exiting lets kubernetes
