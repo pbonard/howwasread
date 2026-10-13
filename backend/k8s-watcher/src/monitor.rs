@@ -1,8 +1,4 @@
-//! Owns every piece of state and decides what is recorded and what alerts.
-//!
-//! The watch tasks only send messages here, and this task handles them one at a time, so the state needs no lock.
-
-use std::collections::{HashMap, VecDeque};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::time::Duration;
 
 use k8s_openapi::api::core::v1::{
@@ -13,14 +9,20 @@ use kube::runtime::watcher::Event;
 use kube::{Api, Client, ResourceExt};
 use serde::Serialize;
 use serde_json::json;
-use tokio::sync::mpsc;
+use tokio::sync::{mpsc, watch};
 use tokio::time::{interval, timeout};
+use tracing::info;
 
 use crate::notify::{Notifier, Severity};
-use crate::quantity::parse_quantity;
-use crate::record::record;
+use crate::util::{
+    container_key, container_statuses, happened_after, log, mib, now, parse_quantity,
+};
 
 const GROUP_WINDOW: f64 = 30.0;
+pub const HEARTBEAT_SECONDS: u64 = 10;
+pub const MAX_CATCHUP: f64 = 86400.0;
+pub const FAILURE_GAP: f64 = 120.0;
+const MAX_RESTART_LINES: usize = 30;
 const CRASH_LOOP_RESTARTS: usize = 3;
 const CRASH_LOOP_WINDOW: f64 = 3600.0;
 const ALERT_EVENT_REASONS: [&str; 7] = [
@@ -32,7 +34,6 @@ const ALERT_EVENT_REASONS: [&str; 7] = [
     "FailedMount",
     "FailedAttachVolume",
 ];
-const EVENT_ALERT_COOLDOWN: f64 = 1800.0;
 const NODE_BAD: [(&str, &str); 4] = [
     ("Ready", "False"),
     ("MemoryPressure", "True"),
@@ -43,16 +44,40 @@ const NODE_BAD: [(&str, &str); 4] = [
 /// (namespace, pod, container)
 pub type ContainerKey = (String, String, String);
 
-// kubernetes objects are boxed, an enum is as large as its largest variant and the channel holds 1024 of them
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Watch {
+    Pods,
+    Events,
+    Nodes,
+}
+
+const WATCHES: [Watch; 3] = [Watch::Pods, Watch::Events, Watch::Nodes];
+
+#[derive(Default)]
+struct WatchState {
+    listed: bool,
+    failed_at: Option<f64>,
+}
+
 pub enum Msg {
+    Listing {
+        watch: Watch,
+        since: f64,
+    },
+    Failed {
+        watch: Watch,
+    },
     Pod(Box<Event<Pod>>),
     Warning(Box<Event<CoreEvent>>),
     Node(Box<Event<Node>>),
     Restart(Box<Restart>),
+    Sent {
+        keys: Vec<String>,
+        sent: bool,
+    },
 }
 
 pub struct Settings {
-    pub cluster_restart_min: usize,
     pub log_tail_lines: i64,
 }
 
@@ -70,33 +95,29 @@ pub struct Restart {
     memory_limit: Option<f64>,
     last_logs: String,
     #[serde(skip)]
-    finished: f64,
+    alert_key: String,
 }
 
 pub struct Monitor {
     client: Client,
     notifier: Notifier,
     settings: Settings,
-    // a log fetch runs in its own task and sends the finished restart back through this
     tx: mpsc::Sender<Msg>,
     restart_counts: HashMap<ContainerKey, i32>,
     restart_times: HashMap<ContainerKey, VecDeque<f64>>,
     crash_loop_alerted: HashMap<ContainerKey, f64>,
-    pending: HashMap<i64, Vec<Restart>>,
-    pending_since: HashMap<i64, f64>,
-    event_alerted: HashMap<(String, String, String), f64>,
+    pending: Vec<Restart>,
     node_conditions: HashMap<(String, String), String>,
-}
-
-pub fn now() -> f64 {
-    std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_secs_f64()
-}
-
-fn mib(bytes: Option<f64>) -> String {
-    bytes.map_or("?".into(), |b| format!("{:.0}Mi", b / 1048576.0))
+    listed: Option<HashSet<ContainerKey>>,
+    pods_since: f64,
+    events_since: f64,
+    nodes_since: f64,
+    alerted: HashMap<String, f64>,
+    sending: HashSet<String>,
+    watches: HashMap<Watch, WatchState>,
+    fetching: usize,
+    catching_up: bool,
+    caught_up: watch::Sender<bool>,
 }
 
 impl Monitor {
@@ -105,6 +126,7 @@ impl Monitor {
         notifier: Notifier,
         settings: Settings,
         tx: mpsc::Sender<Msg>,
+        caught_up: watch::Sender<bool>,
     ) -> Self {
         Self {
             client,
@@ -114,57 +136,164 @@ impl Monitor {
             restart_counts: HashMap::new(),
             restart_times: HashMap::new(),
             crash_loop_alerted: HashMap::new(),
-            pending: HashMap::new(),
-            pending_since: HashMap::new(),
-            event_alerted: HashMap::new(),
+            pending: Vec::new(),
             node_conditions: HashMap::new(),
+            listed: None,
+            pods_since: now(),
+            events_since: now(),
+            nodes_since: now(),
+            alerted: HashMap::new(),
+            sending: HashSet::new(),
+            watches: HashMap::new(),
+            fetching: 0,
+            catching_up: true,
+            caught_up,
         }
     }
 
+    fn is_alerted(&self, key: &str) -> bool {
+        self.alerted.contains_key(key) || self.sending.contains(key)
+    }
+
+    fn notify(&mut self, title: String, body: String, severity: Severity, keys: Vec<String>) {
+        self.sending.extend(keys.iter().cloned());
+        self.notifier.notify(title, body, severity, keys);
+    }
+
+    fn mark_alerted(&mut self, keys: impl IntoIterator<Item = String>) {
+        let at = now();
+        for key in keys {
+            self.alerted.insert(key, at);
+        }
+        let since = at - MAX_CATCHUP;
+        self.alerted.retain(|_, notified| *notified >= since);
+    }
+
     pub async fn run(mut self, mut rx: mpsc::Receiver<Msg>) {
-        let mut flush = interval(Duration::from_secs(2));
+        let mut flush = interval(Duration::from_secs_f64(GROUP_WINDOW));
         loop {
             tokio::select! {
                 Some(msg) = rx.recv() => self.handle(msg),
-                _ = flush.tick() => self.flush_restart_groups(),
+                _ = flush.tick() => self.flush_restarts(),
             }
+            self.update_caught_up();
+        }
+    }
+
+    fn update_caught_up(&mut self) {
+        let at = now();
+        let watching = WATCHES.iter().all(|w| {
+            self.watches.get(w).is_some_and(|s| {
+                s.listed && s.failed_at.is_none_or(|failed| at - failed > FAILURE_GAP)
+            })
+        });
+        if watching && self.fetching == 0 && self.pending.is_empty() && self.sending.is_empty() {
+            self.catching_up = false;
+        }
+        let caught_up = watching && !self.catching_up;
+        if self
+            .caught_up
+            .send_if_modified(|v| std::mem::replace(v, caught_up) != caught_up)
+        {
+            info!(
+                "heartbeat {}",
+                if caught_up {
+                    "renewing"
+                } else {
+                    "paused until caught up"
+                }
+            );
+        }
+    }
+
+    fn track<K>(&mut self, watch: Watch, event: &Event<K>) {
+        let state = self.watches.entry(watch).or_default();
+        match event {
+            Event::InitDone => {
+                state.listed = true;
+                state.failed_at = None;
+            }
+            Event::Apply(_) | Event::Delete(_) => state.failed_at = None,
+            Event::Init | Event::InitApply(_) => {}
         }
     }
 
     fn handle(&mut self, msg: Msg) {
         match msg {
-            Msg::Pod(event) => self.on_pod(&event),
-            Msg::Warning(event) => {
-                if let Event::Apply(event) = event.as_ref() {
-                    self.on_warning(event);
+            Msg::Listing { watch, since } => {
+                self.watches.entry(watch).or_default().listed = false;
+                self.catching_up = true;
+                match watch {
+                    Watch::Pods => self.pods_since = since,
+                    Watch::Events => self.events_since = since,
+                    Watch::Nodes => self.nodes_since = since,
                 }
+            }
+            Msg::Failed { watch } => self.watches.entry(watch).or_default().failed_at = Some(now()),
+            Msg::Pod(event) => {
+                self.track(Watch::Pods, event.as_ref());
+                self.on_pod(&event);
+            }
+            Msg::Warning(event) => {
+                self.track(Watch::Events, event.as_ref());
+                self.on_warning_event(&event);
             }
             Msg::Node(event) => {
-                if let Event::Apply(node) | Event::InitApply(node) = event.as_ref() {
-                    self.on_node(node);
-                }
+                self.track(Watch::Nodes, event.as_ref());
+                self.on_node_event(&event);
             }
             Msg::Restart(restart) => {
-                let bucket = restart.finished as i64 / 5;
-                self.pending.entry(bucket).or_default().push(*restart);
-                self.pending_since.entry(bucket).or_insert_with(now);
+                self.fetching = self.fetching.saturating_sub(1);
+                self.pending.push(*restart);
+            }
+            Msg::Sent { keys, sent } => {
+                for key in &keys {
+                    self.sending.remove(key);
+                }
+                if sent {
+                    self.mark_alerted(keys);
+                }
             }
         }
     }
 
-    // ---- pods: restarts -------------------------------------------------------
+    fn on_warning_event(&mut self, event: &Event<CoreEvent>) {
+        match event {
+            Event::Apply(event) => self.on_warning(event, None),
+            Event::InitApply(event) => self.on_warning(event, Some(self.events_since)),
+            Event::Init | Event::InitDone | Event::Delete(_) => {}
+        }
+    }
+
+    fn on_node_event(&mut self, event: &Event<Node>) {
+        match event {
+            Event::Apply(node) | Event::InitApply(node) => self.on_node(node, self.nodes_since),
+            Event::Init | Event::InitDone | Event::Delete(_) => {}
+        }
+    }
 
     fn on_pod(&mut self, event: &Event<Pod>) {
         match event {
-            Event::Init | Event::InitDone => {}
-            Event::InitApply(pod) | Event::Apply(pod) => self.on_pod_apply(pod),
+            Event::Init => self.listed = Some(HashSet::new()),
+            Event::InitApply(pod) => {
+                if let Some(listed) = self.listed.as_mut() {
+                    listed.extend(container_statuses(pod).map(|cs| container_key(pod, cs)));
+                }
+                self.on_pod_apply(pod, self.pods_since);
+            }
+            // a pod deleted while the watch was reconnecting is only missing from the new list, no Delete arrives for it
+            Event::InitDone => {
+                if let Some(listed) = self.listed.take() {
+                    self.restart_counts.retain(|key, _| listed.contains(key));
+                    self.restart_times.retain(|key, _| listed.contains(key));
+                    self.crash_loop_alerted
+                        .retain(|key, _| listed.contains(key));
+                }
+            }
+            Event::Apply(pod) => self.on_pod_apply(pod, self.pods_since),
             Event::Delete(pod) => {
                 for cs in container_statuses(pod) {
-                    let key = (
-                        pod.namespace().unwrap_or_default(),
-                        pod.name_any(),
-                        cs.name.clone(),
-                    );
+                    let key = container_key(pod, cs);
                     self.restart_counts.remove(&key);
                     self.restart_times.remove(&key);
                     self.crash_loop_alerted.remove(&key);
@@ -173,35 +302,45 @@ impl Monitor {
         }
     }
 
-    fn on_pod_apply(&mut self, pod: &Pod) {
+    fn on_pod_apply(&mut self, pod: &Pod, since: f64) {
         for cs in container_statuses(pod) {
-            let key = (
-                pod.namespace().unwrap_or_default(),
-                pod.name_any(),
-                cs.name.clone(),
-            );
+            let key = container_key(pod, cs);
             let previous = self.restart_counts.insert(key.clone(), cs.restart_count);
-            let Some(previous) = previous else { continue };
-            if cs.restart_count <= previous {
+            let terminated = cs.last_state.as_ref().and_then(|s| s.terminated.as_ref());
+            let restarted = match previous {
+                Some(previous) => cs.restart_count > previous,
+                // first sight: only a restart that ended while the watcher was away, older ones are history
+                None => {
+                    cs.restart_count > 0
+                        && happened_after(terminated.and_then(|t| t.finished_at.as_ref()), since)
+                }
+            };
+            if !restarted {
                 continue;
             }
-            if let Some(terminated) = cs.last_state.as_ref().and_then(|s| s.terminated.as_ref()) {
-                self.on_restart(pod, cs, terminated, key);
+            let alert_key = format!(
+                "{}/{}/{}",
+                pod.uid().unwrap_or_default(),
+                cs.name,
+                cs.restart_count
+            );
+            if self.is_alerted(&alert_key) {
+                continue;
+            }
+            if let Some(terminated) = terminated {
+                self.on_restart(pod, cs, terminated, key, alert_key);
             }
         }
     }
 
     fn on_restart(
-        &self,
+        &mut self,
         pod: &Pod,
         cs: &ContainerStatus,
         terminated: &ContainerStateTerminated,
         key: ContainerKey,
+        alert_key: String,
     ) {
-        let finished = terminated
-            .finished_at
-            .as_ref()
-            .map_or_else(now, |t| t.0.as_second() as f64);
         let limit = pod
             .spec
             .as_ref()
@@ -220,7 +359,7 @@ impl Monitor {
             restart_count: cs.restart_count,
             memory_limit: limit,
             last_logs: String::new(),
-            finished,
+            alert_key,
         };
         let pods: Api<Pod> = Api::namespaced(self.client.clone(), &key.0);
         let params = LogParams {
@@ -230,6 +369,7 @@ impl Monitor {
             ..Default::default()
         };
         let tx = self.tx.clone();
+        self.fetching += 1;
         tokio::spawn(async move {
             restart.last_logs =
                 match timeout(Duration::from_secs(5), pods.logs(&key.1, &params)).await {
@@ -241,79 +381,46 @@ impl Monitor {
         });
     }
 
-    // restarts that ended in the same few seconds are held together, many of them at once is one host event
-    fn flush_restart_groups(&mut self) {
-        let now = now();
-        // collect first, the map can't be changed while it is being iterated
-        let ready: Vec<i64> = self
-            .pending_since
-            .iter()
-            .filter(|(_, since)| now - **since >= GROUP_WINDOW)
-            .map(|(b, _)| *b)
-            .collect();
-        for bucket in ready {
-            self.pending_since.remove(&bucket);
-            let restarts = self.pending.remove(&bucket).unwrap_or_default();
-            if restarts.len() >= self.settings.cluster_restart_min {
-                self.on_cluster_restart(restarts);
-            } else {
-                for restart in restarts {
-                    self.classify_restart(restart);
-                }
+    fn flush_restarts(&mut self) {
+        let restarts = std::mem::take(&mut self.pending);
+        let mut severity = Severity::Warning;
+        let mut lines = Vec::new();
+        let mut keys = Vec::new();
+        for restart in restarts {
+            let Some((line_severity, line)) = self.classify_restart(&restart) else {
+                continue;
+            };
+            if line_severity == Severity::Critical {
+                severity = Severity::Critical;
             }
+            lines.push(line);
+            keys.push(restart.alert_key);
         }
-    }
-
-    fn on_cluster_restart(&self, restarts: Vec<Restart>) {
-        let mut nodes: Vec<&str> = restarts.iter().filter_map(|r| r.node.as_deref()).collect();
-        nodes.sort();
-        nodes.dedup();
-        let mut codes: Vec<String> = restarts.iter().map(|r| r.exit_code.to_string()).collect();
-        codes.sort();
-        codes.dedup();
-        let mut pods: Vec<String> = restarts
-            .iter()
-            .map(|r| format!("{}/{}", r.namespace, r.pod))
-            .collect();
-        pods.sort();
-        pods.dedup();
-        let at = restarts[0].finished_at.clone().unwrap_or_default();
-        for restart in &restarts {
-            let mut data = serde_json::to_value(restart).unwrap_or_default();
-            data["cause"] = json!("cluster_restart");
-            record(
-                "restart",
-                Severity::Info,
-                Some(&restart.namespace),
-                Some(&restart.pod),
-                data,
-            );
+        if lines.is_empty() {
+            return;
         }
-        record(
-            "cluster_restart",
-            Severity::Warning,
-            None,
-            None,
-            json!({"containers": restarts.len(), "nodes": nodes, "exit_codes": codes, "finished_at": at}),
-        );
-        let more = if pods.len() > 15 {
-            format!("\n… and {} more", pods.len() - 15)
+        let more = if lines.len() > MAX_RESTART_LINES {
+            format!("\n… and {} more", lines.len() - MAX_RESTART_LINES)
         } else {
             String::new()
         };
-        self.notifier.notify(
-            format!("{} containers restarted together", restarts.len()),
+        self.notify(
             format!(
-                "node {} · exit codes {} · at {at}\nlikely a node or container runtime restart, not an app crash\n{}{more}",
-                nodes.join(", "), codes.join(", "), pods.iter().take(15).cloned().collect::<Vec<_>>().join("\n"),
+                "{} restart{}",
+                lines.len(),
+                if lines.len() == 1 { "" } else { "s" }
             ),
-            Severity::Warning,
+            format!(
+                "{}{more}",
+                lines[..lines.len().min(MAX_RESTART_LINES)].join("\n")
+            ),
+            severity,
+            keys,
         );
     }
 
-    fn classify_restart(&mut self, r: Restart) {
+    fn classify_restart(&mut self, r: &Restart) -> Option<(Severity, String)> {
         let key = (r.namespace.clone(), r.pod.clone(), r.container.clone());
-        // only when kubernetes says so: this cluster reports a container killed for its memory as 137 with reason Error
         let oom = r.reason.as_deref() == Some("OOMKilled");
         let now = now();
         let times = self.restart_times.entry(key.clone()).or_default();
@@ -340,50 +447,40 @@ impl Monitor {
         } else {
             Severity::Info
         };
-        let mut data = serde_json::to_value(&r).unwrap_or_default();
+        let mut data = serde_json::to_value(r).unwrap_or_default();
         data["cause"] = json!(cause);
         data["crash_loop"] = json!(crash_loop);
-        record("restart", severity, Some(&r.namespace), Some(&r.pod), data);
+        log("restart", severity, Some(&r.namespace), Some(&r.pod), data);
         if severity == Severity::Info {
-            return;
+            return None;
         }
         let what = match cause {
-            "oom" => "out of memory".to_string(),
+            "oom" => format!("out of memory (limit {})", mib(r.memory_limit)),
             "killed" => "killed (SIGKILL)".to_string(),
             _ => format!("exited with {}", r.exit_code),
         };
-        let title = format!("{}{what}", if crash_loop { "crash loop: " } else { "" });
-        let lines: Vec<&str> = r.last_logs.lines().collect();
-        let logs = lines[lines.len().saturating_sub(8)..].join("\n");
-        let logs: String = logs
-            .chars()
-            .rev()
-            .take(1500)
-            .collect::<Vec<_>>()
-            .into_iter()
-            .rev()
-            .collect();
-        let in_window = if crash_loop {
-            format!(" · {restarts_in_window} restarts in the last hour")
+        let crash_loop = if crash_loop {
+            format!("crash loop, {restarts_in_window} restarts in the last hour · ")
         } else {
             String::new()
         };
-        self.notifier.notify(
-            format!("{title} · {}/{} [{}]", r.namespace, r.pod, r.container),
-            format!(
-                "exit {} ({}) · memory limit {} · restart #{}{in_window}\n```\n{logs}\n```",
-                r.exit_code,
-                r.reason.as_deref().unwrap_or("None"),
-                mib(r.memory_limit),
-                r.restart_count,
-            ),
+        Some((
             severity,
-        );
+            format!(
+                "- {}/{} [{}] · {crash_loop}{what} · restart #{}",
+                r.namespace, r.pod, r.container, r.restart_count
+            ),
+        ))
     }
 
-    // ---- warning events -------------------------------------------------------
-
-    fn on_warning(&mut self, event: &CoreEvent) {
+    fn on_warning(&mut self, event: &CoreEvent, listed_since: Option<f64>) {
+        let new = match listed_since {
+            Some(since) => happened_after(event.metadata.creation_timestamp.as_ref(), since),
+            None => event.series.is_none() && event.count.unwrap_or(1) <= 1,
+        };
+        if listed_since.is_some() && !new {
+            return;
+        }
         let object = &event.involved_object;
         let namespace = object
             .namespace
@@ -398,7 +495,7 @@ impl Monitor {
         let reason = event.reason.clone().unwrap_or_default();
         let message = event.message.clone().unwrap_or_default();
         let alert = ALERT_EVENT_REASONS.contains(&reason.as_str());
-        record(
+        log(
             "event",
             if alert {
                 Severity::Warning
@@ -409,24 +506,19 @@ impl Monitor {
             Some(&target),
             json!({"reason": reason, "message": message, "count": event.count}),
         );
-        if !alert {
+        let alert_key = event.metadata.uid.clone().unwrap_or_default();
+        if !alert || !new || self.is_alerted(&alert_key) {
             return;
         }
-        let key = (namespace.clone(), target.clone(), reason.clone());
-        if now() - self.event_alerted.get(&key).copied().unwrap_or(0.0) < EVENT_ALERT_COOLDOWN {
-            return;
-        }
-        self.event_alerted.insert(key, now());
-        self.notifier.notify(
+        self.notify(
             format!("{reason} · {namespace}/{target}"),
             message,
             Severity::Critical,
+            vec![alert_key],
         );
     }
 
-    // ---- nodes ----------------------------------------------------------------
-
-    fn on_node(&mut self, node: &Node) {
+    fn on_node(&mut self, node: &Node, since: f64) {
         let name = node.name_any();
         let conditions = node.status.as_ref().and_then(|s| s.conditions.as_ref());
         for c in conditions.into_iter().flatten() {
@@ -437,7 +529,20 @@ impl Monitor {
                 .node_conditions
                 .insert((name.clone(), c.type_.clone()), c.status.clone());
             let bad = c.status == *bad_status;
-            if (previous.is_none() && !bad) || previous.as_deref() == Some(c.status.as_str()) {
+            let changed = match previous.as_deref() {
+                Some(previous) => previous != c.status,
+                None => bad && happened_after(c.last_transition_time.as_ref(), since),
+            };
+            let alert_key = format!(
+                "{name}/{}/{}/{}",
+                c.type_,
+                c.status,
+                c.last_transition_time
+                    .as_ref()
+                    .map(|t| t.0.to_string())
+                    .unwrap_or_default()
+            );
+            if !changed || self.is_alerted(&alert_key) {
                 continue;
             }
             let severity = if bad {
@@ -446,26 +551,19 @@ impl Monitor {
                 Severity::Resolved
             };
             let message = c.message.clone().unwrap_or_default();
-            record(
+            log(
                 "node",
                 severity,
                 None,
                 Some(&name),
                 json!({"condition": c.type_, "from": previous, "to": c.status, "message": message}),
             );
-            self.notifier.notify(
+            self.notify(
                 format!("node {name}: {}={}", c.type_, c.status),
                 message,
                 severity,
+                vec![alert_key],
             );
         }
     }
-}
-
-fn container_statuses(pod: &Pod) -> impl Iterator<Item = &ContainerStatus> {
-    pod.status
-        .as_ref()
-        .and_then(|s| s.container_statuses.as_ref())
-        .into_iter()
-        .flatten()
 }

@@ -32,5 +32,35 @@ subjects:
   - kind: ServiceAccount
     name: {{ $name }}
     namespace: {{ $.Values.namespace }}
+---
+# the only write: its own heartbeat lease, the next watcher reads it to catch up on what happened while it was gone
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ $name }}-heartbeat
+  namespace: {{ $.Values.namespace }}
+rules:
+  - apiGroups: [coordination.k8s.io]
+    resources: [leases]
+    resourceNames: [{{ $name }}]
+    verbs: [get, patch, update]
+  # create can't be limited by name, the lease is created on the first heartbeat
+  - apiGroups: [coordination.k8s.io]
+    resources: [leases]
+    verbs: [create]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ $name }}-heartbeat
+  namespace: {{ $.Values.namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ $name }}-heartbeat
+subjects:
+  - kind: ServiceAccount
+    name: {{ $name }}
+    namespace: {{ $.Values.namespace }}
 {{- end }}
 {{- end }}

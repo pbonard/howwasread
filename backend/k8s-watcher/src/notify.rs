@@ -1,7 +1,9 @@
-//! Sends alerts to Discord and/or Telegram, or only logs them when neither is configured.
+//! Sends alerts to Discord, or only logs them when it isn't configured.
 
 use std::time::Duration;
 
+use crate::monitor::Msg;
+use crate::util::truncate;
 use reqwest::StatusCode;
 use serde_json::{Value, json};
 use tokio::sync::mpsc;
@@ -25,15 +27,6 @@ impl Severity {
         }
     }
 
-    fn icon(self) -> &'static str {
-        match self {
-            Severity::Critical => "🔴",
-            Severity::Warning => "🟡",
-            Severity::Resolved => "🟢",
-            Severity::Info => "🔵",
-        }
-    }
-
     fn color(self) -> u32 {
         match self {
             Severity::Critical => 0xE5484D,
@@ -48,6 +41,8 @@ struct Alert {
     title: String,
     body: String,
     severity: Severity,
+    // what the alert is about, reported back once it is sent
+    keys: Vec<String>,
 }
 
 /// A cheap handle to the sender task, cloning it clones only the channel sender.
@@ -57,104 +52,82 @@ pub struct Notifier {
 }
 
 impl Notifier {
-    pub fn spawn() -> Self {
-        let (tx, rx) = mpsc::unbounded_channel();
-        tokio::spawn(send_alerts(rx));
+    /// Every alert is reported back to the monitor through `done` once it is sent or failed, only a sent one is
+    /// saved as notified.
+    pub fn spawn(done: mpsc::Sender<Msg>) -> Self {
+        let discord = std::env::var("DISCORD_WEBHOOK_URL")
+            .ok()
+            .filter(|v| !v.is_empty());
+        let http = reqwest::Client::builder()
+            .timeout(Duration::from_secs(10))
+            .build()
+            .expect("http client");
+        let (tx, mut rx) = mpsc::unbounded_channel::<Alert>();
+        // one sender so a burst of alerts stays under the rate limit of the webhook
+        tokio::spawn(async move {
+            while let Some(mut alert) = rx.recv().await {
+                let keys = std::mem::take(&mut alert.keys);
+                let sent = send_alert(&http, discord.as_deref(), alert).await;
+                let _ = done.send(Msg::Sent { keys, sent }).await;
+            }
+        });
         Self { tx }
     }
 
-    /// Never waits, the alert is sent by the background task.
-    pub fn notify(&self, title: impl Into<String>, body: impl Into<String>, severity: Severity) {
+    pub fn notify(
+        &self,
+        title: impl Into<String>,
+        body: impl Into<String>,
+        severity: Severity,
+        keys: Vec<String>,
+    ) {
         let _ = self.tx.send(Alert {
             title: title.into(),
             body: body.into(),
             severity,
+            keys,
         });
     }
 }
 
-// one sender so a burst of alerts stays under the rate limits of both services
-async fn send_alerts(mut rx: mpsc::UnboundedReceiver<Alert>) {
-    let discord = std::env::var("DISCORD_WEBHOOK_URL")
-        .ok()
-        .filter(|v| !v.is_empty());
-    let telegram = std::env::var("TELEGRAM_BOT_TOKEN")
-        .ok()
-        .filter(|v| !v.is_empty())
-        .zip(
-            std::env::var("TELEGRAM_CHAT_ID")
-                .ok()
-                .filter(|v| !v.is_empty()),
+/// Whether the alert reached its destination, a logged one counts as sent.
+async fn send_alert(http: &reqwest::Client, discord: Option<&str>, alert: Alert) -> bool {
+    let Some(url) = discord else {
+        info!(
+            "alert (no destination configured): {} {}\n{}",
+            alert.severity.as_str(),
+            alert.title,
+            alert.body
         );
-    let http = reqwest::Client::builder()
-        .timeout(Duration::from_secs(10))
-        .build()
-        .expect("http client");
-
-    while let Some(alert) = rx.recv().await {
-        let icon = alert.severity.icon();
-        if discord.is_none() && telegram.is_none() {
-            info!(
-                "alert (no destination configured): {icon} {}\n{}",
-                alert.title, alert.body
-            );
-        }
-        if let Some(url) = &discord {
-            post(
-                &http,
-                url,
-                json!({
-                    "embeds": [{
-                        "title": truncate(&format!("{icon} {}", alert.title), 256),
-                        "description": truncate(&alert.body, 4000),
-                        "color": alert.severity.color(),
-                    }],
-                }),
-            )
-            .await;
-        }
-        if let Some((token, chat)) = &telegram {
-            post(
-                &http,
-                &format!("https://api.telegram.org/bot{token}/sendMessage"),
-                json!({
-                    "chat_id": chat,
-                    "text": truncate(&format!("{icon} {}\n\n{}", alert.title, alert.body), 4000),
-                }),
-            )
-            .await;
-        }
-    }
-}
-
-async fn post(http: &reqwest::Client, url: &str, payload: Value) {
+        return true;
+    };
+    let payload = json!({
+        "embeds": [{
+            "title": truncate(&alert.title, 256),
+            "description": truncate(&alert.body, 4000),
+            "color": alert.severity.color(),
+        }],
+    });
     for _ in 0..3 {
         match http.post(url).json(&payload).send().await {
             Ok(resp) if resp.status() == StatusCode::TOO_MANY_REQUESTS => {
-                // both services return how long to wait, Telegram nests it under "parameters"
                 let info: Value = resp.json().await.unwrap_or_default();
-                let wait = info["retry_after"]
-                    .as_f64()
-                    .or(info["parameters"]["retry_after"].as_f64())
-                    .unwrap_or(2.0);
+                let wait = info["retry_after"].as_f64().unwrap_or(2.0);
                 tokio::time::sleep(Duration::from_secs_f64(wait)).await;
             }
             Ok(resp) if !resp.status().is_success() => {
                 let status = resp.status();
                 let text = resp.text().await.unwrap_or_default();
                 error!("fail to send alert: {status} {}", truncate(&text, 200));
-                return;
+                return false;
             }
-            Ok(_) => return,
+            Ok(_) => return true,
             Err(e) => {
                 error!("fail to send alert: {e}");
-                return;
+                return false;
             }
         }
     }
-}
-
-/// Cuts by characters, not bytes, so a multi-byte character like an emoji is never split.
-pub fn truncate(text: &str, max_chars: usize) -> String {
-    text.chars().take(max_chars).collect()
+    error!("fail to send alert: still rate limited after 3 tries");
+    false
 }
