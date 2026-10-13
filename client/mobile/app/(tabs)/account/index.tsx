@@ -19,26 +19,23 @@ export default function AccountScreen() {
         title: "This is irreversible",
         options: [`Delete your account`, "Cancel"],
         cancelButtonIndex: 1,
-        destructiveButtonIndex: 0,
+        destructiveButtonIndex: 0
       },
-      (selectedIndex?: number) => {
+      async (selectedIndex?: number) => {
         switch (selectedIndex) {
           case 0:
-            deleteAccountMutation.mutate(undefined, {
-              onSuccess: async () => {
-                await deleteAllMessages(db);
-                await deleteSecure("accessToken");
-                removeKVStore("myId");
-                removeKVStore("myName");
-                removeKVStore("recentMessageId");
-                router.replace("/");
-              },
-            });
+            deleteAccountMutation.mutate(undefined);
+            await deleteAllMessages(db);
+            await deleteSecure("accessToken");
+            removeKVStore("myId");
+            removeKVStore("myName");
+            removeKVStore("recentMessageId");
+            router.replace("/");
             break;
           case 1:
             break;
         }
-      },
+      }
     );
   };
   const handleLogout = () => {
@@ -47,26 +44,23 @@ export default function AccountScreen() {
         title: "This will delete your local messages.",
         options: [`Logout`, "Cancel"],
         cancelButtonIndex: 2,
-        destructiveButtonIndex: 0,
+        destructiveButtonIndex: 0
       },
-      (selectedIndex?: number) => {
+      async (selectedIndex?: number) => {
         switch (selectedIndex) {
           case 0:
-            logoutMutation.mutate(undefined, {
-              onSuccess: async () => {
-                await deleteAllMessages(db);
-                await deleteSecure("accessToken");
-                removeKVStore("myId");
-                removeKVStore("myName");
-                removeKVStore("recentMessageId");
-                router.replace("/");
-              },
-            });
+            logoutMutation.mutate(undefined);
+            await deleteAllMessages(db);
+            await deleteSecure("accessToken");
+            removeKVStore("myId");
+            removeKVStore("myName");
+            removeKVStore("recentMessageId");
+            router.replace("/");
             break;
           case 1:
             break;
         }
-      },
+      }
     );
   };
   return (
@@ -76,7 +70,7 @@ export default function AccountScreen() {
           onPress={() => router.push("/profile/name")}
           style={({ pressed }) => [
             styles.menuItem,
-            pressed && styles.menuItemPressed,
+            pressed && styles.menuItemPressed
           ]}
         >
           <Text style={styles.menuText}>Change your name</Text>
@@ -85,7 +79,7 @@ export default function AccountScreen() {
           onPress={handleLogout}
           style={({ pressed }) => [
             styles.menuItem,
-            pressed && styles.menuItemPressed,
+            pressed && styles.menuItemPressed
           ]}
         >
           <Text style={styles.menuText}>Sign out</Text>
@@ -106,36 +100,36 @@ export default function AccountScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: colors.SAND_110,
+    backgroundColor: colors.SAND_110
   },
   menuContainer: {
     flex: 1,
-    gap: 10,
+    gap: 10
   },
   menuItem: {
     padding: 20,
     borderWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.BLACK,
+    borderBottomColor: colors.BLACK
   },
   menuItemPressed: {
-    opacity: 0.6,
+    opacity: 0.6
   },
   menuText: {
     fontSize: 18,
-    color: colors.BLACK,
+    color: colors.BLACK
   },
   footer: {
     position: "absolute",
     bottom: 40,
     left: 0,
     right: 0,
-    alignItems: "center",
+    alignItems: "center"
   },
   deleteText: {
     color: colors.GRAY_400,
-    fontSize: 12,
+    fontSize: 12
   },
   deletePressed: {
-    opacity: 0.6,
-  },
+    opacity: 0.6
+  }
 });
