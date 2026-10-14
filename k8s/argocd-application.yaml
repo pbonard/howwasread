@@ -8,7 +8,7 @@ spec:
   source:
     repoURL: https://github.com/pbonard/howwasread.git
     targetRevision: main
-    path: infra/k8s/helm
+    path: k8s/helm
     helm:
       releaseName: holiday
   destination:

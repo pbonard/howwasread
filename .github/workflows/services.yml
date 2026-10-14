@@ -79,6 +79,6 @@ jobs:
 
       - name: write the tags into helm values
         env:
-          HELM_VALUES_PATH: infra/k8s/helm/values.yaml
+          HELM_VALUES_PATH: k8s/helm/values.yaml
           SERVICES: ${{ needs.changes.outputs.services }}
         run: python3 .github/scripts/deploy_tags.py
