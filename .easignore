@@ -6,7 +6,7 @@ node_modules/
 
 backend/
 
-infra/
+k8s/
 
 .github/
 
