@@ -8,7 +8,8 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Document(indexName = "online_conversation")
-@Setting(settingPath = "opensearch/standard-setting.json")
+// a single opensearch node can't hold a replica, the index would stay yellow with spring data's default of 1
+@Setting(settingPath = "opensearch/standard-setting.json", replicas = 0)
 @Getter
 @Setter
 @Builder
