@@ -84,9 +84,9 @@ spec:
             - secretRef:
                 name: cloudflaredns
             {{- end }}
-            {{- if $app.aws }}
+            {{- if $app.garage }}
             - secretRef:
-                name: aws
+                name: garage-s3
             {{- end }}
             {{- if $app.mysql }}
             - secretRef:
@@ -113,11 +113,6 @@ spec:
             {{- if $app.k8ssandra }}
             - name: internal-root-ca-bundle
               mountPath: "/cert/k8ssandra"
-              readOnly: true
-            {{- end }}
-            {{- if $app.aws }}
-            - name: aws-volume
-              mountPath: "/cert/aws"
               readOnly: true
             {{- end }}
             {{- if $app.firebase }}
@@ -164,11 +159,6 @@ spec:
           secret:
             secretName: authentication-volume
         {{- end}}
-        {{- if $app.aws }}
-        - name: aws-volume
-          secret:
-            secretName: aws-volume
-        {{- end }}
         {{- if $app.firebase }}
         - name: firebase-volume
           secret:

@@ -3,16 +3,16 @@ package client
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"time"
 
+	"backend/common"
+
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
-// StorageClient lets clients upload media straight to S3
+// StorageClient lets clients upload media straight to garage
 type StorageClient interface {
 	// PresignUpload returns the form url and fields of a presigned POST for <contentType>/<filename>
 	PresignUpload(ctx context.Context, contentType, filename string) (url string, fields map[string]string, err error)
@@ -24,15 +24,9 @@ type storageClient struct {
 }
 
 func NewStorageClient() StorageClient {
-	cfg, err := config.LoadDefaultConfig(
-		context.Background(),
-		config.WithRegion(os.Getenv("AWS_S3_REGION")))
-	if err != nil {
-		log.Panicf("fail to config for presigned client: %v", err)
-	}
 	return &storageClient{
-		presignClient: s3.NewPresignClient(s3.NewFromConfig(cfg)),
-		bucketName:    os.Getenv("AWS_S3_BUCKET_NAME"),
+		presignClient: common.NewPresignClient(),
+		bucketName:    os.Getenv("S3_BUCKET"),
 	}
 }
 
