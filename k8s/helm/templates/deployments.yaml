@@ -102,7 +102,7 @@ spec:
             {{- end }}
             {{- if $app.opensearch }}
             - secretRef:
-                name: opensearch
+                name: opensearch-backend-user
             {{- end }}
           volumeMounts:
             {{- if $app.authentication}}

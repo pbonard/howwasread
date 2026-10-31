@@ -19,12 +19,15 @@ public class OpenSearchConfig extends OpenSearchConfiguration {
   @Value("${spring.elasticsearch.password}")
   private String password;
 
+  // the in cluster opensearch serves plain http, a hosted one like aiven needs https
+  @Value("${opensearch.ssl}")
+  private boolean ssl;
+
   @Override
   @Bean
   public ClientConfiguration clientConfiguration() {
-    return ClientConfiguration.builder()
-        .connectedTo(uri)
-        .usingSsl()
+    var builder = ClientConfiguration.builder().connectedTo(uri);
+    return (ssl ? builder.usingSsl() : builder)
         .withBasicAuth(username, password)
         .build();
   }

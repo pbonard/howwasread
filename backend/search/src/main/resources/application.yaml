@@ -7,3 +7,6 @@ spring:
     uris: ${OPENSEARCH_HOST}:${OPENSEARCH_PORT}
     username: ${OPENSEARCH_USERNAME}
     password: ${OPENSEARCH_PASSWORD}
+
+opensearch:
+  ssl: ${OPENSEARCH_SSL:true}
