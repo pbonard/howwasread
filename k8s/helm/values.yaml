@@ -15,7 +15,7 @@ apps:
     port: 8080
     routePath: /auth
     authentication: true
-    aws: false
+    garage: false
     confluent: false
     kafka: false
     k8ssandra: true
@@ -35,7 +35,7 @@ apps:
     port: 8080
     routePath: /chat
     authentication: false
-    aws: true
+    garage: true
     kafka: true
     k8ssandra: true
     mongodb: false
@@ -53,7 +53,7 @@ apps:
     port: 8080
     routePath: false
     authentication: false
-    aws: false
+    garage: false
     kafka: true
     k8ssandra: true
     mongodb: false
@@ -69,7 +69,7 @@ apps:
     port: 8080
     routePath: false
     authentication: false
-    aws: false
+    garage: false
     kafka: true
     k8ssandra: true
     mongodb: false
@@ -87,7 +87,7 @@ apps:
     port: 8080
     routePath: false
     authentication: false
-    aws: false
+    garage: false
     kafka: true
     k8ssandra: true
     mongodb: false
@@ -105,7 +105,7 @@ apps:
     port: 8080
     routePath: false
     authentication: false
-    aws: false
+    garage: false
     kafka: true
     k8ssandra: true
     mongodb: false
@@ -123,7 +123,7 @@ apps:
     port: 8080
     routePath: false
     authentication: false
-    aws: false
+    garage: false
     kafka: true
     k8ssandra: true
     mongodb: false
@@ -141,7 +141,7 @@ apps:
     port: 8080
     routePath: /notification
     authentication: false
-    aws: true
+    garage: true
     kafka: true
     k8ssandra: true
     mongodb: false
@@ -159,7 +159,7 @@ apps:
     port: 8080
     routePath: /onlineconversation
     authentication: false
-    aws: false
+    garage: false
     kafka: true
     k8ssandra: false
     mongodb: false
@@ -178,7 +178,7 @@ apps:
     port: 8080
     routePath: false
     authentication: false
-    aws: false
+    garage: false
     kafka: true
     k8ssandra: false
     mongodb: false
@@ -196,7 +196,7 @@ apps:
     port: 8080
     routePath: /offlineconversation
     authentication: false
-    aws: false
+    garage: false
     kafka: true
     k8ssandra: false
     mongodb: false
@@ -216,7 +216,7 @@ apps:
     port: 8080
     routePath: /search
     authentication: false
-    aws: false
+    garage: false
     kafka: true
     k8ssandra: false
     mongodb: false
@@ -237,7 +237,7 @@ apps:
     routePath: false
     turn: true
     authentication: false
-    aws: false
+    garage: false
     kafka: false
     k8ssandra: false
     mongodb: false
