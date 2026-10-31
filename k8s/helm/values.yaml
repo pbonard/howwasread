@@ -31,7 +31,7 @@ apps:
 #    cpuLimits: "0.1"
 #    memoryLimits: "10Mi"
   chat:
-    image: "backend/chat:105237d"
+    image: "backend/chat:98cdf63"
     port: 8080
     routePath: /chat
     authentication: false
@@ -65,7 +65,7 @@ apps:
 #    cpuLimits: "0.1"
 #    memoryLimits: "10Mi"
   fcmnotification:
-    image: "backend/fcmnotification:105237d"
+    image: "backend/fcmnotification:98cdf63"
     port: 8080
     routePath: false
     authentication: false
@@ -83,7 +83,7 @@ apps:
 #    cpuLimits: "0.1"
 #    memoryLimits: "10Mi"
   messagepersist:
-    image: "backend/messagepersist:105237d"
+    image: "backend/messagepersist:98cdf63"
     port: 8080
     routePath: false
     authentication: false
@@ -101,7 +101,7 @@ apps:
 #    cpuLimits: "0.1"
 #    memoryLimits: "10Mi"
   messagepreprocess:
-    image: "backend/messagepreprocess:105237d"
+    image: "backend/messagepreprocess:98cdf63"
     port: 8080
     routePath: false
     authentication: false
@@ -119,7 +119,7 @@ apps:
 #    cpuLimits: "0.1"
 #    memoryLimits: "10Mi"
   messagerelay:
-    image: "backend/messagerelay:105237d"
+    image: "backend/messagerelay:98cdf63"
     port: 8080
     routePath: false
     authentication: false
@@ -137,7 +137,7 @@ apps:
 #    cpuLimits: "0.1"
 #    memoryLimits: "10Mi"
   notification:
-    image: "backend/notification:105237d"
+    image: "backend/notification:98cdf63"
     port: 8080
     routePath: /notification
     authentication: false
@@ -155,7 +155,7 @@ apps:
 #    cpuLimits: "0.1"
 #    memoryLimits: "10Mi"
   onlineconversation:
-    image: "backend/onlineconversation:105237d"
+    image: "backend/onlineconversation:98cdf63"
     port: 8080
     routePath: /onlineconversation
     authentication: false
@@ -174,7 +174,7 @@ apps:
 #    cpuLimits: "0.1"
 #    memoryLimits: "10Mi"
   signalrelay:
-    image: "backend/signalrelay:105237d"
+    image: "backend/signalrelay:98cdf63"
     port: 8080
     routePath: false
     authentication: false
@@ -232,7 +232,7 @@ apps:
   #    cpuLimits: "0.4"
   #    memoryLimits: "100Mi"
   turn:
-    image: "backend/turn:105237d"
+    image: "backend/turn:98cdf63"
     port: 3478
     routePath: false
     turn: true
