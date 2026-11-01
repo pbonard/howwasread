@@ -24,9 +24,16 @@ spec:
             - name: kafka-ca
               mountPath: "/cert/kafka/cluster"
               readOnly: true
+          env:
+            # checkpoints go to garage through the hadoop s3 plugin, presto can't sign for garage's region
+            - name: ENABLE_BUILT_IN_PLUGINS
+              value: flink-s3-fs-hadoop-{{ $flink.imageVersion }}.jar
           envFrom:
             - configMapRef:
                 name: config-map
+            # AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY of the flink key, only the flink-state bucket
+            - secretRef:
+                name: garage-flink
       volumes:
         - name: kafka-user
           secret:
@@ -40,6 +47,10 @@ spec:
     {{- range $key, $value := merge (deepCopy ($job.flinkConfiguration | default dict)) $flink.flinkConfiguration }}
     {{ $key }}: {{ $value | quote }}
     {{- end }}
+    {{- /* every job keeps its state under its own prefix of the flink-state bucket */}}
+    execution.checkpointing.dir: "s3://{{ $flink.stateBucket }}/{{ $name }}/checkpoints"
+    execution.checkpointing.savepoint-dir: "s3://{{ $flink.stateBucket }}/{{ $name }}/savepoints"
+    high-availability.storageDir: "s3://{{ $flink.stateBucket }}/{{ $name }}/ha"
   serviceAccount: flink
   jobManager:
     resource:
@@ -53,8 +64,8 @@ spec:
     jarURI: local:///opt/flink/usrlib/{{ $job.jar }}
     entryClass: {{ $job.entryClass }}
     parallelism: {{ $job.parallelism }}
-    upgradeMode: {{ $job.upgradeMode | default "stateless" }}
-{{/*    upgradeMode is curretly stateless because of cost, but we assume this is set as last-state and s3 is set up while development*/}}
+    # last-state resumes from the latest checkpoint in garage, found through the kubernetes ha metadata
+    upgradeMode: {{ $job.upgradeMode | default "last-state" }}
 {{- end }}
 ---
 apiVersion: v1
