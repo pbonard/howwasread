@@ -65,7 +65,7 @@ export default function OfflineConversationDetail({
                 text2:
                   'We will review this conversation, sorry for inconvenience.',
               });
-              sheet.current?.dismiss();
+              sheet?.current?.dismiss();
             }
         }
       },
@@ -90,7 +90,7 @@ export default function OfflineConversationDetail({
                     type: 'success',
                     text1: 'Conversation deleted',
                   });
-                  sheet.current?.dismiss();
+                  sheet?.current?.dismiss();
                 },
               },
             );
@@ -191,7 +191,7 @@ export default function OfflineConversationDetail({
                 <CustomButton
                   label={'Update'}
                   onPress={() => {
-                    sheet.current?.dismiss();
+                    sheet?.current?.dismiss();
                     router.push(`/offline/update/${id}`);
                   }}
                   style={{ paddingHorizontal: 20 }}
