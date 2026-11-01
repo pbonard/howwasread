@@ -252,6 +252,10 @@ apps:
 flink:
   namespace: flink
   version: v2_2
+  # the flink image tag, picks the matching s3 plugin jar in /opt/flink/opt
+  imageVersion: 2.2.1
+  # garage bucket of checkpoints, savepoints and ha metadata (my-infra garage.yaml)
+  stateBucket: flink-state
   # shared by every job, a job's own flinkConfiguration overrides these keys
   flinkConfiguration:
     taskmanager.numberOfTaskSlots: "2"
@@ -263,6 +267,15 @@ flink:
     taskmanager.memory.network.max: "32m"
     jobmanager.memory.jvm-overhead.min: "64m"
     jobmanager.memory.off-heap.size: "64m"
+    # garage, in cluster and path style. the region key can't be s3.endpoint.region, flink 2 refuses
+    # overlapping keys (s3.endpoint -> s3.endpoint.region), the hadoop plugin also reads fs.s3a.*
+    s3.endpoint: "http://garage.garage.svc.cluster.local:3900"
+    s3.path.style.access: "true"
+    fs.s3a.endpoint.region: "garage"
+    # a jobmanager restart or an upgrade finds the latest checkpoint through configmaps (role flink)
+    high-availability.type: kubernetes
+    # a cancelled job's last checkpoint stays in garage, it can be restored by hand
+    execution.checkpointing.externalized-checkpoint-retention: RETAIN_ON_CANCELLATION
   jobManager:
     memory: "400m"
     cpu: 0.5
