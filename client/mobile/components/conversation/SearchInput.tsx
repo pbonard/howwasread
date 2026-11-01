@@ -1,6 +1,11 @@
 import { StyleSheet, TextInput, TextInputProps, View } from "react-native";
 import { colors } from "@/constants";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { GlassView, isLiquidGlassAvailable } from "expo-glass-effect";
+import { ReactNode } from "react";
+
+// liquid glass only exists on ios 26+, elsewhere the box is the plain white pill
+const hasLiquidGlass = isLiquidGlassAvailable();
 
 interface SearchInputProps extends TextInputProps {
   onSubmit?: () => void;
@@ -17,7 +22,7 @@ export default function SearchInput({
   ...props
 }: SearchInputProps) {
   return (
-    <View style={styles.container}>
+    <Container>
       <TextInput
         style={styles.input}
         autoCapitalize="none"
@@ -36,8 +41,20 @@ export default function SearchInput({
           color={colors.GRAY_500}
         />
       )}
-    </View>
+    </Container>
   );
+}
+
+function Container({ children }: { children: ReactNode }) {
+  if (hasLiquidGlass) {
+    // light like the tab bar, the glass would turn dark over the dark map
+    return (
+      <GlassView style={styles.container} colorScheme="light" isInteractive>
+        {children}
+      </GlassView>
+    );
+  }
+  return <View style={[styles.container, styles.fallback]}>{children}</View>;
 }
 
 const styles = StyleSheet.create({
@@ -49,8 +66,10 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     height: 42,
     paddingRight: 13,
-    backgroundColor: colors.WHITE,
     borderRadius: 40,
+  },
+  fallback: {
+    backgroundColor: colors.WHITE,
   },
   input: {
     flex: 1,

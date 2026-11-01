@@ -244,6 +244,8 @@ export default function OfflineConversationMap({
       {Platform.OS === "ios" ? (
         <AppleMaps.View
           style={StyleSheet.absoluteFill}
+          // dark even when the phone is in light mode
+          colorScheme={AppleMaps.MapColorScheme.DARK}
           cameraPosition={{
             coordinates: {
               latitude: position?.lat,
