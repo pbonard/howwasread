@@ -6,7 +6,7 @@ import React from 'react';
 export default function TabLayout() {
   return (
     <NativeTabs
-      tintColor="black"
+      tintColor="blue"
       // ios 26 ignores the background color (glass), it only paints android and ios 18 and lower
       backgroundColor="white"
       minimizeBehavior="onScrollDown"
