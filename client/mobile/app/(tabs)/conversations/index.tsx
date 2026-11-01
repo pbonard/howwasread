@@ -1,6 +1,6 @@
-import { Platform, Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { colors } from "@/constants";
 import OnlineConversationList from "@/components/conversation/OnlineConversationList";
@@ -8,17 +8,27 @@ import OfflineConversationMap from "@/components/conversation/OfflineConversatio
 import { useRef, useState } from "react";
 import Tab from "@/components/Tab";
 import PagerView from "react-native-pager-view";
+import { GlassView, isLiquidGlassAvailable } from "expo-glass-effect";
+
+// liquid glass only exists on ios 26+, elsewhere the button is the plain white circle
+const hasLiquidGlass = isLiquidGlassAvailable();
 
 export default function ConversationsScreen() {
   const [currentTab, setCurrentTab] = useState(0);
   const pagerRef = useRef<PagerView | null>(null);
+  // the bottom inset includes the native tab bar, the button sits just above it
+  const insets = useSafeAreaInsets();
+
+  const handlePressCreate = () =>
+    router.push(`/${currentTab === 0 ? "offline" : "online"}/create`);
 
   const handlePressTab = (index: number) => {
     pagerRef.current?.setPage(index);
     setCurrentTab(index);
   };
   return (
-    <SafeAreaView style={styles.container} edges={["bottom"]}>
+    // no bottom safe area: the map and the list run under the glass tab bar
+    <View style={styles.container}>
       <View style={styles.tabContainer}>
         <Tab isActive={currentTab === 0} onPress={() => handlePressTab(0)}>
           Offline
@@ -37,15 +47,29 @@ export default function ConversationsScreen() {
         <OfflineConversationMap key="1" isActive={currentTab === 0} />
         <OnlineConversationList key="2" isActive={currentTab === 1} />
       </PagerView>
-      <Pressable
-        style={styles.createButton}
-        onPress={() =>
-          router.push(`/${currentTab === 0 ? "offline" : "online"}/create`)
-        }
-      >
-        <Feather name="plus" size={32} color="black" />
-      </Pressable>
-    </SafeAreaView>
+      {hasLiquidGlass ? (
+        // light like the tab bar, the glass would turn dark over the dark map
+        <GlassView
+          style={[styles.createButtonGlass, { bottom: insets.bottom + 16 }]}
+          colorScheme="light"
+          isInteractive
+        >
+          <Pressable
+            style={styles.createButtonPressable}
+            onPress={handlePressCreate}
+          >
+            <Feather name="plus" size={32} color="black" />
+          </Pressable>
+        </GlassView>
+      ) : (
+        <Pressable
+          style={[styles.createButton, { bottom: insets.bottom + 16 }]}
+          onPress={handlePressCreate}
+        >
+          <Feather name="plus" size={32} color="black" />
+        </Pressable>
+      )}
+    </View>
   );
 }
 
@@ -56,7 +80,6 @@ const styles = StyleSheet.create({
   },
   createButton: {
     position: "absolute",
-    bottom: Platform.OS === "android" ? 120 : 56,
     right: 16,
     backgroundColor: colors.WHITE,
     width: 64,
@@ -69,6 +92,18 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     shadowOpacity: 0.5,
     elevation: 2,
+  },
+  createButtonGlass: {
+    position: "absolute",
+    right: 16,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+  },
+  createButtonPressable: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
   tabContainer: {
     flexDirection: "row",
