@@ -103,7 +103,7 @@ export default function OfflineConversationDetail({
     if (data?.isParticipant) {
       quitOfflineConversationMutation.mutate(
         { conversationId: id },
-        { onSuccess: () => router.push('/conversations') },
+        { onSuccess: () => router.replace('/conversations') },
       );
       return;
     }
@@ -192,7 +192,9 @@ export default function OfflineConversationDetail({
                   label={'Update'}
                   onPress={() => {
                     sheet?.current?.dismiss();
-                    router.push(`/offline/update/${id}`);
+                    router.push(`/offline/update/${id}`, {
+                      dangerouslySingular: true,
+                    });
                   }}
                   style={{ paddingHorizontal: 20 }}
                 />

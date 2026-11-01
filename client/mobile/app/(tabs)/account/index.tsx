@@ -67,7 +67,9 @@ export default function AccountScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.menuContainer}>
         <Pressable
-          onPress={() => router.push("/profile/name")}
+          onPress={() =>
+            router.push("/profile/name", { dangerouslySingular: true })
+          }
           style={({ pressed }) => [
             styles.menuItem,
             pressed && styles.menuItemPressed

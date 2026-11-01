@@ -1,14 +1,14 @@
-import { StyleSheet, View } from "react-native";
-import { FormProvider, useForm } from "react-hook-form";
-import FixedBottomCTA from "@/components/FixedBottomCTA";
-import EmailInput from "@/components/auth/EmailInput";
-import PasswordInput from "@/components/auth/PasswordInput";
-import { useLoginWithEmail } from "@/hooks/useAuth";
-import { colors } from "@/constants";
-import { Link, router } from "expo-router";
-import { getMyProfile } from "@/api/profile";
-import { setKVStore } from "@/db/storage";
-import CustomButton from "@/components/CustomButton";
+import { StyleSheet, View } from 'react-native';
+import { FormProvider, useForm } from 'react-hook-form';
+import FixedBottomCTA from '@/components/FixedBottomCTA';
+import EmailInput from '@/components/auth/EmailInput';
+import PasswordInput from '@/components/auth/PasswordInput';
+import { useLoginWithEmail } from '@/hooks/useAuth';
+import { colors } from '@/constants';
+import { Link, router } from 'expo-router';
+import { getMyProfile } from '@/api/profile';
+import { setKVStore } from '@/db/storage';
+import CustomButton from '@/components/CustomButton';
 
 interface FormValue {
   email: string;
@@ -20,8 +20,8 @@ export default function LoginScreen() {
 
   const emailLoginForm = useForm<FormValue>({
     defaultValues: {
-      email: "",
-      password: "",
+      email: '',
+      password: '',
     },
   });
 
@@ -36,22 +36,22 @@ export default function LoginScreen() {
       {
         onSuccess: async (data) => {
           if (data.verificationId) {
-            router.replace("/auth/otp/email");
+            router.replace('/auth/otp/email');
             return;
           }
           if (data.sessionId) {
-            router.replace("/auth/phone-number");
+            router.replace('/auth/phone-number');
             return;
           }
           if (data.accessToken) {
             const my = await getMyProfile();
-            setKVStore("myId", my.id);
+            setKVStore('myId', my.id);
             if (!my.name) {
-              router.replace("/profile/name");
+              router.replace('/profile/name');
               return;
             }
-            setKVStore("myName", my.name);
-            router.replace("/conversations");
+            setKVStore('myName', my.name);
+            router.replace('/conversations');
           }
         },
       },
@@ -63,13 +63,20 @@ export default function LoginScreen() {
         <View style={styles.content}>
           <EmailInput />
           <PasswordInput />
-          <View style={{ marginTop: 50, gap: 40, alignItems: "center" }}>
+          <View style={{ marginTop: 50, gap: 40, alignItems: 'center' }}>
             <CustomButton
               label="login"
               onPress={emailLoginForm.handleSubmit(onSubmit)}
               disabled={loginWithEmailMutation.isPending}
             />
-            <Link href="/auth/email/forget-password" style={{color: colors.GRAY_500, textDecorationLine: "underline"}}>
+            <Link
+              href="/auth/email/forget-password"
+              dangerouslySingular={true}
+              style={{
+                color: colors.GRAY_500,
+                textDecorationLine: 'underline',
+              }}
+            >
               Forgot your password?
             </Link>
           </View>
