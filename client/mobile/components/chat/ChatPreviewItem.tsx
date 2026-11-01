@@ -131,7 +131,7 @@ export default function ChatPreviewItem({
               id: preview.roomId,
             },
           },
-          { dangerouslySingular: (_, params) => String(params.id) },
+          { dangerouslySingular: true },
         )
       }
       onLongPress={() => handleLongPress()}

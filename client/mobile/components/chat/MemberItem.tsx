@@ -53,7 +53,7 @@ export default function MemberItem({ id }: { id: string }) {
       onPress={() =>
         router.push(
           { pathname: "/chat/[id]", params: { id: id } },
-          { dangerouslySingular: (_, params) => String(params.id) },
+          { dangerouslySingular: true },
         )
       }
       onLongPress={() => handleLongPress()}
