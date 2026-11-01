@@ -51,7 +51,10 @@ export default function MemberItem({ id }: { id: string }) {
     <Pressable
       style={({ pressed }) => [styles.container, pressed && styles.pressed]}
       onPress={() =>
-        router.push({ pathname: "/chat/[id]", params: { id: id } })
+        router.push(
+          { pathname: "/chat/[id]", params: { id: id } },
+          { dangerouslySingular: (_, params) => String(params.id) },
+        )
       }
       onLongPress={() => handleLongPress()}
     >

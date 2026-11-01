@@ -124,12 +124,15 @@ export default function ChatPreviewItem({
     <Pressable
       style={({ pressed }) => [styles.container, pressed && styles.pressed]}
       onPress={() =>
-        router.push({
-          pathname: `/chat/[id]`,
-          params: {
-            id: preview.roomId,
+        router.push(
+          {
+            pathname: `/chat/[id]`,
+            params: {
+              id: preview.roomId,
+            },
           },
-        })
+          { dangerouslySingular: (_, params) => String(params.id) },
+        )
       }
       onLongPress={() => handleLongPress()}
     >

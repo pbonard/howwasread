@@ -4,22 +4,22 @@ import {
   Pressable,
   StyleSheet,
   Text,
-} from "react-native";
+} from 'react-native';
 import {
   SafeAreaView,
   useSafeAreaInsets,
-} from "react-native-safe-area-context";
-import { router, useLocalSearchParams, useNavigation } from "expo-router";
-import { useGetChatRoomInfo } from "@/hooks/useChat";
-import MessageList from "@/components/chat/MessageList";
-import { colors } from "@/constants";
-import MessageInput from "@/components/chat/MessageInput";
-import useKeyboard from "@/hooks/useKeyboard";
-import { useEffect } from "react";
-import { getKVStore } from "@/db/storage";
-import { Ionicons } from "@expo/vector-icons";
-import { useGetMyProfile } from "@/hooks/useProfile";
-import { requestRecordingPermissionsAsync } from "expo-audio";
+} from 'react-native-safe-area-context';
+import { router, useLocalSearchParams, useNavigation } from 'expo-router';
+import { useGetChatRoomInfo } from '@/hooks/useChat';
+import MessageList from '@/components/chat/MessageList';
+import { colors } from '@/constants';
+import MessageInput from '@/components/chat/MessageInput';
+import useKeyboard from '@/hooks/useKeyboard';
+import { useEffect } from 'react';
+import { getKVStore } from '@/db/storage';
+import { Ionicons } from '@expo/vector-icons';
+import { useGetMyProfile } from '@/hooks/useProfile';
+import { requestRecordingPermissionsAsync } from 'expo-audio';
 
 export default function ChatScreen() {
   const { id: roomId } = useLocalSearchParams();
@@ -30,18 +30,21 @@ export default function ChatScreen() {
   const insets = useSafeAreaInsets();
   const roomName = roomInfo?.name ?? getKVStore(String(roomId));
   const isPersonal =
-    (roomInfo?.type ?? getKVStore("type" + String(roomId))) === "personal";
+    (roomInfo?.type ?? getKVStore('type' + String(roomId))) === 'personal';
 
   useEffect(() => {
     navigation.setOptions({
-      headerTitleAlign: "center",
+      headerTitleAlign: 'center',
       headerTitle: () => (
         <Pressable
           onPress={() =>
-            router.push({
-              pathname: "/chat/detail/[id]",
-              params: { id: String(roomId) },
-            })
+            router.push(
+              {
+                pathname: '/chat/detail/[id]',
+                params: { id: String(roomId) },
+              },
+              { dangerouslySingular: (_, params) => String(params.id) },
+            )
           }
           disabled={isPersonal || !myProfile}
         >
@@ -49,12 +52,12 @@ export default function ChatScreen() {
             style={[
               { fontSize: 17 },
               !isPersonal && {
-                fontWeight: "bold",
-                textDecorationLine: "underline",
+                fontWeight: 'bold',
+                textDecorationLine: 'underline',
               },
             ]}
           >
-            {roomName.length > 15 ? roomName.slice(0, 15) + "..." : roomName}
+            {roomName.length > 15 ? roomName.slice(0, 15) + '...' : roomName}
           </Text>
         </Pressable>
       ),
@@ -68,13 +71,16 @@ export default function ChatScreen() {
                       ? `${roomId}${myProfile.id}`
                       : `${myProfile.id}${roomId}`;
                   await requestRecordingPermissionsAsync();
-                  router.push({
-                    pathname: "/online/[id]",
-                    params: {
-                      id: conversationId,
-                      isPersonal: "true",
+                  router.push(
+                    {
+                      pathname: '/online/[id]',
+                      params: {
+                        id: conversationId,
+                        isPersonal: 'true',
+                      },
                     },
-                  });
+                    { dangerouslySingular: (_, params) => String(params.id) },
+                  );
                 }}
               >
                 <Ionicons name="call-outline" size={28} color="black" />
@@ -85,13 +91,13 @@ export default function ChatScreen() {
   }, [roomInfo]);
 
   return (
-    <SafeAreaView style={styles.container} edges={["bottom"]}>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
       <KeyboardAvoidingView
         style={styles.keyboardAvoidingView}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={
-          Platform.OS === "ios" || isKeyboardVisible
-            ? Platform.OS === "ios"
+          Platform.OS === 'ios' || isKeyboardVisible
+            ? Platform.OS === 'ios'
               ? 100
               : 80
             : insets.bottom

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -7,26 +7,26 @@ import {
   Pressable,
   StyleSheet,
   View,
-} from "react-native";
-import { colors } from "@/constants";
-import { useFocusEffect, useScrollToTop } from "expo-router";
+} from 'react-native';
+import { colors } from '@/constants';
+import { useFocusEffect, useScrollToTop } from 'expo-router';
 import {
   useGetBlockedConversations,
   useGetInfiniteOnlineConversations,
-} from "@/hooks/useConversation";
-import SearchInput from "@/components/conversation/SearchInput";
-import OnlineConversationItem from "@/components/conversation/OnlineConversationItem";
-import { TrueSheet } from "@lodev09/react-native-true-sheet";
-import { Ionicons } from "@expo/vector-icons";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import OnlineConversationDetail from "@/components/conversation/OnlineConversationDetail";
+} from '@/hooks/useConversation';
+import SearchInput from '@/components/conversation/SearchInput';
+import OnlineConversationItem from '@/components/conversation/OnlineConversationItem';
+import { TrueSheet } from '@lodev09/react-native-true-sheet';
+import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import OnlineConversationDetail from '@/components/conversation/OnlineConversationDetail';
 
 export default function OnlineConversationList({
   isActive,
 }: {
   isActive: boolean;
 }) {
-  const [keyword, setKeyword] = useState("");
+  const [keyword, setKeyword] = useState('');
   const {
     data,
     fetchNextPage,
@@ -41,7 +41,7 @@ export default function OnlineConversationList({
   const insets = useSafeAreaInsets();
   useScrollToTop(ref);
   const sheet = useRef<TrueSheet>(null);
-  const [detailId, setDetailId] = useState("");
+  const [detailId, setDetailId] = useState('');
 
   useEffect(() => {
     if (!isActive) {
@@ -72,12 +72,12 @@ export default function OnlineConversationList({
   };
 
   const handleSearchCancel = () => {
-    setKeyword("");
+    setKeyword('');
     Keyboard.dismiss();
   };
 
   const handleSheetCloseButtonPress = () => {
-    setDetailId("");
+    setDetailId('');
     sheet.current?.dismiss();
   };
 
@@ -118,10 +118,9 @@ export default function OnlineConversationList({
             );
           }}
           keyExtractor={(item, index) => `${item.id}-${index}`}
-          // the list runs under the glass tab bar, the last item can still scroll above it
           contentContainerStyle={[
             styles.contentContainer,
-            { paddingBottom: insets.bottom + 12 },
+            Platform.OS === 'ios' && { paddingBottom: insets.bottom + 12 },
           ]}
           onEndReached={handleEndReached}
           onEndReachedThreshold={0.5}
@@ -132,7 +131,7 @@ export default function OnlineConversationList({
       <TrueSheet
         ref={sheet}
         detents={
-          Platform.OS === "android" ? [0.123, 0.72] : ["auto", 0.123, 0.72]
+          Platform.OS === 'android' ? [0.123, 0.72] : ['auto', 0.123, 0.72]
         }
         dismissible={false}
         dimmed={false}
@@ -163,18 +162,18 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingHorizontal: 10,
     gap: 8,
-    backgroundColor: "transparent",
-    flexDirection: "row",
+    backgroundColor: 'transparent',
+    flexDirection: 'row',
     paddingTop: 0,
     height: 44,
   },
   closeButton: {
-    position: "absolute",
+    position: 'absolute',
     top: 10,
     right: 16,
     zIndex: 1,
     padding: 8,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     borderRadius: 100,
   },
 });
