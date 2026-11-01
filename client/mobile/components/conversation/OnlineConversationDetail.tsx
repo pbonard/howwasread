@@ -150,7 +150,7 @@ export default function OnlineConversationDetail({
           ) : (
             <Text style={styles.descriptionHeader}>No description</Text>
           )}
-          <View style={{ gap: 30 }}>
+          <View style={{ gap: 25 }}>
             {data.canEnter ? (
               <CustomButton
                 label="Enter"
@@ -211,20 +211,24 @@ export default function OnlineConversationDetail({
               />
             )}
             {data.isModerator && (
-              <CustomButton
-                label={"Update conversation"}
-                onPress={() => {
-                  sheet.current?.dismiss();
-                  router.push(`/online/update/${id}`);
-                }}
-              />
-            )}
-            {data.isModerator && (
-              <CustomButton
-                label={"Delete conversation"}
-                onPress={handleDelete}
-                disabled={deleteOnlineConversationMutation.isPending}
-              />
+              <View style={styles.buttonRow}>
+                <View style={{ flex: 1 }}>
+                  <CustomButton
+                    label={"Update"}
+                    onPress={() => {
+                      sheet.current?.dismiss();
+                      router.push(`/online/update/${id}`);
+                    }}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <CustomButton
+                    label={"Delete"}
+                    onPress={handleDelete}
+                    disabled={deleteOnlineConversationMutation.isPending}
+                  />
+                </View>
+              </View>
             )}
           </View>
         </View>
