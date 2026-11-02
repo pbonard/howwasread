@@ -70,7 +70,3 @@ type RetryEvent struct {
 	Headers     map[string][]byte `json:"headers,omitempty"` // original headers without "partitionId"
 	Value       []byte            `json:"value,omitempty"`
 }
-
-type ConversationRequest struct {
-	Id uuid.UUID `json:"id"`
-}

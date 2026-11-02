@@ -42,16 +42,6 @@ packages:
         configs:
           - dir: messagepersist/test
             pkgname: test
-  backend/onlineconversation/internal/repository:
-    interfaces:
-      Repository:
-        configs:
-          - dir: onlineconversation/test
-            pkgname: test
-      Tx:
-        configs:
-          - dir: onlineconversation/test
-            pkgname: test
   backend/notification/internal/repository:
     interfaces:
       Repository:
@@ -105,18 +95,6 @@ packages:
       Service:
         configs:
           - dir: auth/test
-            pkgname: test
-  backend/onlineconversation/internal/service:
-    interfaces:
-      Service:
-        configs:
-          - dir: onlineconversation/test
-            pkgname: test
-  backend/onlineconversation/internal/client:
-    interfaces:
-      ModerationClient:
-        configs:
-          - dir: onlineconversation/test
             pkgname: test
   backend/fcmnotification/internal/client:
     interfaces:

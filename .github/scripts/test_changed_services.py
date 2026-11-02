@@ -19,7 +19,7 @@ class SelectServicesTest(unittest.TestCase):
         self.assertEqual(
             names(["backend/common/payload.go"]),
             ["chat", "fcmnotification", "messagepersist", "messagepreprocess", "messagerelay",
-             "notification", "onlineconversation", "signalrelay", "turn"],
+             "notification", "signalrelay", "turn"],
         )
 
     def test_files_outside_the_services_select_nothing(self):

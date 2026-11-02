@@ -14,15 +14,15 @@ VALUES = """apps:
     image: "backend/search:1111111"
 flink:
   jobs:
-    conversation-cdc-job:
-      image: flink/conversationcdcjob:2222222
+    scheduled-notification-job:
+      image: flink/schedulednotificationjob:2222222
 """
 
 
 class TagTest(unittest.TestCase):
     def test_current_tag_reads_quoted_and_unquoted_images(self):
         self.assertEqual(get_helm_values_tag(VALUES, "backend/auth"), "latest")
-        self.assertEqual(get_helm_values_tag(VALUES, "flink/conversationcdcjob"), "2222222")
+        self.assertEqual(get_helm_values_tag(VALUES, "flink/schedulednotificationjob"), "2222222")
 
     def test_current_tag_rejects_a_missing_image(self):
         with self.assertRaises(ValueError):
