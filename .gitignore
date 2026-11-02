@@ -9,6 +9,8 @@ Thumbs.db
 *.log
 *.bak
 
+.venv
+
 # JetBrains (IntelliJ, GoLand, etc.)
 .idea/
 *.iml
