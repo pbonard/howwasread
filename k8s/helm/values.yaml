@@ -11,7 +11,7 @@ circuitBreaker:
 
 apps:
   auth:
-    image: "backend/auth:105237d"
+    image: "backend/auth:fba1f73"
     port: 8080
     routePath: /auth
     authentication: true
@@ -31,7 +31,7 @@ apps:
 #    cpuLimits: "0.1"
 #    memoryLimits: "10Mi"
   chat:
-    image: "backend/chat:98cdf63"
+    image: "backend/chat:fba1f73"
     port: 8080
     routePath: /chat
     authentication: false
@@ -49,7 +49,7 @@ apps:
 #    cpuLimits: "0.1"
 #    memoryLimits: "10Mi"
   expo-notification:
-    image: "backend/expo-notification:105237d"
+    image: "backend/expo-notification:fba1f73"
     port: 8080
     routePath: false
     authentication: false
@@ -65,7 +65,7 @@ apps:
 #    cpuLimits: "0.1"
 #    memoryLimits: "10Mi"
   fcmnotification:
-    image: "backend/fcmnotification:98cdf63"
+    image: "backend/fcmnotification:fba1f73"
     port: 8080
     routePath: false
     authentication: false
@@ -83,7 +83,7 @@ apps:
 #    cpuLimits: "0.1"
 #    memoryLimits: "10Mi"
   messagepersist:
-    image: "backend/messagepersist:98cdf63"
+    image: "backend/messagepersist:fba1f73"
     port: 8080
     routePath: false
     authentication: false
@@ -101,7 +101,7 @@ apps:
 #    cpuLimits: "0.1"
 #    memoryLimits: "10Mi"
   messagepreprocess:
-    image: "backend/messagepreprocess:98cdf63"
+    image: "backend/messagepreprocess:fba1f73"
     port: 8080
     routePath: false
     authentication: false
@@ -119,7 +119,7 @@ apps:
 #    cpuLimits: "0.1"
 #    memoryLimits: "10Mi"
   messagerelay:
-    image: "backend/messagerelay:98cdf63"
+    image: "backend/messagerelay:fba1f73"
     port: 8080
     routePath: false
     authentication: false
@@ -137,7 +137,7 @@ apps:
 #    cpuLimits: "0.1"
 #    memoryLimits: "10Mi"
   notification:
-    image: "backend/notification:98cdf63"
+    image: "backend/notification:fba1f73"
     port: 8080
     routePath: /notification
     authentication: false
@@ -155,7 +155,7 @@ apps:
 #    cpuLimits: "0.1"
 #    memoryLimits: "10Mi"
   signalrelay:
-    image: "backend/signalrelay:98cdf63"
+    image: "backend/signalrelay:fba1f73"
     port: 8080
     routePath: false
     authentication: false
@@ -173,7 +173,7 @@ apps:
 #    cpuLimits: "0.1"
 #    memoryLimits: "10Mi"
   search:
-    image: "backend/search:fd20acd"
+    image: "backend/search:fba1f73"
     port: 8080
     routePath: /search
     authentication: false
@@ -193,7 +193,7 @@ apps:
   #    cpuLimits: "0.4"
   #    memoryLimits: "100Mi"
   turn:
-    image: "backend/turn:98cdf63"
+    image: "backend/turn:fba1f73"
     port: 3478
     routePath: false
     turn: true
@@ -253,7 +253,7 @@ flink:
     VITESS_VTGATE_GRPC_PORT: "15999"
   jobs:
     scheduled-notification-job:
-      image: flink/schedulednotificationjob:105237d
+      image: flink/schedulednotificationjob:fba1f73
       jar: schedulednotificationjob.jar
       entryClass: schedulednotificationjob.ScheduledNotificationJob
       parallelism: 2
@@ -263,7 +263,7 @@ flink:
         taskmanager.memory.managed.size: "64m"
         jobmanager.memory.jvm-metaspace.size: "128m"
     exponential-backoff-retry-job:
-      image: flink/exponentialbackoffretryjob:105237d
+      image: flink/exponentialbackoffretryjob:fba1f73
       jar: exponentialbackoffretryjob.jar
       entryClass: exponentialbackoffretryjob.ExponentialBackoffRetryJob
       parallelism: 2
