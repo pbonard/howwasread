@@ -154,25 +154,6 @@ apps:
 #    memoryRequests: "10Mi"
 #    cpuLimits: "0.1"
 #    memoryLimits: "10Mi"
-  onlineconversation:
-    image: "backend/onlineconversation:98cdf63"
-    port: 8080
-    routePath: /onlineconversation
-    authentication: false
-    garage: false
-    kafka: true
-    k8ssandra: false
-    mongodb: false
-    mysql: true
-    smtp: false
-    twilio: false
-    firebase: false
-    valkey: true
-    opensearch: true
-#    cpuRequests: "0.03"
-#    memoryRequests: "10Mi"
-#    cpuLimits: "0.1"
-#    memoryLimits: "10Mi"
   signalrelay:
     image: "backend/signalrelay:98cdf63"
     port: 8080
@@ -191,26 +172,6 @@ apps:
 #    memoryRequests: "10Mi"
 #    cpuLimits: "0.1"
 #    memoryLimits: "10Mi"
-  offlineconversation:
-    image: "backend/offlineconversation:105237d"
-    port: 8080
-    routePath: /offlineconversation
-    authentication: false
-    garage: false
-    kafka: true
-    k8ssandra: false
-    mongodb: false
-    mysql: true
-    smtp: false
-    twilio: false
-    firebase: false
-    valkey: true
-    opensearch: false
-    framework: spring-boot
-#    cpuRequests: "0.3"
-#    memoryRequests: "100Mi"
-#    cpuLimits: "0.4"
-#    memoryLimits: "100Mi"
   search:
     image: "backend/search:fd20acd"
     port: 8080
@@ -311,17 +272,3 @@ flink:
         execution.checkpointing.incremental: "true"
         taskmanager.memory.managed.size: "64m"
         jobmanager.memory.jvm-metaspace.size: "128m"
-    conversation-cdc-job:
-      image: flink/conversationcdcjob:105237d
-      jar: conversationcdcjob.jar
-      entryClass: conversationcdcjob.ConversationCdcJob
-      parallelism: 1
-      flinkConfiguration:
-        # no keyed state (source offsets are operator state), so no rocksdb and no managed memory
-        state.backend.type: hashmap
-        execution.checkpointing.interval: "10s"
-        taskmanager.memory.managed.fraction: "0.0"
-        # sql planning runs in the jobmanager, it needs more metaspace and heap than the datastream jobs
-        jobmanager.memory.jvm-metaspace.size: "160m"
-      jobManager:
-        memory: "512m"

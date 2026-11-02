@@ -19,15 +19,6 @@
     ]
   },
   {
-    "name": "conversationcdcjob",
-    "image": "flink/conversationcdcjob",
-    "dockerfile": "./backend/conversationcdcjob/Dockerfile",
-    "context": "./backend/conversationcdcjob",
-    "paths": [
-      "backend/conversationcdcjob/"
-    ]
-  },
-  {
     "name": "expo-notification",
     "image": "backend/expo-notification",
     "dockerfile": "./backend/expo-notification/Dockerfile",
@@ -92,25 +83,6 @@
     "context": "./backend",
     "paths": [
       "backend/notification/",
-      "backend/common/"
-    ]
-  },
-  {
-    "name": "offlineconversation",
-    "image": "backend/offlineconversation",
-    "dockerfile": "./backend/offlineconversation/Dockerfile",
-    "context": "./backend/offlineconversation",
-    "paths": [
-      "backend/offlineconversation/"
-    ]
-  },
-  {
-    "name": "onlineconversation",
-    "image": "backend/onlineconversation",
-    "dockerfile": "./backend/onlineconversation/Dockerfile",
-    "context": "./backend",
-    "paths": [
-      "backend/onlineconversation/",
       "backend/common/"
     ]
   },
