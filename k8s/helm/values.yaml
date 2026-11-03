@@ -238,7 +238,8 @@ flink:
     # a cancelled job's last checkpoint stays in garage, it can be restored by hand
     execution.checkpointing.externalized-checkpoint-retention: RETAIN_ON_CANCELLATION
   jobManager:
-    memory: "400m"
+    # 400m left only the 64m jvm-overhead minimum for native memory, the pods got OOMKilled every ~8 minutes
+    memory: "640m"
     cpu: 0.5
   taskManager:
     memory: "640m"
