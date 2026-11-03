@@ -113,6 +113,8 @@ android/.cxx/
 *.apk
 *.ap_
 
+*.code-workspace
+
 # Keystores
 *.jks
 *.keystore

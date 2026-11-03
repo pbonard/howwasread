@@ -63,7 +63,7 @@ public interface OfflineConversationDocumentRepository extends ElasticsearchRepo
                           "play.keyword^5",
                           "film.keyword^5",
                           "writtenBy.keyword^5"
-                        ],
+                        ]
                       }
                     }
                   ],
@@ -141,7 +141,7 @@ public interface OfflineConversationDocumentRepository extends ElasticsearchRepo
                           "play.keyword^5",
                           "film.keyword^5",
                           "writtenBy.keyword^5"
-                        ],
+                        ]
                       }
                     }
                   ],
