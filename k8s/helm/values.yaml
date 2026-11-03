@@ -173,7 +173,7 @@ apps:
 #    cpuLimits: "0.1"
 #    memoryLimits: "10Mi"
   search:
-    image: "backend/search:fba1f73"
+    image: "backend/search:d803f54"
     port: 8080
     routePath: /search
     authentication: false
