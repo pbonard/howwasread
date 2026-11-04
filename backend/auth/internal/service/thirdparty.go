@@ -8,6 +8,19 @@ import (
 	"github.com/google/uuid"
 )
 
+// provideBasedOnPhoneVerificationPolicy continues the sign in of a member without a verified phone number: a session to verify it
+// when that is required, otherwise tokens with the profile that the sms step would have created
+func (s *service) provideBasedOnPhoneVerificationPolicy(id gocql.UUID, email, role string) (*dto.SignInWithThirdPartyResponse, string, error) {
+	if s.phoneVerificationRequired {
+		return s.provideSessionId(email)
+	}
+	err := s.repository.SaveProfileId(id)
+	if err != nil {
+		return nil, "", ErrInternalServer
+	}
+	return s.provideTokens(id, role)
+}
+
 func (s *service) provideSessionId(email string) (*dto.SignInWithThirdPartyResponse, string, error) {
 	sessionId := uuid.New()
 	err := s.repository.SaveEmailBySessionId(gocql.UUID(sessionId), email)

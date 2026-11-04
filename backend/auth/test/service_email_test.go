@@ -121,6 +121,20 @@ func TestLoginWithEmail(t *testing.T) {
 		assert.NotEqual(t, uuid.Nil, resp.SessionId)
 		assert.Empty(t, rt)
 	})
+	t.Run("member without a phone number gets a profile and tokens when it is not required", func(t *testing.T) {
+		t.Setenv("PHONE_VERIFICATION_REQUIRED", "false")
+		s, d := newService(t)
+		d.repo.EXPECT().FindLoginInfoByEmail(email).Return(true, false, gid(id), hash(t, "password123"), "user", nil)
+		d.repo.EXPECT().SaveProfileId(gid(id)).Return(nil)
+		d.repo.EXPECT().SaveRefreshTokenJTIById(gid(id), mock.Anything).Return(nil)
+
+		resp, rt, err := s.LoginWithEmail(email, "password123")
+
+		require.NoError(t, err)
+		assert.Equal(t, uuid.Nil, resp.SessionId)
+		assert.Equal(t, id.String(), claims(t, resp.AccessToken, keyAT)["sub"])
+		assert.NotEmpty(t, rt)
+	})
 	t.Run("verified account gets tokens", func(t *testing.T) {
 		s, d := newService(t)
 		d.repo.EXPECT().FindLoginInfoByEmail(email).Return(true, true, gid(id), hash(t, "password123"), "user", nil)

@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/pbonard/howwasread.git
+    repoURL: https://github.com/pbonard/my-server.git
     targetRevision: main
     path: k8s/helm
     helm:

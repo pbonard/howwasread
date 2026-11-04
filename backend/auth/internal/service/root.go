@@ -39,6 +39,8 @@ type service struct {
 	googleAuthClient client.GoogleAuthClient
 	appleKeyFunc     jwt.Keyfunc
 	smtpClient       client.SMTPClient
+	// members must verify a phone number before they get tokens
+	phoneVerificationRequired bool
 }
 
 func NewService(r repository.Repository, keys Keys, smsClient client.SMSClient, googleAuthClient client.GoogleAuthClient,
@@ -54,5 +56,7 @@ func NewService(r repository.Repository, keys Keys, smsClient client.SMSClient, 
 		googleAuthClient: googleAuthClient,
 		appleKeyFunc:     appleKeyFunc,
 		smtpClient:       smtpClient,
+		// only an explicit false turns it off, so a missing or mistyped value can't skip the verification
+		phoneVerificationRequired: os.Getenv("PHONE_VERIFICATION_REQUIRED") != "false",
 	}
 }

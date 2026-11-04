@@ -1,6 +1,7 @@
 package test
 
 import (
+	"backend/auth/internal/client"
 	"backend/auth/internal/constant"
 	"backend/auth/internal/repository"
 	"backend/auth/internal/service"
@@ -55,6 +56,79 @@ func TestSignInWithGoogle(t *testing.T) {
 	})
 }
 
+func TestSignInWithGoogle_phoneVerificationNotRequired(t *testing.T) {
+	id := uuid.New()
+	t.Run("new user gets a profile and tokens", func(t *testing.T) {
+		t.Setenv("PHONE_VERIFICATION_REQUIRED", "false")
+		s, d := newService(t)
+		d.google.EXPECT().Email(mock.Anything, "token").Return(email, nil)
+		d.repo.EXPECT().FindLoginInfoByEmail(email).Return(false, false, gocql.UUID{}, "", "", gocql.ErrNotFound)
+		d.repo.EXPECT().SaveThirdPartySignInInfo(mock.Anything, mock.Anything, email, false, true).Return(nil)
+		d.repo.EXPECT().SaveProfileId(mock.Anything).Return(nil)
+		d.repo.EXPECT().SaveRefreshTokenJTIById(mock.Anything, mock.Anything).Return(nil)
+
+		resp, rt, err := s.SignInWithGoogle(context.Background(), "token")
+
+		require.NoError(t, err)
+		assert.Equal(t, uuid.Nil, resp.SessionId)
+		assert.NotEmpty(t, resp.AccessToken)
+		assert.NotEmpty(t, rt)
+	})
+	t.Run("existing member without a phone number gets a profile and tokens", func(t *testing.T) {
+		t.Setenv("PHONE_VERIFICATION_REQUIRED", "false")
+		s, d := newService(t)
+		d.google.EXPECT().Email(mock.Anything, "token").Return(email, nil)
+		d.repo.EXPECT().FindLoginInfoByEmail(email).Return(true, false, gid(id), "", "user", nil)
+		d.repo.EXPECT().SaveThirdPartySignInInfo(mock.Anything, gid(id), email, false, true).Return(nil)
+		d.repo.EXPECT().SaveProfileId(gid(id)).Return(nil)
+		d.repo.EXPECT().SaveRefreshTokenJTIById(gid(id), mock.Anything).Return(nil)
+
+		resp, rt, err := s.SignInWithGoogle(context.Background(), "token")
+
+		require.NoError(t, err)
+		assert.Equal(t, id.String(), claims(t, resp.AccessToken, keyAT)["sub"])
+		assert.NotEmpty(t, rt)
+	})
+	t.Run("any other value still requires the phone", func(t *testing.T) {
+		t.Setenv("PHONE_VERIFICATION_REQUIRED", "flase")
+		s, d := newService(t)
+		d.google.EXPECT().Email(mock.Anything, "token").Return(email, nil)
+		d.repo.EXPECT().FindLoginInfoByEmail(email).Return(false, false, gocql.UUID{}, "", "", gocql.ErrNotFound)
+		d.repo.EXPECT().SaveThirdPartySignInInfo(mock.Anything, mock.Anything, email, false, true).Return(nil)
+		d.repo.EXPECT().SaveEmailBySessionId(mock.Anything, email).Return(nil)
+
+		resp, rt, err := s.SignInWithGoogle(context.Background(), "token")
+
+		require.NoError(t, err)
+		assert.NotEqual(t, uuid.Nil, resp.SessionId)
+		assert.Empty(t, rt)
+	})
+}
+
+func TestVerifiedEmail(t *testing.T) {
+	t.Run("verified email is returned", func(t *testing.T) {
+		got, err := client.VerifiedEmail(map[string]any{"email": email, "email_verified": true})
+
+		require.NoError(t, err)
+		assert.Equal(t, email, got)
+	})
+	t.Run("unverified email is rejected", func(t *testing.T) {
+		_, err := client.VerifiedEmail(map[string]any{"email": email, "email_verified": false})
+
+		assert.Error(t, err)
+	})
+	t.Run("missing email_verified is rejected", func(t *testing.T) {
+		_, err := client.VerifiedEmail(map[string]any{"email": email})
+
+		assert.Error(t, err)
+	})
+	t.Run("missing email is rejected", func(t *testing.T) {
+		_, err := client.VerifiedEmail(map[string]any{"email_verified": true})
+
+		assert.Error(t, err)
+	})
+}
+
 func appleToken(t *testing.T, override jwt.MapClaims) string {
 	c := jwt.MapClaims{
 		"iss":   constant.AppleIssuerUrl,
@@ -95,6 +169,22 @@ func TestSignInWithApple_replayedNonceIsRejected(t *testing.T) {
 	_, _, err := s.SignInWithApple(context.Background(), appleToken(t, nil))
 
 	assert.ErrorIs(t, err, service.ErrSignInWithApple)
+}
+
+func TestSignInWithApple_phoneVerificationNotRequiredGivesTokens(t *testing.T) {
+	t.Setenv("PHONE_VERIFICATION_REQUIRED", "false")
+	s, d := newService(t)
+	d.repo.EXPECT().SaveNonce("nonce-1").Return(nil)
+	d.repo.EXPECT().FindLoginInfoByEmail(email).Return(false, false, gocql.UUID{}, "", "", gocql.ErrNotFound)
+	d.repo.EXPECT().SaveThirdPartySignInInfo(mock.Anything, mock.Anything, email, false, true).Return(nil)
+	d.repo.EXPECT().SaveProfileId(mock.Anything).Return(nil)
+	d.repo.EXPECT().SaveRefreshTokenJTIById(mock.Anything, mock.Anything).Return(nil)
+
+	resp, rt, err := s.SignInWithApple(context.Background(), appleToken(t, nil))
+
+	require.NoError(t, err)
+	assert.NotEmpty(t, resp.AccessToken)
+	assert.NotEmpty(t, rt)
 }
 
 func TestSignInWithApple_verifiedMemberGetsTokens(t *testing.T) {
