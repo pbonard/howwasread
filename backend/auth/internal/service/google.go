@@ -1,6 +1,7 @@
 package service
 
 import (
+	"backend/auth/internal/constant"
 	"backend/auth/internal/dto"
 	"context"
 	"errors"
@@ -31,7 +32,7 @@ func (s *service) SignInWithGoogle(ctx context.Context, token string) (
 		if err != nil {
 			return nil, "", ErrInternalServer
 		}
-		return s.provideSessionId(email)
+		return s.provideBasedOnPhoneVerificationPolicy(gocql.UUID(idv7), email, constant.RoleUser)
 	}
 	if err1 != nil {
 		return nil, "", ErrInternalServer
@@ -41,7 +42,7 @@ func (s *service) SignInWithGoogle(ctx context.Context, token string) (
 		return nil, "", ErrInternalServer
 	}
 	if !phoneNumberVerified {
-		return s.provideSessionId(email)
+		return s.provideBasedOnPhoneVerificationPolicy(id, email, role1)
 	}
 	return s.provideTokens(id, role1)
 }

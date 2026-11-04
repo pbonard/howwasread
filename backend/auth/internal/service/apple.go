@@ -87,7 +87,7 @@ func (s *service) SignInWithApple(ctx context.Context, identityToken string) (*d
 		if err != nil {
 			return nil, "", ErrInternalServer
 		}
-		return s.provideSessionId(email)
+		return s.provideBasedOnPhoneVerificationPolicy(gocql.UUID(idv7), email, constant.RoleUser)
 	}
 	if err1 != nil {
 		return nil, "", ErrSignInWithApple
@@ -97,7 +97,7 @@ func (s *service) SignInWithApple(ctx context.Context, identityToken string) (*d
 		return nil, "", ErrInternalServer
 	}
 	if !phoneNumberVerified {
-		return s.provideSessionId(email)
+		return s.provideBasedOnPhoneVerificationPolicy(id, email, role)
 	}
 	return s.provideTokens(id, role)
 }

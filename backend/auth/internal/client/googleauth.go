@@ -25,7 +25,12 @@ func NewGoogleAuthClient() GoogleAuthClient {
 	if err != nil {
 		log.Fatalf("Failed to create google id token validator: %v", err)
 	}
-	return &googleAuthClient{validator: validator, audience: os.Getenv("GOOGLE_SIGN_IN_WEB_CLIENT_ID")}
+	audience := os.Getenv("GOOGLE_SIGN_IN_WEB_CLIENT_ID")
+	// the validator skips the audience check when it's empty, and would accept tokens issued for any app
+	if audience == "" {
+		log.Fatal("GOOGLE_SIGN_IN_WEB_CLIENT_ID is not set")
+	}
+	return &googleAuthClient{validator: validator, audience: audience}
 }
 
 func (g *googleAuthClient) Email(ctx context.Context, idToken string) (string, error) {
@@ -33,9 +38,19 @@ func (g *googleAuthClient) Email(ctx context.Context, idToken string) (string, e
 	if err != nil {
 		return "", err
 	}
-	email, ok := payload.Claims["email"].(string)
+	return VerifiedEmail(payload.Claims)
+}
+
+// VerifiedEmail returns the email of the claims only if google verified it, an unverified one must not
+// sign in to the member who owns that address
+func VerifiedEmail(claims map[string]any) (string, error) {
+	email, ok := claims["email"].(string)
 	if !ok {
 		return "", errors.New("no email in google id token")
+	}
+	verified, _ := claims["email_verified"].(bool)
+	if !verified {
+		return "", errors.New("email in google id token is not verified")
 	}
 	return email, nil
 }

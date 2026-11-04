@@ -1,0 +1,28 @@
+# holidayfriend: layered on values.yaml, so auth follows the image tag of the mobile deployment
+namespace: holidayfriend
+hostname: "holidayfriend.pbonard.com"
+
+# no app here needs the gateway to verify tokens yet, and it must never trust the access tokens of the mobile app
+jwks: null
+flink: null
+
+apps:
+  # no phone login on the web, so no twilio secret here
+  auth:
+    twilio: false
+  # /auth goes to auth, every other path to web: the gateway picks the longest matching prefix
+  web:
+    image: "holidayfriend/web:latest"
+    port: 3000
+    routePath: /
+    public: true
+  chat: null
+  expo-notification: null
+  fcmnotification: null
+  messagepersist: null
+  messagepreprocess: null
+  messagerelay: null
+  notification: null
+  signalrelay: null
+  search: null
+  turn: null

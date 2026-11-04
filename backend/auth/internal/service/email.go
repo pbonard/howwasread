@@ -96,7 +96,7 @@ func (s *service) LoginWithEmail(email, password string) (*dto.LoginWithEmailRes
 		return &resp, "", nil
 	}
 
-	if !phoneNumberVerified {
+	if !phoneNumberVerified && s.phoneVerificationRequired {
 		sid := uuid.New()
 		err = s.repository.SaveEmailBySessionId(gocql.UUID(sid), email)
 		if err != nil {
@@ -104,6 +104,12 @@ func (s *service) LoginWithEmail(email, password string) (*dto.LoginWithEmailRes
 		}
 		resp.SessionId = sid
 		return &resp, "", nil
+	}
+	if !phoneNumberVerified {
+		err = s.repository.SaveProfileId(id)
+		if err != nil {
+			return nil, "", ErrInternalServer
+		}
 	}
 
 	jti, err := gocql.RandomUUID()

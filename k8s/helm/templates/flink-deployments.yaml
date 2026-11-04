@@ -1,4 +1,5 @@
 {{- $flink := .Values.flink }}
+{{- if $flink }}
 {{- range $name, $job := $flink.jobs }}
 ---
 apiVersion: flink.apache.org/v1beta1
@@ -110,3 +111,4 @@ data:
   {{- range $key, $value := $flink.config }}
   {{ $key }}: {{ $value | quote }}
   {{- end }}
+{{- end }}

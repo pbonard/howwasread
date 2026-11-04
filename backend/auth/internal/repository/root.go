@@ -104,6 +104,12 @@ func NewRepository() Repository {
 		`CREATE TABLE IF NOT EXISTS nonce (
     		nonce text PRIMARY KEY
     	);`,
+		`CREATE TABLE IF NOT EXISTS profile_by_id (
+			id uuid PRIMARY KEY, name text, reporter_ids set<uuid>, blocked_conversations set<uuid>
+		);`,
+		`CREATE TABLE IF NOT EXISTS banned_phone_number (
+			phone_number text PRIMARY KEY
+		);`,
 	}
 
 	for _, q := range queries {

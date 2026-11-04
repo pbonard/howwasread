@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: holidayfriend
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/pbonard/my-server.git
+    targetRevision: main
+    path: k8s/helm
+    helm:
+      releaseName: holidayfriend
+      valueFiles:
+        - values-holidayfriend.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: holidayfriend
+  syncPolicy:
+    automated:
+      selfHeal: false
+      prune: false
+    retry:
+      limit: 3
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m
