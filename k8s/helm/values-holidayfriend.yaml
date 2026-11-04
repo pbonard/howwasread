@@ -2,8 +2,20 @@
 namespace: holidayfriend
 hostname: "holidayfriend.pbonard.com"
 
-# no app here needs the gateway to verify tokens yet, and it must never trust the access tokens of the mobile app
-jwks: null
+# public key of the holidayfriend access tokens, never the one of the mobile app, so neither app trusts the other's tokens
+jwks: |
+  {
+    "keys": [
+      {
+        "alg": "RS256",
+        "kty": "RSA",
+        "use": "sig",
+        "kid": "holidayfriend-at-key-v1",
+        "n": "05Sw8YQd0S8S4SI57TgRhGpT8qcUrMuekdMlJzSFhrqiWsEvr0f2XgAitfD3xmN2KvUH_jeQOF52RAyitAf1TYtfgaMiN3rkt0TR-vVbpAjs_nzg95F3Ba31N0mxhKxbDyeII62xN-eUu1Vm5h-qTriCHSOZD8zYFq3IRlmZBQvhBYEDNGAd8KT-miScigOAImNPLVq72ucw8VBgQCe8KcREcr5Qcjw-FKgT-x8dt7PwHp0FdOxqcOsCTVYlDlydxf2FVcUTHjxhk-xQMwbm12wpflt4f6-EzesWqrPx0990iewBjMLU70r0Yd6A-fMrVjP9_vWaFsFpyDK8BI2ezQ",
+        "e": "AQAB"
+      }
+    ]
+  }
 flink: null
 
 apps:
