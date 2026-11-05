@@ -360,12 +360,12 @@ func TestLoginWithTOTP(t *testing.T) {
 	})
 }
 
-func TestStartAuthenticatorRecovery(t *testing.T) {
+func TestStartAuthenticatorReset(t *testing.T) {
 	t.Run("an email without an authenticator gets no code", func(t *testing.T) {
 		s, d := newNoPasswordService(t)
 		d.repo.EXPECT().FindTOTP(mock.Anything, email).Return("", int64(0), gocql.ErrNotFound)
 
-		_, err := s.StartAuthenticatorRecovery(context.Background(), email)
+		_, err := s.StartAuthenticatorReset(context.Background(), email)
 
 		assert.ErrorIs(t, err, service.ErrSendEmailOTP)
 	})
@@ -374,18 +374,18 @@ func TestStartAuthenticatorRecovery(t *testing.T) {
 		d.repo.EXPECT().FindTOTP(mock.Anything, email).Return("sealed", int64(1), nil)
 		d.repo.EXPECT().ClaimNoPasswordEmailOTPCooldown(mock.Anything, email).Return(repository.ErrAlreadyExists)
 
-		_, err := s.StartAuthenticatorRecovery(context.Background(), email)
+		_, err := s.StartAuthenticatorReset(context.Background(), email)
 
 		assert.ErrorIs(t, err, service.ErrEmailOTPTooSoon)
 	})
-	t.Run("mails a code for recovery and leaves the authenticator alone", func(t *testing.T) {
+	t.Run("mails a code for a reset and leaves the authenticator alone", func(t *testing.T) {
 		s, d := newNoPasswordService(t)
 		d.repo.EXPECT().FindTOTP(mock.Anything, email).Return("sealed", int64(1), nil)
 		d.repo.EXPECT().ClaimNoPasswordEmailOTPCooldown(mock.Anything, email).Return(nil)
-		d.repo.EXPECT().SaveNoPasswordEmailOTP(mock.Anything, mock.Anything, email, mock.Anything, constant.OTPPurposeRecovery).Return(nil)
+		d.repo.EXPECT().SaveNoPasswordEmailOTP(mock.Anything, mock.Anything, email, mock.Anything, constant.OTPPurposeReset).Return(nil)
 		sent := expectMail(t, d.mailer, email)
 
-		res, err := s.StartAuthenticatorRecovery(context.Background(), "  ALICE@example.com ")
+		res, err := s.StartAuthenticatorReset(context.Background(), "  ALICE@example.com ")
 
 		require.NoError(t, err)
 		assert.NotEqual(t, uuid.Nil, res.VerificationId)
@@ -393,16 +393,16 @@ func TestStartAuthenticatorRecovery(t *testing.T) {
 	})
 }
 
-func TestVerifyNoPasswordEmailOTP_recovery(t *testing.T) {
+func TestVerifyNoPasswordEmailOTP_reset(t *testing.T) {
 	vid := uuid.New()
 	const code = "123456"
 
 	t.Run("the setup is for what the code was mailed for, and no sign in", func(t *testing.T) {
 		s, d := newNoPasswordService(t)
-		d.repo.EXPECT().FindNoPasswordEmailOTP(mock.Anything, gid(vid)).Return(email, code, constant.OTPPurposeRecovery, 0, nil)
+		d.repo.EXPECT().FindNoPasswordEmailOTP(mock.Anything, gid(vid)).Return(email, code, constant.OTPPurposeReset, 0, nil)
 		d.repo.EXPECT().AddNoPasswordEmailOTPAttempt(mock.Anything, gid(vid), 0).Return(nil)
 		d.repo.EXPECT().DeleteNoPasswordEmailOTP(mock.Anything, gid(vid)).Return(nil)
-		d.repo.EXPECT().SaveTOTPSetup(mock.Anything, mock.Anything, email, mock.Anything, constant.OTPPurposeRecovery).Return(nil)
+		d.repo.EXPECT().SaveTOTPSetup(mock.Anything, mock.Anything, email, mock.Anything, constant.OTPPurposeReset).Return(nil)
 
 		res, err := s.VerifyNoPasswordEmailOTP(context.Background(), vid, code)
 
@@ -411,7 +411,7 @@ func TestVerifyNoPasswordEmailOTP_recovery(t *testing.T) {
 	})
 }
 
-func TestConfirmTOTPSetup_recovery(t *testing.T) {
+func TestConfirmTOTPSetup_reset(t *testing.T) {
 	id := uuid.New()
 	token := uuid.New()
 	secret, sealed := sealedSecret(t)
@@ -419,7 +419,7 @@ func TestConfirmTOTPSetup_recovery(t *testing.T) {
 	t.Run("a member without an authenticator has nothing to replace", func(t *testing.T) {
 		s, d := newNoPasswordService(t)
 		code, step := currentCode(t, secret)
-		d.repo.EXPECT().FindTOTPSetup(mock.Anything, gid(token)).Return(email, sealed, constant.OTPPurposeRecovery, nil)
+		d.repo.EXPECT().FindTOTPSetup(mock.Anything, gid(token)).Return(email, sealed, constant.OTPPurposeReset, nil)
 		d.repo.EXPECT().FindTOTPAttempts(mock.Anything, email).Return(0, nil)
 		d.repo.EXPECT().AddTOTPAttempt(mock.Anything, email, 0).Return(nil)
 		d.repo.EXPECT().ReplaceTOTP(mock.Anything, email, sealed, step).Return(repository.ErrAlreadyExists)
@@ -431,7 +431,7 @@ func TestConfirmTOTPSetup_recovery(t *testing.T) {
 	})
 	t.Run("a wrong code keeps the old authenticator", func(t *testing.T) {
 		s, d := newNoPasswordService(t)
-		d.repo.EXPECT().FindTOTPSetup(mock.Anything, gid(token)).Return(email, sealed, constant.OTPPurposeRecovery, nil)
+		d.repo.EXPECT().FindTOTPSetup(mock.Anything, gid(token)).Return(email, sealed, constant.OTPPurposeReset, nil)
 		d.repo.EXPECT().FindTOTPAttempts(mock.Anything, email).Return(0, nil)
 		d.repo.EXPECT().AddTOTPAttempt(mock.Anything, email, 0).Return(nil)
 
@@ -443,7 +443,7 @@ func TestConfirmTOTPSetup_recovery(t *testing.T) {
 	t.Run("sessions that can't be ended stop the sign in", func(t *testing.T) {
 		s, d := newNoPasswordService(t)
 		code, step := currentCode(t, secret)
-		d.repo.EXPECT().FindTOTPSetup(mock.Anything, gid(token)).Return(email, sealed, constant.OTPPurposeRecovery, nil)
+		d.repo.EXPECT().FindTOTPSetup(mock.Anything, gid(token)).Return(email, sealed, constant.OTPPurposeReset, nil)
 		d.repo.EXPECT().FindTOTPAttempts(mock.Anything, email).Return(0, nil)
 		d.repo.EXPECT().AddTOTPAttempt(mock.Anything, email, 0).Return(nil)
 		d.repo.EXPECT().ReplaceTOTP(mock.Anything, email, sealed, step).Return(nil)
@@ -459,7 +459,7 @@ func TestConfirmTOTPSetup_recovery(t *testing.T) {
 		s, d := newNoPasswordService(t)
 		code, step := currentCode(t, secret)
 		told := make(chan string, 1)
-		d.repo.EXPECT().FindTOTPSetup(mock.Anything, gid(token)).Return(email, sealed, constant.OTPPurposeRecovery, nil)
+		d.repo.EXPECT().FindTOTPSetup(mock.Anything, gid(token)).Return(email, sealed, constant.OTPPurposeReset, nil)
 		d.repo.EXPECT().FindTOTPAttempts(mock.Anything, email).Return(0, nil)
 		d.repo.EXPECT().AddTOTPAttempt(mock.Anything, email, 0).Return(nil)
 		d.repo.EXPECT().ReplaceTOTP(mock.Anything, email, sealed, step).Return(nil)

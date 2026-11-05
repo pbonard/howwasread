@@ -50,9 +50,9 @@ func (s *service) StartNoPasswordEmailLogin(ctx context.Context, email string) (
 	return &dto.StartNoPasswordEmailLoginResponse{IsSignup: true, VerificationId: uuid.UUID(vid)}, nil
 }
 
-// StartAuthenticatorRecovery mails a code to a member who lost their authenticator, the old one keeps working until a
+// StartAuthenticatorReset mails a code to a member who lost their authenticator, the old one keeps working until a
 // new one is confirmed
-func (s *service) StartAuthenticatorRecovery(ctx context.Context, email string) (*dto.StartAuthenticatorRecoveryResponse, error) {
+func (s *service) StartAuthenticatorReset(ctx context.Context, email string) (*dto.StartAuthenticatorResetResponse, error) {
 	email = strings.ToLower(strings.TrimSpace(email))
 	_, _, err := s.repository.FindTOTP(ctx, email)
 	if errors.Is(err, gocql.ErrNotFound) {
@@ -61,11 +61,11 @@ func (s *service) StartAuthenticatorRecovery(ctx context.Context, email string) 
 	if err != nil {
 		return nil, ErrInternalServer
 	}
-	vid, err := s.sendNoPasswordEmailOTP(ctx, email, constant.OTPPurposeRecovery)
+	vid, err := s.sendNoPasswordEmailOTP(ctx, email, constant.OTPPurposeReset)
 	if err != nil {
 		return nil, err
 	}
-	return &dto.StartAuthenticatorRecoveryResponse{VerificationId: uuid.UUID(vid)}, nil
+	return &dto.StartAuthenticatorResetResponse{VerificationId: uuid.UUID(vid)}, nil
 }
 
 func (s *service) sendNoPasswordEmailOTP(ctx context.Context, email, purpose string) (gocql.UUID, error) {
@@ -170,7 +170,7 @@ func (s *service) VerifyNoPasswordEmailOTP(ctx context.Context, verificationId u
 }
 
 // ConfirmTOTPSetup turns the authenticator on once its first code proves the scan worked, and signs in. A setup for
-// recovery replaces the one the member has, ends every other session and tells the owner
+// a reset replaces the one the member has, ends every other session and tells the owner
 func (s *service) ConfirmTOTPSetup(ctx context.Context, setupToken uuid.UUID, code string) (*dto.SignInWithThirdPartyResponse, string, error) {
 	token := gocql.UUID(setupToken)
 	email, sealed, purpose, err := s.repository.FindTOTPSetup(ctx, token)
@@ -194,8 +194,8 @@ func (s *service) ConfirmTOTPSetup(ctx context.Context, setupToken uuid.UUID, co
 	if !ok {
 		return nil, "", ErrVerifyTOTP
 	}
-	isRecovery := purpose == constant.OTPPurposeRecovery
-	if isRecovery {
+	isReset := purpose == constant.OTPPurposeReset
+	if isReset {
 		err = s.repository.ReplaceTOTP(ctx, email, sealed, step)
 	} else {
 		err = s.repository.EnableTOTP(ctx, email, sealed, step)
@@ -206,7 +206,7 @@ func (s *service) ConfirmTOTPSetup(ctx context.Context, setupToken uuid.UUID, co
 	if err != nil {
 		return nil, "", ErrInternalServer
 	}
-	if isRecovery {
+	if isReset {
 		// a request that fails from here can be retried, the setup is only deleted at the end
 		_, _, id, _, _, err := s.repository.FindLoginInfoByEmail(email)
 		if err != nil && !errors.Is(err, gocql.ErrNotFound) {

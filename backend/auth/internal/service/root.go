@@ -27,7 +27,7 @@ type Service interface {
 	VerifyNoPasswordEmailOTP(ctx context.Context, verificationId uuid.UUID, otp string) (*dto.TOTPSetupResponse, error)
 	ConfirmTOTPSetup(ctx context.Context, setupToken uuid.UUID, code string) (*dto.SignInWithThirdPartyResponse, string, error)
 	LoginWithTOTP(ctx context.Context, email, code string) (*dto.SignInWithThirdPartyResponse, string, error)
-	StartAuthenticatorRecovery(ctx context.Context, email string) (*dto.StartAuthenticatorRecoveryResponse, error)
+	StartAuthenticatorReset(ctx context.Context, email string) (*dto.StartAuthenticatorResetResponse, error)
 	SendSMSOTP(sessionId uuid.UUID, phoneNumber string) (map[string]uuid.UUID, error)
 	VerifySMSOTP(sessionId uuid.UUID, verificationId uuid.UUID, otp string) (*dto.VerifySMSOTPResponse, string, error)
 	GenerateAccessToken(refreshToken string) (map[string]string, error)

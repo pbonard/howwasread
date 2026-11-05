@@ -48,11 +48,11 @@ type LoginWithTOTPRequest struct {
 	Code  string `json:"code"`
 }
 
-type StartAuthenticatorRecoveryRequest struct {
+type StartAuthenticatorResetRequest struct {
 	Email string `json:"email"`
 }
 
-type StartAuthenticatorRecoveryResponse struct {
+type StartAuthenticatorResetResponse struct {
 	VerificationId uuid.UUID `json:"verificationId"`
 }
 

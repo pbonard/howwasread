@@ -210,7 +210,7 @@ func enableNoPasswordLogin(t *testing.T) {
 
 func TestController_noPasswordRoutesAreOffUnlessEnabled(t *testing.T) {
 	svc := NewMockService(t)
-	for _, path := range []string{"/auth/email/login/start", "/auth/email/login/otp/verify", "/auth/email/login/totp/confirm", "/auth/email/login/totp/verify", "/auth/email/login/recovery/start"} {
+	for _, path := range []string{"/auth/email/login/start", "/auth/email/login/otp/verify", "/auth/email/login/totp/confirm", "/auth/email/login/totp/verify", "/auth/email/login/reset/start"} {
 		rec := serve(svc, http.MethodPost, path, `{}`)
 		assert.Equal(t, http.StatusNotFound, rec.Code, path)
 	}

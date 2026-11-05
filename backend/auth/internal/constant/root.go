@@ -21,8 +21,8 @@ const (
 
 // what an emailed code or an authenticator setup is for, one made for signup can't replace a working authenticator
 const (
-	OTPPurposeSignup   = "signup"
-	OTPPurposeRecovery = "recovery"
+	OTPPurposeSignup = "signup"
+	OTPPurposeReset  = "reset"
 )
 
 const (
