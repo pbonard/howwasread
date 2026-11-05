@@ -18,7 +18,7 @@ func emailRouter(n *Controller) {
 		n.Router(POST, "/auth/email/login/otp/verify", n.verifyNoPasswordEmailOTP)
 		n.Router(POST, "/auth/email/login/totp/confirm", n.confirmTOTPSetup)
 		n.Router(POST, "/auth/email/login/totp/verify", n.loginWithTOTP)
-		n.Router(POST, "/auth/email/login/recovery/start", n.startAuthenticatorRecovery)
+		n.Router(POST, "/auth/email/login/reset/start", n.startAuthenticatorReset)
 		return
 	}
 	n.Router(POST, "/auth/email/create", n.createMemberByEmail)
@@ -98,14 +98,14 @@ func (c *Controller) loginWithTOTP(w http.ResponseWriter, r *http.Request) {
 	writeSignedIn(w, result, rt)
 }
 
-func (c *Controller) startAuthenticatorRecovery(w http.ResponseWriter, r *http.Request) {
-	var req dto.StartAuthenticatorRecoveryRequest
+func (c *Controller) startAuthenticatorReset(w http.ResponseWriter, r *http.Request) {
+	var req dto.StartAuthenticatorResetRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		handleError(w, err)
 		return
 	}
-	result, err := c.service.StartAuthenticatorRecovery(r.Context(), req.Email)
+	result, err := c.service.StartAuthenticatorReset(r.Context(), req.Email)
 	if err != nil {
 		handleError(w, err)
 		return

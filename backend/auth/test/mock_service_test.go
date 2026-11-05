@@ -873,24 +873,24 @@ func (_c *MockService_SignInWithGoogle_Call) RunAndReturn(run func(ctx context.C
 	return _c
 }
 
-// StartAuthenticatorRecovery provides a mock function for the type MockService
-func (_mock *MockService) StartAuthenticatorRecovery(ctx context.Context, email string) (*dto.StartAuthenticatorRecoveryResponse, error) {
+// StartAuthenticatorReset provides a mock function for the type MockService
+func (_mock *MockService) StartAuthenticatorReset(ctx context.Context, email string) (*dto.StartAuthenticatorResetResponse, error) {
 	ret := _mock.Called(ctx, email)
 
 	if len(ret) == 0 {
-		panic("no return value specified for StartAuthenticatorRecovery")
+		panic("no return value specified for StartAuthenticatorReset")
 	}
 
-	var r0 *dto.StartAuthenticatorRecoveryResponse
+	var r0 *dto.StartAuthenticatorResetResponse
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (*dto.StartAuthenticatorRecoveryResponse, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (*dto.StartAuthenticatorResetResponse, error)); ok {
 		return returnFunc(ctx, email)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) *dto.StartAuthenticatorRecoveryResponse); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) *dto.StartAuthenticatorResetResponse); ok {
 		r0 = returnFunc(ctx, email)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*dto.StartAuthenticatorRecoveryResponse)
+			r0 = ret.Get(0).(*dto.StartAuthenticatorResetResponse)
 		}
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
@@ -901,19 +901,19 @@ func (_mock *MockService) StartAuthenticatorRecovery(ctx context.Context, email 
 	return r0, r1
 }
 
-// MockService_StartAuthenticatorRecovery_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'StartAuthenticatorRecovery'
-type MockService_StartAuthenticatorRecovery_Call struct {
+// MockService_StartAuthenticatorReset_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'StartAuthenticatorReset'
+type MockService_StartAuthenticatorReset_Call struct {
 	*mock.Call
 }
 
-// StartAuthenticatorRecovery is a helper method to define mock.On call
+// StartAuthenticatorReset is a helper method to define mock.On call
 //   - ctx context.Context
 //   - email string
-func (_e *MockService_Expecter) StartAuthenticatorRecovery(ctx any, email any) *MockService_StartAuthenticatorRecovery_Call {
-	return &MockService_StartAuthenticatorRecovery_Call{Call: _e.mock.On("StartAuthenticatorRecovery", ctx, email)}
+func (_e *MockService_Expecter) StartAuthenticatorReset(ctx any, email any) *MockService_StartAuthenticatorReset_Call {
+	return &MockService_StartAuthenticatorReset_Call{Call: _e.mock.On("StartAuthenticatorReset", ctx, email)}
 }
 
-func (_c *MockService_StartAuthenticatorRecovery_Call) Run(run func(ctx context.Context, email string)) *MockService_StartAuthenticatorRecovery_Call {
+func (_c *MockService_StartAuthenticatorReset_Call) Run(run func(ctx context.Context, email string)) *MockService_StartAuthenticatorReset_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -931,12 +931,12 @@ func (_c *MockService_StartAuthenticatorRecovery_Call) Run(run func(ctx context.
 	return _c
 }
 
-func (_c *MockService_StartAuthenticatorRecovery_Call) Return(startAuthenticatorRecoveryResponse *dto.StartAuthenticatorRecoveryResponse, err error) *MockService_StartAuthenticatorRecovery_Call {
-	_c.Call.Return(startAuthenticatorRecoveryResponse, err)
+func (_c *MockService_StartAuthenticatorReset_Call) Return(startAuthenticatorResetResponse *dto.StartAuthenticatorResetResponse, err error) *MockService_StartAuthenticatorReset_Call {
+	_c.Call.Return(startAuthenticatorResetResponse, err)
 	return _c
 }
 
-func (_c *MockService_StartAuthenticatorRecovery_Call) RunAndReturn(run func(ctx context.Context, email string) (*dto.StartAuthenticatorRecoveryResponse, error)) *MockService_StartAuthenticatorRecovery_Call {
+func (_c *MockService_StartAuthenticatorReset_Call) RunAndReturn(run func(ctx context.Context, email string) (*dto.StartAuthenticatorResetResponse, error)) *MockService_StartAuthenticatorReset_Call {
 	_c.Call.Return(run)
 	return _c
 }
