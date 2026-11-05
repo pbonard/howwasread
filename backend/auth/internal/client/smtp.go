@@ -44,5 +44,6 @@ func appName() string {
 func send(to, message string) error {
 	from := os.Getenv("FROM_EMAIL")
 	auth := smtp.PlainAuth("", from, os.Getenv("FROM_EMAIL_PASSWORD"), os.Getenv("FROM_EMAIL_SMTP"))
+	message = "From: " + appName() + " <" + from + ">\nTo: " + to + "\n" + message
 	return smtp.SendMail(os.Getenv("SMTP_ADDR"), auth, from, []string{to}, []byte(message))
 }
