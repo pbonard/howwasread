@@ -6,17 +6,135 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"os"
 	"time"
 )
 
 func emailRouter(n *Controller) {
+	n.Router(POST, "/auth/email/apple", n.signInWithApple)
+	n.Router(POST, "/auth/email/google", n.signInWithGoogle)
+	if os.Getenv("NO_PASSWORD_EMAIL_LOGIN") == "true" {
+		n.Router(POST, "/auth/email/login/start", n.startNoPasswordEmailLogin)
+		n.Router(POST, "/auth/email/login/otp/verify", n.verifyNoPasswordEmailOTP)
+		n.Router(POST, "/auth/email/login/totp/confirm", n.confirmTOTPSetup)
+		n.Router(POST, "/auth/email/login/totp/verify", n.loginWithTOTP)
+		n.Router(POST, "/auth/email/login/recovery/start", n.startAuthenticatorRecovery)
+		return
+	}
 	n.Router(POST, "/auth/email/create", n.createMemberByEmail)
 	n.Router(POST, "/auth/email/login", n.loginWithEmail)
 	n.Router(POST, "/auth/email/otp/verify", n.verifyEmailOTP)
-	n.Router(POST, "/auth/email/apple", n.signInWithApple)
-	n.Router(POST, "/auth/email/google", n.signInWithGoogle)
 	n.Router(POST, "/auth/email/password/forget", n.forgetPassword)
 	n.Router(PATCH, "/auth/email/password/set-new", n.setNewPassword)
+}
+
+func (c *Controller) startNoPasswordEmailLogin(w http.ResponseWriter, r *http.Request) {
+	var req dto.StartNoPasswordEmailLoginRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		handleError(w, err)
+		return
+	}
+	result, err := c.service.StartNoPasswordEmailLogin(r.Context(), req.Email)
+	if err != nil {
+		handleError(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	err = json.NewEncoder(w).Encode(result)
+	if err != nil {
+		slog.Error("fail to write response body",
+			"err", err)
+	}
+}
+
+func (c *Controller) verifyNoPasswordEmailOTP(w http.ResponseWriter, r *http.Request) {
+	var req dto.VerifyEmailOTPRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		handleError(w, err)
+		return
+	}
+	result, err := c.service.VerifyNoPasswordEmailOTP(r.Context(), req.VerificationId, req.OTP)
+	if err != nil {
+		handleError(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	err = json.NewEncoder(w).Encode(result)
+	if err != nil {
+		slog.Error("fail to write response body",
+			"err", err)
+	}
+}
+
+func (c *Controller) confirmTOTPSetup(w http.ResponseWriter, r *http.Request) {
+	var req dto.ConfirmTOTPSetupRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		handleError(w, err)
+		return
+	}
+	result, rt, err := c.service.ConfirmTOTPSetup(r.Context(), req.SetupToken, req.Code)
+	if err != nil {
+		handleError(w, err)
+		return
+	}
+	writeSignedIn(w, result, rt)
+}
+
+func (c *Controller) loginWithTOTP(w http.ResponseWriter, r *http.Request) {
+	var req dto.LoginWithTOTPRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		handleError(w, err)
+		return
+	}
+	result, rt, err := c.service.LoginWithTOTP(r.Context(), req.Email, req.Code)
+	if err != nil {
+		handleError(w, err)
+		return
+	}
+	writeSignedIn(w, result, rt)
+}
+
+func (c *Controller) startAuthenticatorRecovery(w http.ResponseWriter, r *http.Request) {
+	var req dto.StartAuthenticatorRecoveryRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		handleError(w, err)
+		return
+	}
+	result, err := c.service.StartAuthenticatorRecovery(r.Context(), req.Email)
+	if err != nil {
+		handleError(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	err = json.NewEncoder(w).Encode(result)
+	if err != nil {
+		slog.Error("fail to write response body",
+			"err", err)
+	}
+}
+
+func writeSignedIn(w http.ResponseWriter, result any, rt string) {
+	if rt != "" {
+		http.SetCookie(w, &http.Cookie{Name: "refresh_token",
+			Value:    rt,
+			Expires:  time.Now().Add(constant.RefreshTokenTTL * time.Second),
+			Path:     "/",
+			Domain:   "",
+			HttpOnly: true,
+			Secure:   true,
+		})
+	}
+	w.WriteHeader(http.StatusOK)
+	err := json.NewEncoder(w).Encode(result)
+	if err != nil {
+		slog.Error("fail to write response body",
+			"err", err)
+	}
 }
 
 func (c *Controller) createMemberByEmail(w http.ResponseWriter, r *http.Request) {

@@ -47,6 +47,246 @@ func (_m *MockRepository) EXPECT() *MockRepository_Expecter {
 	return &MockRepository_Expecter{mock: &_m.Mock}
 }
 
+// AddNoPasswordEmailOTPAttempt provides a mock function for the type MockRepository
+func (_mock *MockRepository) AddNoPasswordEmailOTPAttempt(ctx context.Context, verificationId gocql.UUID, attempts int) error {
+	ret := _mock.Called(ctx, verificationId, attempts)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AddNoPasswordEmailOTPAttempt")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, gocql.UUID, int) error); ok {
+		r0 = returnFunc(ctx, verificationId, attempts)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockRepository_AddNoPasswordEmailOTPAttempt_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AddNoPasswordEmailOTPAttempt'
+type MockRepository_AddNoPasswordEmailOTPAttempt_Call struct {
+	*mock.Call
+}
+
+// AddNoPasswordEmailOTPAttempt is a helper method to define mock.On call
+//   - ctx context.Context
+//   - verificationId gocql.UUID
+//   - attempts int
+func (_e *MockRepository_Expecter) AddNoPasswordEmailOTPAttempt(ctx any, verificationId any, attempts any) *MockRepository_AddNoPasswordEmailOTPAttempt_Call {
+	return &MockRepository_AddNoPasswordEmailOTPAttempt_Call{Call: _e.mock.On("AddNoPasswordEmailOTPAttempt", ctx, verificationId, attempts)}
+}
+
+func (_c *MockRepository_AddNoPasswordEmailOTPAttempt_Call) Run(run func(ctx context.Context, verificationId gocql.UUID, attempts int)) *MockRepository_AddNoPasswordEmailOTPAttempt_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 gocql.UUID
+		if args[1] != nil {
+			arg1 = args[1].(gocql.UUID)
+		}
+		var arg2 int
+		if args[2] != nil {
+			arg2 = args[2].(int)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *MockRepository_AddNoPasswordEmailOTPAttempt_Call) Return(err error) *MockRepository_AddNoPasswordEmailOTPAttempt_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockRepository_AddNoPasswordEmailOTPAttempt_Call) RunAndReturn(run func(ctx context.Context, verificationId gocql.UUID, attempts int) error) *MockRepository_AddNoPasswordEmailOTPAttempt_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// AddTOTPAttempt provides a mock function for the type MockRepository
+func (_mock *MockRepository) AddTOTPAttempt(ctx context.Context, email string, attempts int) error {
+	ret := _mock.Called(ctx, email, attempts)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AddTOTPAttempt")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, int) error); ok {
+		r0 = returnFunc(ctx, email, attempts)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockRepository_AddTOTPAttempt_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AddTOTPAttempt'
+type MockRepository_AddTOTPAttempt_Call struct {
+	*mock.Call
+}
+
+// AddTOTPAttempt is a helper method to define mock.On call
+//   - ctx context.Context
+//   - email string
+//   - attempts int
+func (_e *MockRepository_Expecter) AddTOTPAttempt(ctx any, email any, attempts any) *MockRepository_AddTOTPAttempt_Call {
+	return &MockRepository_AddTOTPAttempt_Call{Call: _e.mock.On("AddTOTPAttempt", ctx, email, attempts)}
+}
+
+func (_c *MockRepository_AddTOTPAttempt_Call) Run(run func(ctx context.Context, email string, attempts int)) *MockRepository_AddTOTPAttempt_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		var arg2 int
+		if args[2] != nil {
+			arg2 = args[2].(int)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *MockRepository_AddTOTPAttempt_Call) Return(err error) *MockRepository_AddTOTPAttempt_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockRepository_AddTOTPAttempt_Call) RunAndReturn(run func(ctx context.Context, email string, attempts int) error) *MockRepository_AddTOTPAttempt_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ClaimNoPasswordEmailOTPCooldown provides a mock function for the type MockRepository
+func (_mock *MockRepository) ClaimNoPasswordEmailOTPCooldown(ctx context.Context, email string) error {
+	ret := _mock.Called(ctx, email)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ClaimNoPasswordEmailOTPCooldown")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = returnFunc(ctx, email)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockRepository_ClaimNoPasswordEmailOTPCooldown_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ClaimNoPasswordEmailOTPCooldown'
+type MockRepository_ClaimNoPasswordEmailOTPCooldown_Call struct {
+	*mock.Call
+}
+
+// ClaimNoPasswordEmailOTPCooldown is a helper method to define mock.On call
+//   - ctx context.Context
+//   - email string
+func (_e *MockRepository_Expecter) ClaimNoPasswordEmailOTPCooldown(ctx any, email any) *MockRepository_ClaimNoPasswordEmailOTPCooldown_Call {
+	return &MockRepository_ClaimNoPasswordEmailOTPCooldown_Call{Call: _e.mock.On("ClaimNoPasswordEmailOTPCooldown", ctx, email)}
+}
+
+func (_c *MockRepository_ClaimNoPasswordEmailOTPCooldown_Call) Run(run func(ctx context.Context, email string)) *MockRepository_ClaimNoPasswordEmailOTPCooldown_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockRepository_ClaimNoPasswordEmailOTPCooldown_Call) Return(err error) *MockRepository_ClaimNoPasswordEmailOTPCooldown_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockRepository_ClaimNoPasswordEmailOTPCooldown_Call) RunAndReturn(run func(ctx context.Context, email string) error) *MockRepository_ClaimNoPasswordEmailOTPCooldown_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ClearRefreshTokenJTIsById provides a mock function for the type MockRepository
+func (_mock *MockRepository) ClearRefreshTokenJTIsById(ctx context.Context, id gocql.UUID) error {
+	ret := _mock.Called(ctx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ClearRefreshTokenJTIsById")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, gocql.UUID) error); ok {
+		r0 = returnFunc(ctx, id)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockRepository_ClearRefreshTokenJTIsById_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ClearRefreshTokenJTIsById'
+type MockRepository_ClearRefreshTokenJTIsById_Call struct {
+	*mock.Call
+}
+
+// ClearRefreshTokenJTIsById is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id gocql.UUID
+func (_e *MockRepository_Expecter) ClearRefreshTokenJTIsById(ctx any, id any) *MockRepository_ClearRefreshTokenJTIsById_Call {
+	return &MockRepository_ClearRefreshTokenJTIsById_Call{Call: _e.mock.On("ClearRefreshTokenJTIsById", ctx, id)}
+}
+
+func (_c *MockRepository_ClearRefreshTokenJTIsById_Call) Run(run func(ctx context.Context, id gocql.UUID)) *MockRepository_ClearRefreshTokenJTIsById_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 gocql.UUID
+		if args[1] != nil {
+			arg1 = args[1].(gocql.UUID)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockRepository_ClearRefreshTokenJTIsById_Call) Return(err error) *MockRepository_ClearRefreshTokenJTIsById_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockRepository_ClearRefreshTokenJTIsById_Call) RunAndReturn(run func(ctx context.Context, id gocql.UUID) error) *MockRepository_ClearRefreshTokenJTIsById_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // DeleteAccount provides a mock function for the type MockRepository
 func (_mock *MockRepository) DeleteAccount(ctx context.Context, id gocql.UUID, email string, phoneNumber string) error {
 	ret := _mock.Called(ctx, id, email, phoneNumber)
@@ -112,6 +352,246 @@ func (_c *MockRepository_DeleteAccount_Call) Return(err error) *MockRepository_D
 }
 
 func (_c *MockRepository_DeleteAccount_Call) RunAndReturn(run func(ctx context.Context, id gocql.UUID, email string, phoneNumber string) error) *MockRepository_DeleteAccount_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// DeleteNoPasswordEmailOTP provides a mock function for the type MockRepository
+func (_mock *MockRepository) DeleteNoPasswordEmailOTP(ctx context.Context, verificationId gocql.UUID) error {
+	ret := _mock.Called(ctx, verificationId)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteNoPasswordEmailOTP")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, gocql.UUID) error); ok {
+		r0 = returnFunc(ctx, verificationId)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockRepository_DeleteNoPasswordEmailOTP_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeleteNoPasswordEmailOTP'
+type MockRepository_DeleteNoPasswordEmailOTP_Call struct {
+	*mock.Call
+}
+
+// DeleteNoPasswordEmailOTP is a helper method to define mock.On call
+//   - ctx context.Context
+//   - verificationId gocql.UUID
+func (_e *MockRepository_Expecter) DeleteNoPasswordEmailOTP(ctx any, verificationId any) *MockRepository_DeleteNoPasswordEmailOTP_Call {
+	return &MockRepository_DeleteNoPasswordEmailOTP_Call{Call: _e.mock.On("DeleteNoPasswordEmailOTP", ctx, verificationId)}
+}
+
+func (_c *MockRepository_DeleteNoPasswordEmailOTP_Call) Run(run func(ctx context.Context, verificationId gocql.UUID)) *MockRepository_DeleteNoPasswordEmailOTP_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 gocql.UUID
+		if args[1] != nil {
+			arg1 = args[1].(gocql.UUID)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockRepository_DeleteNoPasswordEmailOTP_Call) Return(err error) *MockRepository_DeleteNoPasswordEmailOTP_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockRepository_DeleteNoPasswordEmailOTP_Call) RunAndReturn(run func(ctx context.Context, verificationId gocql.UUID) error) *MockRepository_DeleteNoPasswordEmailOTP_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// DeleteTOTPAttempts provides a mock function for the type MockRepository
+func (_mock *MockRepository) DeleteTOTPAttempts(ctx context.Context, email string) error {
+	ret := _mock.Called(ctx, email)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteTOTPAttempts")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = returnFunc(ctx, email)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockRepository_DeleteTOTPAttempts_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeleteTOTPAttempts'
+type MockRepository_DeleteTOTPAttempts_Call struct {
+	*mock.Call
+}
+
+// DeleteTOTPAttempts is a helper method to define mock.On call
+//   - ctx context.Context
+//   - email string
+func (_e *MockRepository_Expecter) DeleteTOTPAttempts(ctx any, email any) *MockRepository_DeleteTOTPAttempts_Call {
+	return &MockRepository_DeleteTOTPAttempts_Call{Call: _e.mock.On("DeleteTOTPAttempts", ctx, email)}
+}
+
+func (_c *MockRepository_DeleteTOTPAttempts_Call) Run(run func(ctx context.Context, email string)) *MockRepository_DeleteTOTPAttempts_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockRepository_DeleteTOTPAttempts_Call) Return(err error) *MockRepository_DeleteTOTPAttempts_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockRepository_DeleteTOTPAttempts_Call) RunAndReturn(run func(ctx context.Context, email string) error) *MockRepository_DeleteTOTPAttempts_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// DeleteTOTPSetup provides a mock function for the type MockRepository
+func (_mock *MockRepository) DeleteTOTPSetup(ctx context.Context, token gocql.UUID) error {
+	ret := _mock.Called(ctx, token)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteTOTPSetup")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, gocql.UUID) error); ok {
+		r0 = returnFunc(ctx, token)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockRepository_DeleteTOTPSetup_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeleteTOTPSetup'
+type MockRepository_DeleteTOTPSetup_Call struct {
+	*mock.Call
+}
+
+// DeleteTOTPSetup is a helper method to define mock.On call
+//   - ctx context.Context
+//   - token gocql.UUID
+func (_e *MockRepository_Expecter) DeleteTOTPSetup(ctx any, token any) *MockRepository_DeleteTOTPSetup_Call {
+	return &MockRepository_DeleteTOTPSetup_Call{Call: _e.mock.On("DeleteTOTPSetup", ctx, token)}
+}
+
+func (_c *MockRepository_DeleteTOTPSetup_Call) Run(run func(ctx context.Context, token gocql.UUID)) *MockRepository_DeleteTOTPSetup_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 gocql.UUID
+		if args[1] != nil {
+			arg1 = args[1].(gocql.UUID)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockRepository_DeleteTOTPSetup_Call) Return(err error) *MockRepository_DeleteTOTPSetup_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockRepository_DeleteTOTPSetup_Call) RunAndReturn(run func(ctx context.Context, token gocql.UUID) error) *MockRepository_DeleteTOTPSetup_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// EnableTOTP provides a mock function for the type MockRepository
+func (_mock *MockRepository) EnableTOTP(ctx context.Context, email string, sealedSecret string, step int64) error {
+	ret := _mock.Called(ctx, email, sealedSecret, step)
+
+	if len(ret) == 0 {
+		panic("no return value specified for EnableTOTP")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string, int64) error); ok {
+		r0 = returnFunc(ctx, email, sealedSecret, step)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockRepository_EnableTOTP_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'EnableTOTP'
+type MockRepository_EnableTOTP_Call struct {
+	*mock.Call
+}
+
+// EnableTOTP is a helper method to define mock.On call
+//   - ctx context.Context
+//   - email string
+//   - sealedSecret string
+//   - step int64
+func (_e *MockRepository_Expecter) EnableTOTP(ctx any, email any, sealedSecret any, step any) *MockRepository_EnableTOTP_Call {
+	return &MockRepository_EnableTOTP_Call{Call: _e.mock.On("EnableTOTP", ctx, email, sealedSecret, step)}
+}
+
+func (_c *MockRepository_EnableTOTP_Call) Run(run func(ctx context.Context, email string, sealedSecret string, step int64)) *MockRepository_EnableTOTP_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		var arg2 string
+		if args[2] != nil {
+			arg2 = args[2].(string)
+		}
+		var arg3 int64
+		if args[3] != nil {
+			arg3 = args[3].(int64)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3,
+		)
+	})
+	return _c
+}
+
+func (_c *MockRepository_EnableTOTP_Call) Return(err error) *MockRepository_EnableTOTP_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockRepository_EnableTOTP_Call) RunAndReturn(run func(ctx context.Context, email string, sealedSecret string, step int64) error) *MockRepository_EnableTOTP_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -530,6 +1010,90 @@ func (_c *MockRepository_FindLoginInfoByEmail_Call) RunAndReturn(run func(email 
 	return _c
 }
 
+// FindNoPasswordEmailOTP provides a mock function for the type MockRepository
+func (_mock *MockRepository) FindNoPasswordEmailOTP(ctx context.Context, verificationId gocql.UUID) (string, string, string, int, error) {
+	ret := _mock.Called(ctx, verificationId)
+
+	if len(ret) == 0 {
+		panic("no return value specified for FindNoPasswordEmailOTP")
+	}
+
+	var r0 string
+	var r1 string
+	var r2 string
+	var r3 int
+	var r4 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, gocql.UUID) (string, string, string, int, error)); ok {
+		return returnFunc(ctx, verificationId)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, gocql.UUID) string); ok {
+		r0 = returnFunc(ctx, verificationId)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, gocql.UUID) string); ok {
+		r1 = returnFunc(ctx, verificationId)
+	} else {
+		r1 = ret.Get(1).(string)
+	}
+	if returnFunc, ok := ret.Get(2).(func(context.Context, gocql.UUID) string); ok {
+		r2 = returnFunc(ctx, verificationId)
+	} else {
+		r2 = ret.Get(2).(string)
+	}
+	if returnFunc, ok := ret.Get(3).(func(context.Context, gocql.UUID) int); ok {
+		r3 = returnFunc(ctx, verificationId)
+	} else {
+		r3 = ret.Get(3).(int)
+	}
+	if returnFunc, ok := ret.Get(4).(func(context.Context, gocql.UUID) error); ok {
+		r4 = returnFunc(ctx, verificationId)
+	} else {
+		r4 = ret.Error(4)
+	}
+	return r0, r1, r2, r3, r4
+}
+
+// MockRepository_FindNoPasswordEmailOTP_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FindNoPasswordEmailOTP'
+type MockRepository_FindNoPasswordEmailOTP_Call struct {
+	*mock.Call
+}
+
+// FindNoPasswordEmailOTP is a helper method to define mock.On call
+//   - ctx context.Context
+//   - verificationId gocql.UUID
+func (_e *MockRepository_Expecter) FindNoPasswordEmailOTP(ctx any, verificationId any) *MockRepository_FindNoPasswordEmailOTP_Call {
+	return &MockRepository_FindNoPasswordEmailOTP_Call{Call: _e.mock.On("FindNoPasswordEmailOTP", ctx, verificationId)}
+}
+
+func (_c *MockRepository_FindNoPasswordEmailOTP_Call) Run(run func(ctx context.Context, verificationId gocql.UUID)) *MockRepository_FindNoPasswordEmailOTP_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 gocql.UUID
+		if args[1] != nil {
+			arg1 = args[1].(gocql.UUID)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockRepository_FindNoPasswordEmailOTP_Call) Return(email string, otp string, purpose string, attempts int, err error) *MockRepository_FindNoPasswordEmailOTP_Call {
+	_c.Call.Return(email, otp, purpose, attempts, err)
+	return _c
+}
+
+func (_c *MockRepository_FindNoPasswordEmailOTP_Call) RunAndReturn(run func(ctx context.Context, verificationId gocql.UUID) (string, string, string, int, error)) *MockRepository_FindNoPasswordEmailOTP_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // FindPhoneNumberByVerificationId provides a mock function for the type MockRepository
 func (_mock *MockRepository) FindPhoneNumberByVerificationId(verificationId gocql.UUID) (string, error) {
 	ret := _mock.Called(verificationId)
@@ -648,6 +1212,222 @@ func (_c *MockRepository_FindRefreshTokenJTIsById_Call) Return(jtis []gocql.UUID
 }
 
 func (_c *MockRepository_FindRefreshTokenJTIsById_Call) RunAndReturn(run func(id gocql.UUID) ([]gocql.UUID, error)) *MockRepository_FindRefreshTokenJTIsById_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// FindTOTP provides a mock function for the type MockRepository
+func (_mock *MockRepository) FindTOTP(ctx context.Context, email string) (string, int64, error) {
+	ret := _mock.Called(ctx, email)
+
+	if len(ret) == 0 {
+		panic("no return value specified for FindTOTP")
+	}
+
+	var r0 string
+	var r1 int64
+	var r2 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (string, int64, error)); ok {
+		return returnFunc(ctx, email)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) string); ok {
+		r0 = returnFunc(ctx, email)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string) int64); ok {
+		r1 = returnFunc(ctx, email)
+	} else {
+		r1 = ret.Get(1).(int64)
+	}
+	if returnFunc, ok := ret.Get(2).(func(context.Context, string) error); ok {
+		r2 = returnFunc(ctx, email)
+	} else {
+		r2 = ret.Error(2)
+	}
+	return r0, r1, r2
+}
+
+// MockRepository_FindTOTP_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FindTOTP'
+type MockRepository_FindTOTP_Call struct {
+	*mock.Call
+}
+
+// FindTOTP is a helper method to define mock.On call
+//   - ctx context.Context
+//   - email string
+func (_e *MockRepository_Expecter) FindTOTP(ctx any, email any) *MockRepository_FindTOTP_Call {
+	return &MockRepository_FindTOTP_Call{Call: _e.mock.On("FindTOTP", ctx, email)}
+}
+
+func (_c *MockRepository_FindTOTP_Call) Run(run func(ctx context.Context, email string)) *MockRepository_FindTOTP_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockRepository_FindTOTP_Call) Return(sealedSecret string, lastStep int64, err error) *MockRepository_FindTOTP_Call {
+	_c.Call.Return(sealedSecret, lastStep, err)
+	return _c
+}
+
+func (_c *MockRepository_FindTOTP_Call) RunAndReturn(run func(ctx context.Context, email string) (string, int64, error)) *MockRepository_FindTOTP_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// FindTOTPAttempts provides a mock function for the type MockRepository
+func (_mock *MockRepository) FindTOTPAttempts(ctx context.Context, email string) (int, error) {
+	ret := _mock.Called(ctx, email)
+
+	if len(ret) == 0 {
+		panic("no return value specified for FindTOTPAttempts")
+	}
+
+	var r0 int
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (int, error)); ok {
+		return returnFunc(ctx, email)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) int); ok {
+		r0 = returnFunc(ctx, email)
+	} else {
+		r0 = ret.Get(0).(int)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = returnFunc(ctx, email)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockRepository_FindTOTPAttempts_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FindTOTPAttempts'
+type MockRepository_FindTOTPAttempts_Call struct {
+	*mock.Call
+}
+
+// FindTOTPAttempts is a helper method to define mock.On call
+//   - ctx context.Context
+//   - email string
+func (_e *MockRepository_Expecter) FindTOTPAttempts(ctx any, email any) *MockRepository_FindTOTPAttempts_Call {
+	return &MockRepository_FindTOTPAttempts_Call{Call: _e.mock.On("FindTOTPAttempts", ctx, email)}
+}
+
+func (_c *MockRepository_FindTOTPAttempts_Call) Run(run func(ctx context.Context, email string)) *MockRepository_FindTOTPAttempts_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockRepository_FindTOTPAttempts_Call) Return(n int, err error) *MockRepository_FindTOTPAttempts_Call {
+	_c.Call.Return(n, err)
+	return _c
+}
+
+func (_c *MockRepository_FindTOTPAttempts_Call) RunAndReturn(run func(ctx context.Context, email string) (int, error)) *MockRepository_FindTOTPAttempts_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// FindTOTPSetup provides a mock function for the type MockRepository
+func (_mock *MockRepository) FindTOTPSetup(ctx context.Context, token gocql.UUID) (string, string, string, error) {
+	ret := _mock.Called(ctx, token)
+
+	if len(ret) == 0 {
+		panic("no return value specified for FindTOTPSetup")
+	}
+
+	var r0 string
+	var r1 string
+	var r2 string
+	var r3 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, gocql.UUID) (string, string, string, error)); ok {
+		return returnFunc(ctx, token)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, gocql.UUID) string); ok {
+		r0 = returnFunc(ctx, token)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, gocql.UUID) string); ok {
+		r1 = returnFunc(ctx, token)
+	} else {
+		r1 = ret.Get(1).(string)
+	}
+	if returnFunc, ok := ret.Get(2).(func(context.Context, gocql.UUID) string); ok {
+		r2 = returnFunc(ctx, token)
+	} else {
+		r2 = ret.Get(2).(string)
+	}
+	if returnFunc, ok := ret.Get(3).(func(context.Context, gocql.UUID) error); ok {
+		r3 = returnFunc(ctx, token)
+	} else {
+		r3 = ret.Error(3)
+	}
+	return r0, r1, r2, r3
+}
+
+// MockRepository_FindTOTPSetup_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FindTOTPSetup'
+type MockRepository_FindTOTPSetup_Call struct {
+	*mock.Call
+}
+
+// FindTOTPSetup is a helper method to define mock.On call
+//   - ctx context.Context
+//   - token gocql.UUID
+func (_e *MockRepository_Expecter) FindTOTPSetup(ctx any, token any) *MockRepository_FindTOTPSetup_Call {
+	return &MockRepository_FindTOTPSetup_Call{Call: _e.mock.On("FindTOTPSetup", ctx, token)}
+}
+
+func (_c *MockRepository_FindTOTPSetup_Call) Run(run func(ctx context.Context, token gocql.UUID)) *MockRepository_FindTOTPSetup_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 gocql.UUID
+		if args[1] != nil {
+			arg1 = args[1].(gocql.UUID)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockRepository_FindTOTPSetup_Call) Return(email string, sealedSecret string, purpose string, err error) *MockRepository_FindTOTPSetup_Call {
+	_c.Call.Return(email, sealedSecret, purpose, err)
+	return _c
+}
+
+func (_c *MockRepository_FindTOTPSetup_Call) RunAndReturn(run func(ctx context.Context, token gocql.UUID) (string, string, string, error)) *MockRepository_FindTOTPSetup_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -778,6 +1558,75 @@ func (_c *MockRepository_MarkEmailVerified_Call) RunAndReturn(run func(id gocql.
 	return _c
 }
 
+// MarkTOTPStep provides a mock function for the type MockRepository
+func (_mock *MockRepository) MarkTOTPStep(ctx context.Context, email string, lastStep int64, step int64) error {
+	ret := _mock.Called(ctx, email, lastStep, step)
+
+	if len(ret) == 0 {
+		panic("no return value specified for MarkTOTPStep")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, int64, int64) error); ok {
+		r0 = returnFunc(ctx, email, lastStep, step)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockRepository_MarkTOTPStep_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'MarkTOTPStep'
+type MockRepository_MarkTOTPStep_Call struct {
+	*mock.Call
+}
+
+// MarkTOTPStep is a helper method to define mock.On call
+//   - ctx context.Context
+//   - email string
+//   - lastStep int64
+//   - step int64
+func (_e *MockRepository_Expecter) MarkTOTPStep(ctx any, email any, lastStep any, step any) *MockRepository_MarkTOTPStep_Call {
+	return &MockRepository_MarkTOTPStep_Call{Call: _e.mock.On("MarkTOTPStep", ctx, email, lastStep, step)}
+}
+
+func (_c *MockRepository_MarkTOTPStep_Call) Run(run func(ctx context.Context, email string, lastStep int64, step int64)) *MockRepository_MarkTOTPStep_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		var arg2 int64
+		if args[2] != nil {
+			arg2 = args[2].(int64)
+		}
+		var arg3 int64
+		if args[3] != nil {
+			arg3 = args[3].(int64)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3,
+		)
+	})
+	return _c
+}
+
+func (_c *MockRepository_MarkTOTPStep_Call) Return(err error) *MockRepository_MarkTOTPStep_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockRepository_MarkTOTPStep_Call) RunAndReturn(run func(ctx context.Context, email string, lastStep int64, step int64) error) *MockRepository_MarkTOTPStep_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // RemoveRefreshTokenJTIById provides a mock function for the type MockRepository
 func (_mock *MockRepository) RemoveRefreshTokenJTIById(id gocql.UUID, jti gocql.UUID) error {
 	ret := _mock.Called(id, jti)
@@ -900,6 +1749,75 @@ func (_c *MockRepository_ReplaceAndLinkMemberWithOldAccount_Call) Return(err err
 }
 
 func (_c *MockRepository_ReplaceAndLinkMemberWithOldAccount_Call) RunAndReturn(run func(newId gocql.UUID, oldAccountId gocql.UUID, email string, phoneNumber string) error) *MockRepository_ReplaceAndLinkMemberWithOldAccount_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ReplaceTOTP provides a mock function for the type MockRepository
+func (_mock *MockRepository) ReplaceTOTP(ctx context.Context, email string, sealedSecret string, step int64) error {
+	ret := _mock.Called(ctx, email, sealedSecret, step)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ReplaceTOTP")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string, int64) error); ok {
+		r0 = returnFunc(ctx, email, sealedSecret, step)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockRepository_ReplaceTOTP_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ReplaceTOTP'
+type MockRepository_ReplaceTOTP_Call struct {
+	*mock.Call
+}
+
+// ReplaceTOTP is a helper method to define mock.On call
+//   - ctx context.Context
+//   - email string
+//   - sealedSecret string
+//   - step int64
+func (_e *MockRepository_Expecter) ReplaceTOTP(ctx any, email any, sealedSecret any, step any) *MockRepository_ReplaceTOTP_Call {
+	return &MockRepository_ReplaceTOTP_Call{Call: _e.mock.On("ReplaceTOTP", ctx, email, sealedSecret, step)}
+}
+
+func (_c *MockRepository_ReplaceTOTP_Call) Run(run func(ctx context.Context, email string, sealedSecret string, step int64)) *MockRepository_ReplaceTOTP_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		var arg2 string
+		if args[2] != nil {
+			arg2 = args[2].(string)
+		}
+		var arg3 int64
+		if args[3] != nil {
+			arg3 = args[3].(int64)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3,
+		)
+	})
+	return _c
+}
+
+func (_c *MockRepository_ReplaceTOTP_Call) Return(err error) *MockRepository_ReplaceTOTP_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockRepository_ReplaceTOTP_Call) RunAndReturn(run func(ctx context.Context, email string, sealedSecret string, step int64) error) *MockRepository_ReplaceTOTP_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1089,6 +2007,81 @@ func (_c *MockRepository_SaveEmailLoginInfo_Call) Return(err error) *MockReposit
 }
 
 func (_c *MockRepository_SaveEmailLoginInfo_Call) RunAndReturn(run func(id gocql.UUID, email string, password string) error) *MockRepository_SaveEmailLoginInfo_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// SaveNoPasswordEmailOTP provides a mock function for the type MockRepository
+func (_mock *MockRepository) SaveNoPasswordEmailOTP(ctx context.Context, verificationId gocql.UUID, email string, otp string, purpose string) error {
+	ret := _mock.Called(ctx, verificationId, email, otp, purpose)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SaveNoPasswordEmailOTP")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, gocql.UUID, string, string, string) error); ok {
+		r0 = returnFunc(ctx, verificationId, email, otp, purpose)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockRepository_SaveNoPasswordEmailOTP_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SaveNoPasswordEmailOTP'
+type MockRepository_SaveNoPasswordEmailOTP_Call struct {
+	*mock.Call
+}
+
+// SaveNoPasswordEmailOTP is a helper method to define mock.On call
+//   - ctx context.Context
+//   - verificationId gocql.UUID
+//   - email string
+//   - otp string
+//   - purpose string
+func (_e *MockRepository_Expecter) SaveNoPasswordEmailOTP(ctx any, verificationId any, email any, otp any, purpose any) *MockRepository_SaveNoPasswordEmailOTP_Call {
+	return &MockRepository_SaveNoPasswordEmailOTP_Call{Call: _e.mock.On("SaveNoPasswordEmailOTP", ctx, verificationId, email, otp, purpose)}
+}
+
+func (_c *MockRepository_SaveNoPasswordEmailOTP_Call) Run(run func(ctx context.Context, verificationId gocql.UUID, email string, otp string, purpose string)) *MockRepository_SaveNoPasswordEmailOTP_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 gocql.UUID
+		if args[1] != nil {
+			arg1 = args[1].(gocql.UUID)
+		}
+		var arg2 string
+		if args[2] != nil {
+			arg2 = args[2].(string)
+		}
+		var arg3 string
+		if args[3] != nil {
+			arg3 = args[3].(string)
+		}
+		var arg4 string
+		if args[4] != nil {
+			arg4 = args[4].(string)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3,
+			arg4,
+		)
+	})
+	return _c
+}
+
+func (_c *MockRepository_SaveNoPasswordEmailOTP_Call) Return(err error) *MockRepository_SaveNoPasswordEmailOTP_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockRepository_SaveNoPasswordEmailOTP_Call) RunAndReturn(run func(ctx context.Context, verificationId gocql.UUID, email string, otp string, purpose string) error) *MockRepository_SaveNoPasswordEmailOTP_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1362,6 +2355,81 @@ func (_c *MockRepository_SaveRefreshTokenJTIById_Call) Return(err error) *MockRe
 }
 
 func (_c *MockRepository_SaveRefreshTokenJTIById_Call) RunAndReturn(run func(id gocql.UUID, jti gocql.UUID) error) *MockRepository_SaveRefreshTokenJTIById_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// SaveTOTPSetup provides a mock function for the type MockRepository
+func (_mock *MockRepository) SaveTOTPSetup(ctx context.Context, token gocql.UUID, email string, sealedSecret string, purpose string) error {
+	ret := _mock.Called(ctx, token, email, sealedSecret, purpose)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SaveTOTPSetup")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, gocql.UUID, string, string, string) error); ok {
+		r0 = returnFunc(ctx, token, email, sealedSecret, purpose)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockRepository_SaveTOTPSetup_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SaveTOTPSetup'
+type MockRepository_SaveTOTPSetup_Call struct {
+	*mock.Call
+}
+
+// SaveTOTPSetup is a helper method to define mock.On call
+//   - ctx context.Context
+//   - token gocql.UUID
+//   - email string
+//   - sealedSecret string
+//   - purpose string
+func (_e *MockRepository_Expecter) SaveTOTPSetup(ctx any, token any, email any, sealedSecret any, purpose any) *MockRepository_SaveTOTPSetup_Call {
+	return &MockRepository_SaveTOTPSetup_Call{Call: _e.mock.On("SaveTOTPSetup", ctx, token, email, sealedSecret, purpose)}
+}
+
+func (_c *MockRepository_SaveTOTPSetup_Call) Run(run func(ctx context.Context, token gocql.UUID, email string, sealedSecret string, purpose string)) *MockRepository_SaveTOTPSetup_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 gocql.UUID
+		if args[1] != nil {
+			arg1 = args[1].(gocql.UUID)
+		}
+		var arg2 string
+		if args[2] != nil {
+			arg2 = args[2].(string)
+		}
+		var arg3 string
+		if args[3] != nil {
+			arg3 = args[3].(string)
+		}
+		var arg4 string
+		if args[4] != nil {
+			arg4 = args[4].(string)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3,
+			arg4,
+		)
+	})
+	return _c
+}
+
+func (_c *MockRepository_SaveTOTPSetup_Call) Return(err error) *MockRepository_SaveTOTPSetup_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockRepository_SaveTOTPSetup_Call) RunAndReturn(run func(ctx context.Context, token gocql.UUID, email string, sealedSecret string, purpose string) error) *MockRepository_SaveTOTPSetup_Call {
 	_c.Call.Return(run)
 	return _c
 }

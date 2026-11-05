@@ -23,6 +23,8 @@ apps:
   # no phone login on the web, so no twilio secret here
   auth:
     twilio: false
+    # the key that seals the secrets of authenticators
+    totp: true
   chat: null
   expo-notification: null
   fcmnotification: null

@@ -48,6 +48,86 @@ func (_m *MockService) EXPECT() *MockService_Expecter {
 	return &MockService_Expecter{mock: &_m.Mock}
 }
 
+// ConfirmTOTPSetup provides a mock function for the type MockService
+func (_mock *MockService) ConfirmTOTPSetup(ctx context.Context, setupToken uuid.UUID, code string) (*dto.SignInWithThirdPartyResponse, string, error) {
+	ret := _mock.Called(ctx, setupToken, code)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ConfirmTOTPSetup")
+	}
+
+	var r0 *dto.SignInWithThirdPartyResponse
+	var r1 string
+	var r2 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, string) (*dto.SignInWithThirdPartyResponse, string, error)); ok {
+		return returnFunc(ctx, setupToken, code)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, string) *dto.SignInWithThirdPartyResponse); ok {
+		r0 = returnFunc(ctx, setupToken, code)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*dto.SignInWithThirdPartyResponse)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, string) string); ok {
+		r1 = returnFunc(ctx, setupToken, code)
+	} else {
+		r1 = ret.Get(1).(string)
+	}
+	if returnFunc, ok := ret.Get(2).(func(context.Context, uuid.UUID, string) error); ok {
+		r2 = returnFunc(ctx, setupToken, code)
+	} else {
+		r2 = ret.Error(2)
+	}
+	return r0, r1, r2
+}
+
+// MockService_ConfirmTOTPSetup_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ConfirmTOTPSetup'
+type MockService_ConfirmTOTPSetup_Call struct {
+	*mock.Call
+}
+
+// ConfirmTOTPSetup is a helper method to define mock.On call
+//   - ctx context.Context
+//   - setupToken uuid.UUID
+//   - code string
+func (_e *MockService_Expecter) ConfirmTOTPSetup(ctx any, setupToken any, code any) *MockService_ConfirmTOTPSetup_Call {
+	return &MockService_ConfirmTOTPSetup_Call{Call: _e.mock.On("ConfirmTOTPSetup", ctx, setupToken, code)}
+}
+
+func (_c *MockService_ConfirmTOTPSetup_Call) Run(run func(ctx context.Context, setupToken uuid.UUID, code string)) *MockService_ConfirmTOTPSetup_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		var arg2 string
+		if args[2] != nil {
+			arg2 = args[2].(string)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *MockService_ConfirmTOTPSetup_Call) Return(signInWithThirdPartyResponse *dto.SignInWithThirdPartyResponse, s string, err error) *MockService_ConfirmTOTPSetup_Call {
+	_c.Call.Return(signInWithThirdPartyResponse, s, err)
+	return _c
+}
+
+func (_c *MockService_ConfirmTOTPSetup_Call) RunAndReturn(run func(ctx context.Context, setupToken uuid.UUID, code string) (*dto.SignInWithThirdPartyResponse, string, error)) *MockService_ConfirmTOTPSetup_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // CreateMemberByEmail provides a mock function for the type MockService
 func (_mock *MockService) CreateMemberByEmail(ctx context.Context, email string, password string) (map[string]uuid.UUID, error) {
 	ret := _mock.Called(ctx, email, password)
@@ -383,6 +463,86 @@ func (_c *MockService_LoginWithEmail_Call) RunAndReturn(run func(email string, p
 	return _c
 }
 
+// LoginWithTOTP provides a mock function for the type MockService
+func (_mock *MockService) LoginWithTOTP(ctx context.Context, email string, code string) (*dto.SignInWithThirdPartyResponse, string, error) {
+	ret := _mock.Called(ctx, email, code)
+
+	if len(ret) == 0 {
+		panic("no return value specified for LoginWithTOTP")
+	}
+
+	var r0 *dto.SignInWithThirdPartyResponse
+	var r1 string
+	var r2 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string) (*dto.SignInWithThirdPartyResponse, string, error)); ok {
+		return returnFunc(ctx, email, code)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string) *dto.SignInWithThirdPartyResponse); ok {
+		r0 = returnFunc(ctx, email, code)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*dto.SignInWithThirdPartyResponse)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string, string) string); ok {
+		r1 = returnFunc(ctx, email, code)
+	} else {
+		r1 = ret.Get(1).(string)
+	}
+	if returnFunc, ok := ret.Get(2).(func(context.Context, string, string) error); ok {
+		r2 = returnFunc(ctx, email, code)
+	} else {
+		r2 = ret.Error(2)
+	}
+	return r0, r1, r2
+}
+
+// MockService_LoginWithTOTP_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'LoginWithTOTP'
+type MockService_LoginWithTOTP_Call struct {
+	*mock.Call
+}
+
+// LoginWithTOTP is a helper method to define mock.On call
+//   - ctx context.Context
+//   - email string
+//   - code string
+func (_e *MockService_Expecter) LoginWithTOTP(ctx any, email any, code any) *MockService_LoginWithTOTP_Call {
+	return &MockService_LoginWithTOTP_Call{Call: _e.mock.On("LoginWithTOTP", ctx, email, code)}
+}
+
+func (_c *MockService_LoginWithTOTP_Call) Run(run func(ctx context.Context, email string, code string)) *MockService_LoginWithTOTP_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		var arg2 string
+		if args[2] != nil {
+			arg2 = args[2].(string)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *MockService_LoginWithTOTP_Call) Return(signInWithThirdPartyResponse *dto.SignInWithThirdPartyResponse, s string, err error) *MockService_LoginWithTOTP_Call {
+	_c.Call.Return(signInWithThirdPartyResponse, s, err)
+	return _c
+}
+
+func (_c *MockService_LoginWithTOTP_Call) RunAndReturn(run func(ctx context.Context, email string, code string) (*dto.SignInWithThirdPartyResponse, string, error)) *MockService_LoginWithTOTP_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // RemoveJTI provides a mock function for the type MockService
 func (_mock *MockService) RemoveJTI(refreshToken string) error {
 	ret := _mock.Called(refreshToken)
@@ -713,6 +873,142 @@ func (_c *MockService_SignInWithGoogle_Call) RunAndReturn(run func(ctx context.C
 	return _c
 }
 
+// StartAuthenticatorRecovery provides a mock function for the type MockService
+func (_mock *MockService) StartAuthenticatorRecovery(ctx context.Context, email string) (*dto.StartAuthenticatorRecoveryResponse, error) {
+	ret := _mock.Called(ctx, email)
+
+	if len(ret) == 0 {
+		panic("no return value specified for StartAuthenticatorRecovery")
+	}
+
+	var r0 *dto.StartAuthenticatorRecoveryResponse
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (*dto.StartAuthenticatorRecoveryResponse, error)); ok {
+		return returnFunc(ctx, email)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) *dto.StartAuthenticatorRecoveryResponse); ok {
+		r0 = returnFunc(ctx, email)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*dto.StartAuthenticatorRecoveryResponse)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = returnFunc(ctx, email)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockService_StartAuthenticatorRecovery_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'StartAuthenticatorRecovery'
+type MockService_StartAuthenticatorRecovery_Call struct {
+	*mock.Call
+}
+
+// StartAuthenticatorRecovery is a helper method to define mock.On call
+//   - ctx context.Context
+//   - email string
+func (_e *MockService_Expecter) StartAuthenticatorRecovery(ctx any, email any) *MockService_StartAuthenticatorRecovery_Call {
+	return &MockService_StartAuthenticatorRecovery_Call{Call: _e.mock.On("StartAuthenticatorRecovery", ctx, email)}
+}
+
+func (_c *MockService_StartAuthenticatorRecovery_Call) Run(run func(ctx context.Context, email string)) *MockService_StartAuthenticatorRecovery_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockService_StartAuthenticatorRecovery_Call) Return(startAuthenticatorRecoveryResponse *dto.StartAuthenticatorRecoveryResponse, err error) *MockService_StartAuthenticatorRecovery_Call {
+	_c.Call.Return(startAuthenticatorRecoveryResponse, err)
+	return _c
+}
+
+func (_c *MockService_StartAuthenticatorRecovery_Call) RunAndReturn(run func(ctx context.Context, email string) (*dto.StartAuthenticatorRecoveryResponse, error)) *MockService_StartAuthenticatorRecovery_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// StartNoPasswordEmailLogin provides a mock function for the type MockService
+func (_mock *MockService) StartNoPasswordEmailLogin(ctx context.Context, email string) (*dto.StartNoPasswordEmailLoginResponse, error) {
+	ret := _mock.Called(ctx, email)
+
+	if len(ret) == 0 {
+		panic("no return value specified for StartNoPasswordEmailLogin")
+	}
+
+	var r0 *dto.StartNoPasswordEmailLoginResponse
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (*dto.StartNoPasswordEmailLoginResponse, error)); ok {
+		return returnFunc(ctx, email)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) *dto.StartNoPasswordEmailLoginResponse); ok {
+		r0 = returnFunc(ctx, email)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*dto.StartNoPasswordEmailLoginResponse)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = returnFunc(ctx, email)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockService_StartNoPasswordEmailLogin_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'StartNoPasswordEmailLogin'
+type MockService_StartNoPasswordEmailLogin_Call struct {
+	*mock.Call
+}
+
+// StartNoPasswordEmailLogin is a helper method to define mock.On call
+//   - ctx context.Context
+//   - email string
+func (_e *MockService_Expecter) StartNoPasswordEmailLogin(ctx any, email any) *MockService_StartNoPasswordEmailLogin_Call {
+	return &MockService_StartNoPasswordEmailLogin_Call{Call: _e.mock.On("StartNoPasswordEmailLogin", ctx, email)}
+}
+
+func (_c *MockService_StartNoPasswordEmailLogin_Call) Run(run func(ctx context.Context, email string)) *MockService_StartNoPasswordEmailLogin_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockService_StartNoPasswordEmailLogin_Call) Return(startNoPasswordEmailLoginResponse *dto.StartNoPasswordEmailLoginResponse, err error) *MockService_StartNoPasswordEmailLogin_Call {
+	_c.Call.Return(startNoPasswordEmailLoginResponse, err)
+	return _c
+}
+
+func (_c *MockService_StartNoPasswordEmailLogin_Call) RunAndReturn(run func(ctx context.Context, email string) (*dto.StartNoPasswordEmailLoginResponse, error)) *MockService_StartNoPasswordEmailLogin_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // VerifyEmailOTP provides a mock function for the type MockService
 func (_mock *MockService) VerifyEmailOTP(otp string, verificationId uuid.UUID) (*dto.VerifyEmailOTPResponse, error) {
 	ret := _mock.Called(otp, verificationId)
@@ -777,6 +1073,80 @@ func (_c *MockService_VerifyEmailOTP_Call) Return(verifyEmailOTPResponse *dto.Ve
 }
 
 func (_c *MockService_VerifyEmailOTP_Call) RunAndReturn(run func(otp string, verificationId uuid.UUID) (*dto.VerifyEmailOTPResponse, error)) *MockService_VerifyEmailOTP_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// VerifyNoPasswordEmailOTP provides a mock function for the type MockService
+func (_mock *MockService) VerifyNoPasswordEmailOTP(ctx context.Context, verificationId uuid.UUID, otp string) (*dto.TOTPSetupResponse, error) {
+	ret := _mock.Called(ctx, verificationId, otp)
+
+	if len(ret) == 0 {
+		panic("no return value specified for VerifyNoPasswordEmailOTP")
+	}
+
+	var r0 *dto.TOTPSetupResponse
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, string) (*dto.TOTPSetupResponse, error)); ok {
+		return returnFunc(ctx, verificationId, otp)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, string) *dto.TOTPSetupResponse); ok {
+		r0 = returnFunc(ctx, verificationId, otp)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*dto.TOTPSetupResponse)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, string) error); ok {
+		r1 = returnFunc(ctx, verificationId, otp)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockService_VerifyNoPasswordEmailOTP_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'VerifyNoPasswordEmailOTP'
+type MockService_VerifyNoPasswordEmailOTP_Call struct {
+	*mock.Call
+}
+
+// VerifyNoPasswordEmailOTP is a helper method to define mock.On call
+//   - ctx context.Context
+//   - verificationId uuid.UUID
+//   - otp string
+func (_e *MockService_Expecter) VerifyNoPasswordEmailOTP(ctx any, verificationId any, otp any) *MockService_VerifyNoPasswordEmailOTP_Call {
+	return &MockService_VerifyNoPasswordEmailOTP_Call{Call: _e.mock.On("VerifyNoPasswordEmailOTP", ctx, verificationId, otp)}
+}
+
+func (_c *MockService_VerifyNoPasswordEmailOTP_Call) Run(run func(ctx context.Context, verificationId uuid.UUID, otp string)) *MockService_VerifyNoPasswordEmailOTP_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		var arg2 string
+		if args[2] != nil {
+			arg2 = args[2].(string)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *MockService_VerifyNoPasswordEmailOTP_Call) Return(tOTPSetupResponse *dto.TOTPSetupResponse, err error) *MockService_VerifyNoPasswordEmailOTP_Call {
+	_c.Call.Return(tOTPSetupResponse, err)
+	return _c
+}
+
+func (_c *MockService_VerifyNoPasswordEmailOTP_Call) RunAndReturn(run func(ctx context.Context, verificationId uuid.UUID, otp string) (*dto.TOTPSetupResponse, error)) *MockService_VerifyNoPasswordEmailOTP_Call {
 	_c.Call.Return(run)
 	return _c
 }
