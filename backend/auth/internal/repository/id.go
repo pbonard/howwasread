@@ -50,6 +50,18 @@ func (r *repository) RemoveRefreshTokenJTIById(id, jti gocql.UUID) error {
 	return nil
 }
 
+// ClearRefreshTokenJTIsById ends every session of a member
+func (r *repository) ClearRefreshTokenJTIsById(ctx context.Context, id gocql.UUID) error {
+	err := r.session.Query("DELETE refresh_token_jtis FROM member_by_id WHERE id = ?", id).ExecContext(ctx)
+	if err != nil {
+		slog.Error("fail to clear refresh token jtis",
+			"err", err,
+		)
+		return err
+	}
+	return nil
+}
+
 func (r *repository) FindEmailAndPhoneNumberById(ctx context.Context, id gocql.UUID) (email, phoneNumber string, err error) {
 	err = r.session.Query("SELECT email, phone_number FROM member_by_id WHERE id = ?", id).
 		ScanContext(ctx, &email, &phoneNumber)

@@ -33,6 +33,7 @@ type Repository interface {
 	FindRefreshTokenJTIsById(id gocql.UUID) (jtis []gocql.UUID, err error)
 	SaveRefreshTokenJTIById(id, jti gocql.UUID) error
 	RemoveRefreshTokenJTIById(id, jti gocql.UUID) error
+	ClearRefreshTokenJTIsById(ctx context.Context, id gocql.UUID) error
 	FindEmailAndPhoneNumberById(ctx context.Context, id gocql.UUID) (email, phoneNumber string, err error)
 	DeleteAccount(ctx context.Context, id gocql.UUID, email, phoneNumber string) error
 	SaveProfileId(id gocql.UUID) error
@@ -45,6 +46,21 @@ type Repository interface {
 	ReplaceAndLinkMemberWithOldAccount(newId, oldAccountId gocql.UUID, email, phoneNumber string) error
 	WasBanned(phoneNumber string) error
 	SaveNonce(nonce string) error
+	ClaimNoPasswordEmailOTPCooldown(ctx context.Context, email string) error
+	SaveNoPasswordEmailOTP(ctx context.Context, verificationId gocql.UUID, email, otp, purpose string) error
+	FindNoPasswordEmailOTP(ctx context.Context, verificationId gocql.UUID) (email, otp, purpose string, attempts int, err error)
+	AddNoPasswordEmailOTPAttempt(ctx context.Context, verificationId gocql.UUID, attempts int) error
+	DeleteNoPasswordEmailOTP(ctx context.Context, verificationId gocql.UUID) error
+	FindTOTP(ctx context.Context, email string) (sealedSecret string, lastStep int64, err error)
+	SaveTOTPSetup(ctx context.Context, token gocql.UUID, email, sealedSecret, purpose string) error
+	FindTOTPSetup(ctx context.Context, token gocql.UUID) (email, sealedSecret, purpose string, err error)
+	DeleteTOTPSetup(ctx context.Context, token gocql.UUID) error
+	EnableTOTP(ctx context.Context, email, sealedSecret string, step int64) error
+	ReplaceTOTP(ctx context.Context, email, sealedSecret string, step int64) error
+	MarkTOTPStep(ctx context.Context, email string, lastStep, step int64) error
+	FindTOTPAttempts(ctx context.Context, email string) (int, error)
+	AddTOTPAttempt(ctx context.Context, email string, attempts int) error
+	DeleteTOTPAttempts(ctx context.Context, email string) error
 	SaveThirdPartySignInInfo(ctx context.Context, id gocql.UUID, email string, phoneNumberVerified, emailVerified bool) error
 }
 
@@ -104,6 +120,21 @@ func NewRepository() Repository {
 		`CREATE TABLE IF NOT EXISTS nonce (
     		nonce text PRIMARY KEY
     	);`,
+		`CREATE TABLE IF NOT EXISTS email_otp (
+			verification_id uuid PRIMARY KEY, email text, otp text, purpose text, attempts int
+		);`,
+		`CREATE TABLE IF NOT EXISTS email_otp_cooldown (
+			email text PRIMARY KEY
+		);`,
+		`CREATE TABLE IF NOT EXISTS member_totp (
+			email text PRIMARY KEY, secret text, last_step bigint
+		);`,
+		`CREATE TABLE IF NOT EXISTS totp_setup (
+			setup_token uuid PRIMARY KEY, email text, secret text, purpose text
+		);`,
+		`CREATE TABLE IF NOT EXISTS totp_attempt (
+			email text PRIMARY KEY, attempts int
+		);`,
 		`CREATE TABLE IF NOT EXISTS profile_by_id (
 			id uuid PRIMARY KEY, name text, reporter_ids set<uuid>, blocked_conversations set<uuid>
 		);`,

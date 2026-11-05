@@ -44,6 +44,57 @@ func (_m *MockSMTPClient) EXPECT() *MockSMTPClient_Expecter {
 	return &MockSMTPClient_Expecter{mock: &_m.Mock}
 }
 
+// SendAuthenticatorChanged provides a mock function for the type MockSMTPClient
+func (_mock *MockSMTPClient) SendAuthenticatorChanged(to string) error {
+	ret := _mock.Called(to)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SendAuthenticatorChanged")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(string) error); ok {
+		r0 = returnFunc(to)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockSMTPClient_SendAuthenticatorChanged_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SendAuthenticatorChanged'
+type MockSMTPClient_SendAuthenticatorChanged_Call struct {
+	*mock.Call
+}
+
+// SendAuthenticatorChanged is a helper method to define mock.On call
+//   - to string
+func (_e *MockSMTPClient_Expecter) SendAuthenticatorChanged(to any) *MockSMTPClient_SendAuthenticatorChanged_Call {
+	return &MockSMTPClient_SendAuthenticatorChanged_Call{Call: _e.mock.On("SendAuthenticatorChanged", to)}
+}
+
+func (_c *MockSMTPClient_SendAuthenticatorChanged_Call) Run(run func(to string)) *MockSMTPClient_SendAuthenticatorChanged_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 string
+		if args[0] != nil {
+			arg0 = args[0].(string)
+		}
+		run(
+			arg0,
+		)
+	})
+	return _c
+}
+
+func (_c *MockSMTPClient_SendAuthenticatorChanged_Call) Return(err error) *MockSMTPClient_SendAuthenticatorChanged_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockSMTPClient_SendAuthenticatorChanged_Call) RunAndReturn(run func(to string) error) *MockSMTPClient_SendAuthenticatorChanged_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // SendOTP provides a mock function for the type MockSMTPClient
 func (_mock *MockSMTPClient) SendOTP(to string, otp string) error {
 	ret := _mock.Called(to, otp)

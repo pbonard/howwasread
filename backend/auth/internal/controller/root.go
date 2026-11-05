@@ -78,6 +78,14 @@ func getStatusCode(err error) int {
 		return http.StatusBadRequest
 	case service.ErrVerifyEmailOTP:
 		return http.StatusUnauthorized
+	case service.ErrEmailOTPTooSoon:
+		return http.StatusTooManyRequests
+	case service.ErrUseThirdPartySignIn:
+		return http.StatusConflict
+	case service.ErrVerifyTOTP:
+		return http.StatusUnauthorized
+	case service.ErrTOTPTooManyAttempts:
+		return http.StatusTooManyRequests
 	case service.ErrEmailSignedUpAgain:
 		return http.StatusConflict
 	case service.ErrSessionExpired:

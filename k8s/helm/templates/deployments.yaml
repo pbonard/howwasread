@@ -100,6 +100,10 @@ spec:
             - secretRef:
                 name: twilio
             {{- end }}
+            {{- if $app.totp }}
+            - secretRef:
+                name: totp
+            {{- end }}
             {{- if $app.opensearch }}
             - secretRef:
                 name: opensearch-backend-user

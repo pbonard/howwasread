@@ -203,3 +203,87 @@ func TestController_deleteAccount(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, rec.Code)
 }
+
+func enableNoPasswordLogin(t *testing.T) {
+	t.Setenv("NO_PASSWORD_EMAIL_LOGIN", "true")
+}
+
+func TestController_noPasswordRoutesAreOffUnlessEnabled(t *testing.T) {
+	svc := NewMockService(t)
+	for _, path := range []string{"/auth/email/login/start", "/auth/email/login/otp/verify", "/auth/email/login/totp/confirm", "/auth/email/login/totp/verify", "/auth/email/login/recovery/start"} {
+		rec := serve(svc, http.MethodPost, path, `{}`)
+		assert.Equal(t, http.StatusNotFound, rec.Code, path)
+	}
+}
+
+func TestController_passwordRoutesAreOffWithNoPasswordLogin(t *testing.T) {
+	enableNoPasswordLogin(t)
+	svc := NewMockService(t)
+	for _, path := range []string{"/auth/email/create", "/auth/email/login", "/auth/email/otp/verify", "/auth/email/password/forget"} {
+		rec := serve(svc, http.MethodPost, path, `{}`)
+		assert.Equal(t, http.StatusNotFound, rec.Code, path)
+	}
+	rec := serve(svc, http.MethodPatch, "/auth/email/password/set-new", `{}`)
+	assert.Equal(t, http.StatusNotFound, rec.Code)
+}
+
+func TestController_emailOTPVerifyGivesSetupWithoutCookie(t *testing.T) {
+	enableNoPasswordLogin(t)
+	svc := NewMockService(t)
+	vid := uuid.New()
+	svc.EXPECT().VerifyNoPasswordEmailOTP(mock.Anything, vid, "123456").
+		Return(&dto.TOTPSetupResponse{SetupToken: uuid.New()}, nil)
+
+	rec := serve(svc, http.MethodPost, "/auth/email/login/otp/verify", `{"verificationId":"`+vid.String()+`","otp":"123456"}`)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+	assert.Nil(t, refreshCookie(rec))
+}
+
+func TestController_totpConfirmSetsCookie(t *testing.T) {
+	enableNoPasswordLogin(t)
+	svc := NewMockService(t)
+	token := uuid.New()
+	svc.EXPECT().ConfirmTOTPSetup(mock.Anything, token, "123456").
+		Return(&dto.SignInWithThirdPartyResponse{AccessToken: "at"}, "rt", nil)
+
+	rec := serve(svc, http.MethodPost, "/auth/email/login/totp/confirm", `{"setupToken":"`+token.String()+`","code":"123456"}`)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+	assert.Equal(t, "rt", refreshCookie(rec).Value)
+}
+
+func TestController_totpLoginSetsCookie(t *testing.T) {
+	enableNoPasswordLogin(t)
+	svc := NewMockService(t)
+	svc.EXPECT().LoginWithTOTP(mock.Anything, email, "123456").
+		Return(&dto.SignInWithThirdPartyResponse{AccessToken: "at"}, "rt", nil)
+
+	rec := serve(svc, http.MethodPost, "/auth/email/login/totp/verify", `{"email":"alice@example.com","code":"123456"}`)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+	assert.Equal(t, "rt", refreshCookie(rec).Value)
+}
+
+func TestController_tooManyAttemptsStatuses(t *testing.T) {
+	enableNoPasswordLogin(t)
+	svc := NewMockService(t)
+	svc.EXPECT().StartNoPasswordEmailLogin(mock.Anything, email).Return(nil, service.ErrEmailOTPTooSoon)
+	svc.EXPECT().LoginWithTOTP(mock.Anything, email, "1").Return(nil, "", service.ErrTOTPTooManyAttempts)
+
+	send := serve(svc, http.MethodPost, "/auth/email/login/start", `{"email":"alice@example.com"}`)
+	login := serve(svc, http.MethodPost, "/auth/email/login/totp/verify", `{"email":"alice@example.com","code":"1"}`)
+
+	assert.Equal(t, http.StatusTooManyRequests, send.Code)
+	assert.Equal(t, http.StatusTooManyRequests, login.Code)
+}
+
+func TestController_useThirdPartySignInStatus(t *testing.T) {
+	enableNoPasswordLogin(t)
+	svc := NewMockService(t)
+	svc.EXPECT().StartNoPasswordEmailLogin(mock.Anything, email).Return(nil, service.ErrUseThirdPartySignIn)
+
+	send := serve(svc, http.MethodPost, "/auth/email/login/start", `{"email":"alice@example.com"}`)
+
+	assert.Equal(t, http.StatusConflict, send.Code)
+}
