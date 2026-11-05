@@ -27,7 +27,7 @@ circuitBreaker:
 
 apps:
   auth:
-    image: "backend/auth:3a1ca08"
+    image: "backend/auth:d0b0fad"
     port: 8080
     routePath: /auth
     authentication: true
